@@ -27,9 +27,30 @@ public class Util {
 	{
 		PUTCHUNK, STORED, GETCHUNK, CHUNK, DELETE, REMOVED, GETINITIATOR, INITIATOR, GOTCHUNKENH, GETCHUNKENH
 	}
+	
+	public static boolean isProtocolMessageType(String test){
+		ProtocolMessageType[] types = ProtocolMessageType.values();
+		
+		for(ProtocolMessageType t : types){
+			if(test.compareTo(t.name()) == 0)
+				return true;
+		}
+		return false;
+	}
+	
 	public static enum TopologyMessageType
 	{
 		ROOT, PARENT, SUBSCRIBER, MOVSUBSCRIBER, NEWSUBSCRIBER, REMSUBSCRIBER
+	}
+	
+	public static boolean isTopologyMessageType(String test){
+		TopologyMessageType[] types = TopologyMessageType.values();
+		
+		for(TopologyMessageType t : types){
+			if(test.compareTo(t.name()) == 0)
+				return true;
+		}
+		return false;
 	}
 	
 	public static int PACKET_MAX_SIZE = 65000;

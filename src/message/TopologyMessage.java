@@ -3,7 +3,7 @@ package message;
 import java.net.InetAddress;
 import resources.Util;
 
-public class TopologyMessage {
+public class TopologyMessage extends Message{
 	
 	Util.TopologyMessageType type = null;
 	String subscriberAddress = null;
@@ -45,6 +45,7 @@ public class TopologyMessage {
 		}
 	}
 	
+	@Override
 	public byte[] buildMessage(){
 		
 		String content = type.name() + " " + subscriberAddress + " " + subscriberPort + " ";
@@ -57,8 +58,10 @@ public class TopologyMessage {
 		return content.getBytes();
 	}
 	
-	public static TopologyMessage parseMessage(String[] parts){
+	public static TopologyMessage parseMessage(byte[] message){
 		TopologyMessage parsed = null;
+		
+		String parts[] = new String(message).split("\\s");
 		
 		Util.TopologyMessageType type_rcv;
 		

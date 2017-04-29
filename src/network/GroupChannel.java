@@ -2,70 +2,93 @@ package network;
 import java.net.InetAddress;
 import java.util.ArrayList;
 
+import message.Message;
+import peer.Peer;
+
 public class GroupChannel extends Thread{
+	
+	/*
+	 * Max children = 3
+	 */
 	
 	private Subscriber root = null;
 	private Subscriber parent = null;
+	private Subscriber mySubscription = null;
 	private ArrayList<Subscriber> nextSubscribers = new ArrayList<Subscriber>();
+	private DatagramListener comunicationChannel = null;
 
-	public GroupChannel(InetAddress rootAddress, int rootPort){
+	public GroupChannel(InetAddress rootAddress, int rootPort, Peer peer){
+		comunicationChannel = new DatagramListener(peer,peer.getMySubscriptionInfo().getPort());
+		
 		root = new Subscriber(rootAddress,rootPort);
+		mySubscription = peer.getMySubscriptionInfo();
+		
+		comunicationChannel.start();
 	}
 	
 	/*
 	 * Information Flow Functions
 	 */
 	
-	public void sendMessageToSubscribers(DatagramListener channel, byte[] message){
+	public void sendPrivateMessage(Message message, Subscriber destination){
+		comunicationChannel.send(message.buildMessage(), destination.getAddress(), destination.getPort());
+	}
+	
+	public void sendMessageToSubscribers(Message message){
 		for(Subscriber subscriber : nextSubscribers){
-			channel.send(message, subscriber.getAddress(), subscriber.getPort());
+			comunicationChannel.send(message.buildMessage(), subscriber.getAddress(), subscriber.getPort());
 		}
 	}
 	
-	public void sendMessageToRoot(DatagramListener channel,byte[] message){
-		channel.send(message, root.getAddress(), root.getPort());
+	public void sendMessageToRoot(Message message){
+		comunicationChannel.send(message.buildMessage(), root.getAddress(), root.getPort());
 	}
 	
-	public void sendMessageToParent(DatagramListener channel,byte[] message){
+	public void sendMessageToParent(Message message){
 		if(parent != null)
-			channel.send(message, parent.getAddress(), parent.getPort());
+			comunicationChannel.send(message.buildMessage(), parent.getAddress(), parent.getPort());
 	}
 	
 	/*
 	 * Topology Functions
 	 */
 	
-	public void addSubscriber(InetAddress address, int port){
-		if(hasSubscriber(address,port) == null)
-			nextSubscribers.add(new Subscriber(address,port));
+	public boolean addSubscriber(Subscriber newSubscriber){
+		if(hasSubscriber(newSubscriber) == null){
+			if(nextSubscribers.size() < 5){
+				nextSubscribers.add(newSubscriber);
+				return true;
+			}
+			else
+				return false;
+		}
+		return true;
 	}
 	
-	public void removeSubscriber(InetAddress address, int port){
+	public void removeSubscriber(Subscriber subscriber){
 		Subscriber p;
-		if((p = hasSubscriber(address,port)) != null)
+		if((p = hasSubscriber(subscriber)) != null)
 			nextSubscribers.remove(p);
 	}
 	
-	public Subscriber hasSubscriber(InetAddress address, int port){
-		for(Subscriber subscriber : nextSubscribers){
-			if(subscriber.getAddress() == address && subscriber.getPort() == port)
-				return subscriber;
+	public Subscriber hasSubscriber(Subscriber subscriber){
+		for(Subscriber s : nextSubscribers){
+			if(s.equal(subscriber))
+				return s;
 		}
 		return null;
 	}
 	
-	public void setParent(InetAddress address, int port){
+	public void setParent(Subscriber subscriber){
 		if(parent != null){
-			parent.setAddress(address);
-			parent.setPort(port);
+			parent.setSubscriber(subscriber.getAddress(), subscriber.getPort());
 		}
 		else{
-			parent = new Subscriber(address, port);
+			parent = new Subscriber(subscriber.getAddress(), subscriber.getPort());
 		}
 	}
 	
-	public void setRoot(InetAddress address, int port){
-		root.setAddress(address);
-		root.setPort(port);
+	public void setRoot(Subscriber subscriber){
+		root.setSubscriber(subscriber.getAddress(),subscriber.getPort());
 	}
 }

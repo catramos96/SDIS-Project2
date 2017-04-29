@@ -6,6 +6,7 @@ import java.net.UnknownHostException;
 import message.TopologyMessage;
 import network.DatagramListener;
 import network.GroupChannel;
+import network.Subscriber;
 import resources.Util;
 
 public class Peer {
@@ -13,13 +14,17 @@ public class Peer {
 	private int ID = 0;
 	private DatagramListener comunicationChannel = null;
 	private GroupChannel subscribedGroup = null;
+	private Subscriber mySubscription = null;
 	
 	public Peer(String[] rootInfo,int myport){
 		
 		try {
+			
+			mySubscription = new Subscriber(InetAddress.getLocalHost(), myport);
 			InetAddress address;
 			int port;
 			
+			//root
 			if(rootInfo[0] == "")
 				address = InetAddress.getLocalHost();
 			else	
@@ -27,17 +32,14 @@ public class Peer {
 
 			port = Integer.parseInt(rootInfo[1]);
 			
-			//comunication
-			comunicationChannel = new DatagramListener(this,myport);
-			comunicationChannel.start();
-			
 			//comunication topology
-			subscribedGroup = new GroupChannel(address, port);
+			subscribedGroup = new GroupChannel(address, port,this);
+			subscribedGroup.start();
 		
-			
 			//teste
-			TopologyMessage msg = new TopologyMessage(Util.TopologyMessageType.ROOT,address.toString(),port);
-			subscribedGroup.sendMessageToRoot(comunicationChannel, msg.buildMessage());
+			//dizer que eu sou a root
+			TopologyMessage msg = new TopologyMessage(Util.TopologyMessageType.ROOT,mySubscription.getAddress().getHostAddress(),myport);
+			subscribedGroup.sendMessageToRoot(msg);
 			
 		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block
@@ -47,5 +49,13 @@ public class Peer {
 	
 	public GroupChannel getSubscribedGroup(){
 		return subscribedGroup;
+	}
+	
+	public DatagramListener getChannel(){
+		return comunicationChannel;
+	}
+	
+	public Subscriber getMySubscriptionInfo(){
+		return mySubscription;
 	}
 }

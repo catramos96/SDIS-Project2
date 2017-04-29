@@ -23,7 +23,7 @@ import resources.Util;
  * @attribute port - Port of the sender peer (ENHANCEMENT)
  * @attribute body - Content of the chunk associated
  */
-public class ProtocolMessage 
+public class ProtocolMessage extends Message
 {
 	//ProtocolMessageType information
 	private Util.ProtocolMessageType type = null;
@@ -178,6 +178,7 @@ public class ProtocolMessage
 	 * 
 	 * @return The message to be sent in byte[]
 	 */
+	@Override
 	public byte[] buildMessage() {
 		
 		String content = type.name() + " " + version[0]+version[1]+version[2] + " " + senderId + " " + fileId + " ";

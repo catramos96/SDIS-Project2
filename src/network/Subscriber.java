@@ -1,6 +1,7 @@
 package network;
 
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 public class Subscriber {
 
@@ -10,6 +11,33 @@ public class Subscriber {
 	public Subscriber(InetAddress address,int port){
 		this.address = address;
 		this.port = port;
+	}
+	
+	public Subscriber(String address,int port){
+		try {
+			this.address = InetAddress.getByName(address);
+			this.port = port;
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	/*
+	 * SETS AND GETS
+	 */
+	
+	public void setSubscriber(InetAddress address, int port){
+		this.address = address;
+		this.port = port;
+	}
+	
+	public void setSubscriber(String address, int port){
+		try {
+			this.address = InetAddress.getByName(address);
+			this.port = port;
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public InetAddress getAddress(){
@@ -26,5 +54,9 @@ public class Subscriber {
 	
 	public void setPort(int port){
 		this.port = port;
+	}
+	
+	public boolean equal(Subscriber subscriber){
+		return (this.address == subscriber.getAddress() && this.port == subscriber.getPort());
 	}
 }
