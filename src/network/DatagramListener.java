@@ -15,11 +15,13 @@ public class DatagramListener extends Thread{
 	private DatagramSocket socket = null;
 	private boolean running = false;
 	private Peer peer = null;
+	private GroupChannel subscribers = null;
 	
-	public DatagramListener(Peer peer,int port){
+	public DatagramListener(Peer peer,GroupChannel channel){
 		this.peer = peer;
+		this.subscribers = channel;
 		try {
-			socket = new DatagramSocket(port);
+			socket = new DatagramSocket(peer.getMySubscriptionInfo().getPort());
 		} catch (SocketException e) {
 			e.printStackTrace();
 		}
@@ -58,9 +60,8 @@ public class DatagramListener extends Thread{
 	
 		while(running)
 		{
-			byte[] messageReceived = receive().getData();
-			new MessageHandler(messageReceived,peer).start();
-			
+			DatagramPacket packet = receive();
+			new MessageHandler(packet.getData(),new Subscriber(packet.getAddress(),packet.getPort()),peer,subscribers).start();
 		}
 		
 		//close connection

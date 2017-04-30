@@ -7,6 +7,7 @@ import message.TopologyMessage;
 import network.DatagramListener;
 import network.GroupChannel;
 import network.Subscriber;
+import resources.Logs;
 import resources.Util;
 
 public class Peer {
@@ -20,7 +21,9 @@ public class Peer {
 		
 		try {
 			
-			mySubscription = new Subscriber(InetAddress.getLocalHost(), myport);
+			mySubscription = new Subscriber(InetAddress.getLocalHost().getHostAddress(), myport);
+			Logs.MyAddress(mySubscription);
+			
 			InetAddress address;
 			int port;
 			
@@ -32,14 +35,13 @@ public class Peer {
 
 			port = Integer.parseInt(rootInfo[1]);
 			
-			//comunication topology
-			subscribedGroup = new GroupChannel(address, port,this);
+			//Group1
+			subscribedGroup = new GroupChannel(this);
 			subscribedGroup.start();
 		
-			//teste
-			//dizer que eu sou a root
-			TopologyMessage msg = new TopologyMessage(Util.TopologyMessageType.ROOT,mySubscription.getAddress().getHostAddress(),myport);
-			subscribedGroup.sendMessageToRoot(msg);
+			//Try to communicate with root
+			TopologyMessage msg = new TopologyMessage(Util.TopologyMessageType.WHOISROOT);
+			subscribedGroup.sendPrivateMessage(msg, new Subscriber(address,port));
 			
 		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block

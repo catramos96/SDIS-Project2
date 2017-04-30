@@ -1,21 +1,19 @@
 package message;
 
 import java.net.InetAddress;
+
+import network.Subscriber;
+import resources.Logs;
 import resources.Util;
 
 public class TopologyMessage extends Message{
 	
 	Util.TopologyMessageType type = null;
-	String subscriberAddress = null;
-	String parentAddress = null;
-	int subscriberPort = -1;
-	int parentPort = -1;
-	
-	/*
-	 * ROOT, PARENT, SUBSCRIBER, MOVSUBSCRIBER
-	 */
+	Subscriber subscriber1 = null;
+	Subscriber subscriber2 = null;
 	
 	/**
+	 * WHOISROOT		
 	 * ROOT				<address> <port> 	<CRLF><CRLF>
 	 * PARENT 			<address> <port> 	<CRLF><CRLF>
 	 * SUBSCRIBER 		<address> <port> 	<CRLF><CRLF>
@@ -24,37 +22,44 @@ public class TopologyMessage extends Message{
 	 * MOVSUBSCRIBER	<subscriberAddress> <subscriberPort> <parentAddress> <parentPort>	<CRLF><CRLF>
 	 */
 	
-	public TopologyMessage(Util.TopologyMessageType type, String address, int port)
+	public TopologyMessage(Util.TopologyMessageType type){
+		if(type.name().equals("WHOISROOT")){
+			this.type = type;
+		}
+	}
+	
+	public TopologyMessage(Util.TopologyMessageType type, Subscriber subscriber)
 	{
 		if(type.name().equals("ROOT") || type.name().equals("PARENT") || type.name().equals("SUBSCRIBER") || 
 				type.name().equals("NEWSUBSCRIBER") ||type.name().equals("REMSUBSCRIBER")){
 			this.type = type;
-			this.subscriberAddress = address;
-			this.subscriberPort = port;
+			this.subscriber1 = subscriber;
 		}
 	}
 	
-	public TopologyMessage(Util.TopologyMessageType type, String address1, int port1, String address2, int port2)
+	public TopologyMessage(Util.TopologyMessageType type, Subscriber s1, Subscriber s2)
 	{
 		if(type.name().equals("MOVSUBSCRIBER")){
 			this.type = type;
-			this.subscriberAddress = address1;
-			this.subscriberPort = port1;
-			this.parentAddress = address2;
-			this.parentPort = port2;
+			this.subscriber1 = s1;
+			this.subscriber2 = s2;
 		}
 	}
 	
 	@Override
 	public byte[] buildMessage(){
 		
-		String content = type.name() + " " + subscriberAddress + " " + subscriberPort + " ";
+		String content = type.name() + " ";
+		
+		if(type.compareTo(Util.TopologyMessageType.WHOISROOT) != 0)
+			content += subscriber1.getAddress().getHostAddress() + " " + subscriber1.getPort() + " ";
 		
 		if(type.compareTo(Util.TopologyMessageType.MOVSUBSCRIBER) == 0){
-			content += parentAddress + " " + parentPort + " ";
+			content += subscriber2.getAddress().getHostAddress() + " " + subscriber2.getPort() + " ";
 		}
 		
 		content += Util.LINE_SEPARATOR + Util.LINE_SEPARATOR;
+		
 		return content.getBytes();
 	}
 	
@@ -67,26 +72,25 @@ public class TopologyMessage extends Message{
 		
 		if((type_rcv = Util.TopologyMessageType.valueOf(parts[0])) != null){
 		
-			String addr1_rcv = parts[1];
-			int port1_rcv = Integer.parseInt(parts[2]);
+			Subscriber s1 = null;
+			Subscriber s2 = null;
 			
-			String addr2_rcv = "";
-			int port2_rcv = -1;
-			
-			if(type_rcv.compareTo(Util.TopologyMessageType.MOVSUBSCRIBER) == 0){
-				addr2_rcv = parts[3];
-				port2_rcv = Integer.parseInt(parts[4]);
-			}
-			
-			if(type_rcv.compareTo(Util.TopologyMessageType.ROOT) == 0 || type_rcv.compareTo(Util.TopologyMessageType.PARENT) == 0 ||
+			if(type_rcv.compareTo(Util.TopologyMessageType.WHOISROOT) == 0)
+				parsed = new TopologyMessage(type_rcv);
+			else if(type_rcv.compareTo(Util.TopologyMessageType.ROOT) == 0 || type_rcv.compareTo(Util.TopologyMessageType.PARENT) == 0 ||
 					type_rcv.compareTo(Util.TopologyMessageType.SUBSCRIBER) == 0 || type_rcv.compareTo(Util.TopologyMessageType.NEWSUBSCRIBER) == 0 ||
-					type_rcv.compareTo(Util.TopologyMessageType.REMSUBSCRIBER) == 0)
-				parsed = new TopologyMessage(type_rcv,addr1_rcv,port1_rcv);	
-			else if(type_rcv.compareTo(Util.TopologyMessageType.MOVSUBSCRIBER) == 0)
-				parsed = new TopologyMessage(type_rcv,addr1_rcv,port1_rcv,addr2_rcv,port2_rcv) ;
+					type_rcv.compareTo(Util.TopologyMessageType.REMSUBSCRIBER) == 0){
+				s1 = new Subscriber(parts[1],Integer.parseInt(parts[2]));
+				parsed = new TopologyMessage(type_rcv,s1);	
+			}
+			else if(type_rcv.compareTo(Util.TopologyMessageType.MOVSUBSCRIBER) == 0){
+				s1 = new Subscriber(parts[1],Integer.parseInt(parts[2]));
+				s2 = new Subscriber(parts[3],Integer.parseInt(parts[4]));
+				parsed = new TopologyMessage(type_rcv,s1,s2) ;
+			}
 		}
 		else{
-			//error
+			Logs.notTopologyMessage();
 		}
 		
 		return parsed;
@@ -100,19 +104,11 @@ public class TopologyMessage extends Message{
 		return type;
 	}
 	
-	public String getSubscriberAddress(){
-		return subscriberAddress;
+	public Subscriber getSubscriber1(){
+		return subscriber1;
 	}
 	
-	public String getParentAddress(){
-		return parentAddress;
-	}
-	
-	public int getSubscriberPort(){
-		return subscriberPort;
-	}
-	
-	public int getParentPort(){
-		return parentPort;
+	public Subscriber getSubscriber2(){
+		return subscriber2;
 	}
 }

@@ -1,28 +1,25 @@
 package network;
-import java.net.InetAddress;
 import java.util.ArrayList;
 
 import message.Message;
 import peer.Peer;
 
 public class GroupChannel extends Thread{
-	
-	/*
-	 * Max children = 3
-	 */
-	
+
 	private Subscriber root = null;
 	private Subscriber parent = null;
 	private Subscriber mySubscription = null;
-	private ArrayList<Subscriber> nextSubscribers = new ArrayList<Subscriber>();
+	private ArrayList<Subscriber> nextSubscribers = new ArrayList<Subscriber>();	//max size = 5
 	private DatagramListener comunicationChannel = null;
+	
+	private boolean waitingToBeAdded;
 
-	public GroupChannel(InetAddress rootAddress, int rootPort, Peer peer){
-		comunicationChannel = new DatagramListener(peer,peer.getMySubscriptionInfo().getPort());
-		
-		root = new Subscriber(rootAddress,rootPort);
-		mySubscription = peer.getMySubscriptionInfo();
-		
+	public GroupChannel(Peer peer){
+		this.waitingToBeAdded =true;
+
+		this.comunicationChannel = new DatagramListener(peer,this);
+		this.root = peer.getMySubscriptionInfo();				//tmp
+		this.mySubscription = peer.getMySubscriptionInfo();
 		comunicationChannel.start();
 	}
 	
@@ -79,16 +76,31 @@ public class GroupChannel extends Thread{
 		return null;
 	}
 	
+	/*
+	 * GETS & SETS
+	 */
+	
 	public void setParent(Subscriber subscriber){
-		if(parent != null){
-			parent.setSubscriber(subscriber.getAddress(), subscriber.getPort());
-		}
-		else{
-			parent = new Subscriber(subscriber.getAddress(), subscriber.getPort());
-		}
+		parent = subscriber;
 	}
 	
 	public void setRoot(Subscriber subscriber){
-		root.setSubscriber(subscriber.getAddress(),subscriber.getPort());
+		root = subscriber;
+	}
+	
+	public Subscriber getRoot(){
+		return root;
+	}
+	
+	public void setWaitingToBeAdded(boolean w){
+		waitingToBeAdded = w;
+	}
+	
+	public boolean isWaitingToBeAdded(){
+		return waitingToBeAdded;
+	}
+	
+	public boolean hasParent(){
+		return (parent != null);
 	}
 }

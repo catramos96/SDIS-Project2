@@ -1,12 +1,5 @@
 package message;
-
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-
+import network.GroupChannel;
 import network.Subscriber;
 import peer.Peer;
 import resources.Logs;
@@ -15,10 +8,12 @@ import resources.Util;
 public class MessageHandler extends Thread{
 	
 	private Peer peer = null;
+	private GroupChannel channel = null;
 	
-	public MessageHandler(byte[] message, Peer peer){
+	public MessageHandler(byte[] message, Subscriber sender, Peer peer, GroupChannel channel){
 		
 		this.peer = peer;
+		this.channel = channel;
 		
 		String content = new String(message);
 
@@ -28,7 +23,7 @@ public class MessageHandler extends Thread{
 		
 		if(Util.isTopologyMessageType(type)){
 			TopologyMessage msg = TopologyMessage.parseMessage(message);
-			handleTopologyMessage(msg);
+			handleTopologyMessage(msg,sender);
 		}
 		else if(Util.isProtocolMessageType(type)){
 			//ProtocolMessage msg = ProtocolMessage.parseMessage(message, peer.getVersion());
@@ -42,51 +37,73 @@ public class MessageHandler extends Thread{
 			
 	}
 	
-	public void handleTopologyMessage(TopologyMessage msg){
+	public void handleTopologyMessage(TopologyMessage msg, Subscriber sender){
 	
 		switch (msg.getType()) {
+			//Who is the root ?
+			case WHOISROOT:{
+				//answer
+				TopologyMessage message = null;
+				if(channel.getRoot() == null)
+					 message = new TopologyMessage(Util.TopologyMessageType.ROOT,peer.getMySubscriptionInfo());
+				else
+					message = new TopologyMessage(Util.TopologyMessageType.ROOT,channel.getRoot());
+				channel.sendPrivateMessage(message, sender);
+				Logs.whoIsRootMessage();
+				break;
+			}
 			//I'm the root
 			case ROOT:{
-				Subscriber root = new Subscriber(msg.getSubscriberAddress(),msg.getSubscriberPort());
-				peer.getSubscribedGroup().setRoot(root);
-				Logs.newRoot(root);
+				channel.setRoot(msg.getSubscriber1());
+				Logs.newRoot(msg.getSubscriber1());
+				
+				if(channel.isWaitingToBeAdded()){
+					TopologyMessage message = new TopologyMessage(Util.TopologyMessageType.NEWSUBSCRIBER,peer.getMySubscriptionInfo());
+					channel.sendMessageToRoot(message);
+				}
+				
+				//pass the message to the others subscribers in the group
+				channel.sendMessageToSubscribers(msg);
 				break;
 			}
 			//I'm your parent
 			case PARENT:{
-				Subscriber parent = new Subscriber(msg.getSubscriberAddress(),msg.getSubscriberPort());
-				peer.getSubscribedGroup().setParent(parent);
-				Logs.newParent(parent);
+				if(channel.hasParent()){
+					TopologyMessage warnMessage = new TopologyMessage(Util.TopologyMessageType.REMSUBSCRIBER,peer.getMySubscriptionInfo());
+					channel.sendMessageToParent(warnMessage);
+				}
+				channel.setParent(msg.getSubscriber1());
+				Logs.newParent(msg.getSubscriber1());
+				TopologyMessage warnMessage = new TopologyMessage(Util.TopologyMessageType.SUBSCRIBER,peer.getMySubscriptionInfo());
+				channel.sendMessageToParent(warnMessage);
 				break;
 			}
 			//I'm your subscriber
 			case SUBSCRIBER:{
-				Subscriber son = new Subscriber(msg.getSubscriberAddress(),msg.getSubscriberPort());
-				Logs.newSubscriber(son);
+				/*
+				 * CENAS
+				 */
+				Logs.yourSubscriber(msg.getSubscriber1());
 				break;
 			}
 			//I'm new Try to add me
 			case NEWSUBSCRIBER:{
-				Subscriber newSubscriber = new Subscriber(msg.getSubscriberAddress(),msg.getSubscriberPort());
-				if(peer.getSubscribedGroup().addSubscriber(newSubscriber)){
-					
-					String myAddress = peer.getMySubscriptionInfo().getAddress().getHostAddress();
-					int myPort = peer.getMySubscriptionInfo().getPort();
-					
-					TopologyMessage newMsg = new TopologyMessage(Util.TopologyMessageType.PARENT,myAddress,myPort);
-					peer.getSubscribedGroup().sendPrivateMessage(newMsg, newSubscriber);
+				if(channel.addSubscriber(msg.getSubscriber1())){	
+					TopologyMessage newMsg = new TopologyMessage(Util.TopologyMessageType.PARENT,peer.getMySubscriptionInfo());
+					channel.sendPrivateMessage(newMsg, msg.getSubscriber1());
 				}
 				else{
 					/*
-					 * Avisar o parent para ir para o próximo irmão e só depois
-					 * Avisar os nextSubscribers
+					 * MANDAR PARA OUTROS 
 					 */
 				}
+				Logs.newSubscriber(msg.getSubscriber1());
 				break;
 			}
 			//Remove me
 			case REMSUBSCRIBER:{
-				System.out.println("RECEIVED REMSUBSCRIBER MSG");
+				Logs.removeSubscriber(msg.getSubscriber1());
+				channel.removeSubscriber(msg.getSubscriber1());
 				break;
 			}
 			case MOVSUBSCRIBER:{

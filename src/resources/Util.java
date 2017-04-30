@@ -40,7 +40,7 @@ public class Util {
 	
 	public static enum TopologyMessageType
 	{
-		ROOT, PARENT, SUBSCRIBER, MOVSUBSCRIBER, NEWSUBSCRIBER, REMSUBSCRIBER
+		WHOISROOT,ROOT, PARENT, SUBSCRIBER, MOVSUBSCRIBER, NEWSUBSCRIBER, REMSUBSCRIBER
 	}
 	
 	public static boolean isTopologyMessageType(String test){

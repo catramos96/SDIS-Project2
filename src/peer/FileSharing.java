@@ -25,9 +25,6 @@ public class FileSharing
 		//TMP
 		int port = Integer.parseInt(args[0]);
 		String[] root = addressVerification(args[1]);
-		
-		System.out.println("Root " + root[0]+":"+root[1]);
-		System.out.println("MyPort " +  port);
 		new Peer(root,port);
 		
 		/*String[] parts_mc = addressVerification(args[3]);
