@@ -6,15 +6,18 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 
-import message.MessageHandler;
+import peer.MessagePeerHandler;
 import peer.Peer;
 import resources.Util;
+import tracker.MessageTrackerHandler;
+import tracker.Tracker;
 
 public class DatagramListener extends Thread{
 	
 	private DatagramSocket socket = null;
 	private boolean running = false;
 	private Peer peer = null;
+	private Tracker tracker = null;
 	private GroupChannel subscribers = null;
 	
 	public DatagramListener(Peer peer,GroupChannel channel){
@@ -22,6 +25,15 @@ public class DatagramListener extends Thread{
 		this.subscribers = channel;
 		try {
 			socket = new DatagramSocket(peer.getMySubscriptionInfo().getPort());
+		} catch (SocketException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public DatagramListener(Tracker tracker, int port){
+		this.tracker = tracker;
+		try {
+			socket = new DatagramSocket(port);
 		} catch (SocketException e) {
 			e.printStackTrace();
 		}
@@ -61,7 +73,10 @@ public class DatagramListener extends Thread{
 		while(running)
 		{
 			DatagramPacket packet = receive();
-			new MessageHandler(packet.getData(),new Subscriber(packet.getAddress(),packet.getPort()),peer,subscribers).start();
+			if(peer != null)
+				new MessagePeerHandler(packet.getData(),new Subscriber(packet.getAddress(),packet.getPort()),peer,subscribers).start();
+			else if(tracker != null)
+				new MessageTrackerHandler(packet.getData(),new Subscriber(packet.getAddress(),packet.getPort()),tracker).start();
 		}
 		
 		//close connection

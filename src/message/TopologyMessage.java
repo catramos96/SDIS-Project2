@@ -1,14 +1,10 @@
 package message;
-
-import java.net.InetAddress;
-
 import network.Subscriber;
 import resources.Logs;
 import resources.Util;
+import resources.Util.TopologyMessageType;
 
 public class TopologyMessage extends Message{
-	
-	Util.TopologyMessageType type = null;
 	Subscriber subscriber1 = null;
 	Subscriber subscriber2 = null;
 	
@@ -51,10 +47,10 @@ public class TopologyMessage extends Message{
 		
 		String content = type.name() + " ";
 		
-		if(type.compareTo(Util.TopologyMessageType.WHOISROOT) != 0)
+		if(((TopologyMessageType)type).compareTo(Util.TopologyMessageType.WHOISROOT) != 0)
 			content += subscriber1.getAddress().getHostAddress() + " " + subscriber1.getPort() + " ";
 		
-		if(type.compareTo(Util.TopologyMessageType.MOVSUBSCRIBER) == 0){
+		if(((TopologyMessageType)type).compareTo(Util.TopologyMessageType.MOVSUBSCRIBER) == 0){
 			content += subscriber2.getAddress().getHostAddress() + " " + subscriber2.getPort() + " ";
 		}
 		
@@ -101,7 +97,7 @@ public class TopologyMessage extends Message{
 	 */
 
 	public Util.TopologyMessageType getType(){
-		return type;
+		return (TopologyMessageType) type;
 	}
 	
 	public Subscriber getSubscriber1(){

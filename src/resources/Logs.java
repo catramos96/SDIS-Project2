@@ -39,4 +39,7 @@ public class Logs {
 	public static void notTopologyMessage(){
 		System.out.println("Message is not of type Topology!");
 	}
+	public static void notActivityMessage(){
+		System.out.println("Message is not of type Activity!");
+	}
 }

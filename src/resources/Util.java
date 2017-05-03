@@ -40,13 +40,27 @@ public class Util {
 	
 	public static enum TopologyMessageType
 	{
-		WHOISROOT,ROOT, PARENT, SUBSCRIBER, MOVSUBSCRIBER, NEWSUBSCRIBER, REMSUBSCRIBER
+		WHOISROOT,ROOT,PARENT,SUBSCRIBER,MOVSUBSCRIBER,NEWSUBSCRIBER,REMSUBSCRIBER
 	}
 	
 	public static boolean isTopologyMessageType(String test){
 		TopologyMessageType[] types = TopologyMessageType.values();
 		
 		for(TopologyMessageType t : types){
+			if(test.compareTo(t.name()) == 0)
+				return true;
+		}
+		return false;
+	}
+	
+	public static enum ActivityMessageType{
+		ACTIVITY,ONLINE,OFFLINE
+	}
+	
+	public static boolean isActivityMessageType(String test){
+		ActivityMessageType[] types = ActivityMessageType.values();
+		
+		for(ActivityMessageType t : types){
 			if(test.compareTo(t.name()) == 0)
 				return true;
 		}
@@ -75,5 +89,8 @@ public class Util {
 			e.printStackTrace();
 		}
 	}
+	
+	//Topologia
+	public static final int MAX_SUBSCRIBERS_CHILDS = 3;
 	
 }

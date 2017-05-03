@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 
 //import resources.//Logs;
 import resources.Util;
+import resources.Util.ProtocolMessageType;
 
 /**
  * Class ProtocolMessageType
@@ -26,7 +27,6 @@ import resources.Util;
 public class ProtocolMessage extends Message
 {
 	//ProtocolMessageType information
-	private Util.ProtocolMessageType type = null;
 	private char[] version;
 	private int senderId = -1;
 	private String fileId = null;
@@ -183,18 +183,21 @@ public class ProtocolMessage extends Message
 		
 		String content = type.name() + " " + version[0]+version[1]+version[2] + " " + senderId + " " + fileId + " ";
 		
-		if(type.compareTo(Util.ProtocolMessageType.DELETE) != 0 || type.compareTo(Util.ProtocolMessageType.GETINITIATOR) != 0 || type.compareTo(Util.ProtocolMessageType.INITIATOR) != 0 )
+		if(((ProtocolMessageType)type).compareTo(Util.ProtocolMessageType.DELETE) != 0 || 
+			((ProtocolMessageType)type).compareTo(Util.ProtocolMessageType.GETINITIATOR) != 0 || 
+			((ProtocolMessageType)type).compareTo(Util.ProtocolMessageType.INITIATOR) != 0 )
 			content += chunkNo + " ";
 		
-		if(type.compareTo(Util.ProtocolMessageType.PUTCHUNK) == 0)
+		if(((ProtocolMessageType)type).compareTo(Util.ProtocolMessageType.PUTCHUNK) == 0)
 			content += replicationDeg + " ";
 		
-		if(type.compareTo(Util.ProtocolMessageType.GETCHUNKENH) == 0)
+		if(((ProtocolMessageType)type).compareTo(Util.ProtocolMessageType.GETCHUNKENH) == 0)
 			content += address + " " + port + " ";
 		
 		content += LINE_SEPARATOR + LINE_SEPARATOR;
 		
-		if(type.compareTo(Util.ProtocolMessageType.PUTCHUNK) == 0 || type.compareTo(Util.ProtocolMessageType.CHUNK) == 0)
+		if(((ProtocolMessageType)type).compareTo(Util.ProtocolMessageType.PUTCHUNK) == 0 || 
+			((ProtocolMessageType)type).compareTo(Util.ProtocolMessageType.CHUNK) == 0)
 		{
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			try 
@@ -225,7 +228,7 @@ public class ProtocolMessage extends Message
 	 * @return type - ProtocolMessageType type
 	 */
 	public Util.ProtocolMessageType getType() {
-		return type;
+		return (ProtocolMessageType) type;
 	}
 
 	/**
@@ -301,6 +304,8 @@ public class ProtocolMessage extends Message
 	 * @param peerVersion
 	 * @return ProtocolMessageType Object
 	 */
+	
+	//============================================== SUBSTITUIR =================
 	public static ProtocolMessage parseMessage(byte[] message, char[] peerVersion)
 	{
 		ProtocolMessage parsed = null;
@@ -397,5 +402,7 @@ public class ProtocolMessage extends Message
 	{
 		return Util.ProtocolMessageType.valueOf(type);
 	}
+
+	
 	
 }

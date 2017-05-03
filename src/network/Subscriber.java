@@ -56,7 +56,10 @@ public class Subscriber {
 		this.port = port;
 	}
 	
-	public boolean equal(Subscriber subscriber){
-		return (this.address == subscriber.getAddress() && this.port == subscriber.getPort());
+	@Override
+	public boolean equals(Object other){
+		return (this.address == ((Subscriber)other).getAddress() && 
+				this.port == ((Subscriber) other).getPort());
+		
 	}
 }

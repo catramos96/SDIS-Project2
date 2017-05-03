@@ -6,19 +6,17 @@ import peer.Peer;
 
 public class GroupChannel extends Thread{
 
+	private Subscriber tracker = null;
 	private Subscriber root = null;
 	private Subscriber parent = null;
 	private Subscriber mySubscription = null;
 	private ArrayList<Subscriber> nextSubscribers = new ArrayList<Subscriber>();	//max size = 5
 	private DatagramListener comunicationChannel = null;
-	
-	private boolean waitingToBeAdded;
 
-	public GroupChannel(Peer peer){
-		this.waitingToBeAdded =true;
-
+	public GroupChannel(Peer peer, Subscriber tracker){
 		this.comunicationChannel = new DatagramListener(peer,this);
-		this.root = peer.getMySubscriptionInfo();				//tmp
+		this.tracker = tracker;
+		this.root = peer.getMySubscriptionInfo();			
 		this.mySubscription = peer.getMySubscriptionInfo();
 		comunicationChannel.start();
 	}
@@ -29,6 +27,10 @@ public class GroupChannel extends Thread{
 	
 	public void sendPrivateMessage(Message message, Subscriber destination){
 		comunicationChannel.send(message.buildMessage(), destination.getAddress(), destination.getPort());
+	}
+	
+	public void sendMessageToTracker(Message message){
+		comunicationChannel.send(message.buildMessage(), tracker.getAddress(), tracker.getPort());
 	}
 	
 	public void sendMessageToSubscribers(Message message){
@@ -50,16 +52,10 @@ public class GroupChannel extends Thread{
 	 * Topology Functions
 	 */
 	
-	public boolean addSubscriber(Subscriber newSubscriber){
+	public void addSubscriber(Subscriber newSubscriber){
 		if(hasSubscriber(newSubscriber) == null){
-			if(nextSubscribers.size() < 5){
-				nextSubscribers.add(newSubscriber);
-				return true;
-			}
-			else
-				return false;
+			nextSubscribers.add(newSubscriber);
 		}
-		return true;
 	}
 	
 	public void removeSubscriber(Subscriber subscriber){
@@ -70,7 +66,7 @@ public class GroupChannel extends Thread{
 	
 	public Subscriber hasSubscriber(Subscriber subscriber){
 		for(Subscriber s : nextSubscribers){
-			if(s.equal(subscriber))
+			if(s == subscriber)
 				return s;
 		}
 		return null;
@@ -90,14 +86,6 @@ public class GroupChannel extends Thread{
 	
 	public Subscriber getRoot(){
 		return root;
-	}
-	
-	public void setWaitingToBeAdded(boolean w){
-		waitingToBeAdded = w;
-	}
-	
-	public boolean isWaitingToBeAdded(){
-		return waitingToBeAdded;
 	}
 	
 	public boolean hasParent(){

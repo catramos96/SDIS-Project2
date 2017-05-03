@@ -17,31 +17,24 @@ public class Peer {
 	private GroupChannel subscribedGroup = null;
 	private Subscriber mySubscription = null;
 	
-	public Peer(String[] rootInfo,int myport){
+	public Peer(String[] trackerInfo,int myport){
 		
 		try {
 			
 			mySubscription = new Subscriber(InetAddress.getLocalHost().getHostAddress(), myport);
 			Logs.MyAddress(mySubscription);
 			
-			InetAddress address;
-			int port;
-			
-			//root
-			if(rootInfo[0] == "")
-				address = InetAddress.getLocalHost();
-			else	
-				address = InetAddress.getByName(rootInfo[0]);
-
-			port = Integer.parseInt(rootInfo[1]);
+			//tracker
+			InetAddress address = InetAddress.getByName(trackerInfo[0]);
+			int port = Integer.parseInt(trackerInfo[1]);
 			
 			//Group1
-			subscribedGroup = new GroupChannel(this);
+			subscribedGroup = new GroupChannel(this,new Subscriber(address,port));
 			subscribedGroup.start();
 		
 			//Try to communicate with root
 			TopologyMessage msg = new TopologyMessage(Util.TopologyMessageType.WHOISROOT);
-			subscribedGroup.sendPrivateMessage(msg, new Subscriber(address,port));
+			subscribedGroup.sendMessageToTracker(msg);
 			
 		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block
