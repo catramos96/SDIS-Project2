@@ -28,31 +28,12 @@ public class Encrypt{
 	static Cipher aesCipher;
 	
 	
-	 public static void main(String[] args) {
-	       try {
-			iniciateCipher();
-			generateKey();
-			File in = new File("ff.txt");
-			File out = new File("ff.encrypted");
-			encrypt(in,out);
-		} catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InvalidKeyException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	       
-	    }
 	
-	public static void iniciateCipher() throws NoSuchAlgorithmException, NoSuchPaddingException {
+	public  void iniciateCipher() throws NoSuchAlgorithmException, NoSuchPaddingException {
 		aesCipher = Cipher.getInstance(ALGORITHM);
 	}
 	
-	private static  void generateKey() throws NoSuchAlgorithmException  {
+	public  void generateKey() throws NoSuchAlgorithmException  {
 		KeyGenerator kgen = KeyGenerator.getInstance(ALGORITHM);
 		kgen.init(AES_KEY_SIZE);
 		SecretKey key = kgen.generateKey();
@@ -60,7 +41,7 @@ public class Encrypt{
 		AESkeySpec = new SecretKeySpec(AESkey,"AES");
 	}
 	
-	public static void encrypt(File in, File out) throws IOException, InvalidKeyException{
+	public void encrypt(File in, File out) throws IOException, InvalidKeyException{
 		System.out.println(AESkey.length);
 		System.out.println(AESkeySpec.getEncoded().length);
 		aesCipher.init(Cipher.ENCRYPT_MODE, AESkeySpec);
