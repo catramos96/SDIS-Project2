@@ -11,17 +11,17 @@ import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 
 public class SSLlistenerServer extends Thread {
-	
+
 	private String[] cypherSuites;
 	private int port;
-	
+
 	private PrintWriter out;
 	private BufferedReader in;
-	
+
 	private SSLServerSocket socket;
-	
+
 	private boolean LISTENING = true;
-	
+
 	private static final boolean REQUEST_AUTHENTICATION = true;
 	/*
 	 * For server side
@@ -29,28 +29,30 @@ public class SSLlistenerServer extends Thread {
 	public SSLlistenerServer(int port, String [] cypherSuites) throws IOException {
 		this.port = port;
 		this.cypherSuites = cypherSuites;
-		
+
 		createServerSocket();
 	}
 
 	private void createServerSocket() throws IOException {
-		 SSLServerSocketFactory ssf = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
-		 socket = (SSLServerSocket) ssf.createServerSocket(port);
-		 socket.setNeedClientAuth(true);
-		 if(cypherSuites.length == 0) {
-			 socket.setEnabledCipherSuites(ssf.getDefaultCipherSuites());
-		 } else {
-			 socket.setEnabledCipherSuites(cypherSuites);
-		 }
-		 
-		
+		SSLServerSocketFactory ssf = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+		socket = (SSLServerSocket) ssf.createServerSocket(port);
+		socket.setNeedClientAuth(true);
+		if(cypherSuites.length == 0) {
+			socket.setEnabledCipherSuites(ssf.getDefaultCipherSuites());
+		} else {
+			socket.setEnabledCipherSuites(cypherSuites);
+		}
+
+
 	}
 
-	
+
 	public void start() {
+		System.out.println("SERVER : starting service");
+		SSLSocket skct;
 		
 		try {
-			SSLSocket skct = (SSLSocket) socket.accept();
+			skct = (SSLSocket) socket.accept();
 			out = new PrintWriter(skct.getOutputStream(),true);
 			in  = new BufferedReader(new InputStreamReader(skct.getInputStream()));
 		} catch (IOException e) {
@@ -58,7 +60,7 @@ public class SSLlistenerServer extends Thread {
 			LISTENING = false;
 			return;
 		}
-		
+
 		while(LISTENING) {
 			String buffer;
 			try {
@@ -71,6 +73,14 @@ public class SSLlistenerServer extends Thread {
 			}
 			System.out.println(buffer);
 		}
-	}
 
+		try {
+			out.close();
+			in.close();
+			skct.close();
+		} catch (IOException e) {
+			System.out.println("Unnable to  close socket");	
+			e.printStackTrace();
+		}
+	}
 }

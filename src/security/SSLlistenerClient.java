@@ -28,6 +28,7 @@ public class SSLlistenerClient extends Thread{
 
 
 	public void start() {
+		System.out.println("Client : starting SSL conection to server");
 		SSLSocket socket;
 		try {
 			socket = (SSLSocket) SSLSocketFactory.getDefault().createSocket(address, port);
@@ -66,4 +67,5 @@ public class SSLlistenerClient extends Thread{
 			e.printStackTrace();
 		}
 	}
+
 }
