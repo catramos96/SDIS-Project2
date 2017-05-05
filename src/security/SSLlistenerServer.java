@@ -15,9 +15,6 @@ public class SSLlistenerServer extends Thread {
 	private String[] cypherSuites;
 	private int port;
 
-	private PrintWriter out;
-	private BufferedReader in;
-
 	private SSLServerSocket socket;
 
 	private boolean LISTENING = true;
@@ -49,38 +46,37 @@ public class SSLlistenerServer extends Thread {
 
 	public void start() {
 		System.out.println("SERVER : starting service");
-		SSLSocket skct;
 		
-		try {
-			skct = (SSLSocket) socket.accept();
-			out = new PrintWriter(skct.getOutputStream(),true);
-			in  = new BufferedReader(new InputStreamReader(skct.getInputStream()));
-		} catch (IOException e) {
-			System.out.println("SERVER : start service SSL failed");
-			LISTENING = false;
-			return;
-		}
 
 		while(LISTENING) {
-			String buffer;
+			
+			SSLSocket skct;
+			PrintWriter out;
+			BufferedReader in;
+
+			
 			try {
-				buffer = in.readLine();
-				out.println(buffer); //TEST
+				skct = (SSLSocket) socket.accept();
+				out = new PrintWriter(skct.getOutputStream(),true);
+				in  = new BufferedReader(new InputStreamReader(skct.getInputStream()));
+			} catch (IOException e) {
+				System.out.println("SERVER : start service SSL failed");
+				LISTENING = false;
+				return;
+			}
+			
+			System.out.println("try to read");
+			try {
+				String buffer = in.readLine(); 
+					out.println(buffer); //TEST
+				System.out.println(buffer);
 			} catch (IOException e) {
 				System.out.println("SERVER : Fail to read from socket");
 				e.printStackTrace();
-				continue;
 			}
-			System.out.println(buffer);
-		}
-
-		try {
-			out.close();
-			in.close();
-			skct.close();
-		} catch (IOException e) {
-			System.out.println("Unnable to  close socket");	
-			e.printStackTrace();
+			
+			
+			
 		}
 	}
 }
