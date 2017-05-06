@@ -44,7 +44,7 @@ public class MessagePeerHandler extends Thread{
 			//I'm the root
 			case ROOT:{
 				channel.setRoot(msg.getSubscriber1());
-				Logs.newRoot(msg.getSubscriber1());
+				Logs.receivedROOTmsg(msg.getSubscriber1());
 				
 				if(!channel.hasParent()){
 					TopologyMessage message = new TopologyMessage(Util.TopologyMessageType.NEWSUBSCRIBER,peer.getMySubscriptionInfo());
@@ -56,10 +56,15 @@ public class MessagePeerHandler extends Thread{
 			}
 			//I'm your parent
 			case PARENT:{
-				Logs.newParent(msg.getSubscriber1());
+				Logs.receivedPARENTmsg(msg.getSubscriber1());
 				TopologyMessage warnMessage;
 				
-				if(channel.hasParent()){
+				if(channel.iAmRoot()){
+					warnMessage = new TopologyMessage(Util.TopologyMessageType.ROOT,msg.getSubscriber1());
+					channel.sendMessageToRoot(warnMessage);
+					Logs.newRoot(msg.getSubscriber1());
+				}
+				else if(channel.hasParent()){
 					warnMessage = new TopologyMessage(Util.TopologyMessageType.REMSUBSCRIBER,peer.getMySubscriptionInfo());
 					channel.sendMessageToParent(warnMessage);
 				}
@@ -72,13 +77,13 @@ public class MessagePeerHandler extends Thread{
 			}
 			//I'm your subscriber
 			case SUBSCRIBER:{
-				Logs.yourSubscriber(msg.getSubscriber1());
+				Logs.receivedSUBSCRIBERmsg(msg.getSubscriber1());
 				channel.addSubscriber(msg.getSubscriber1());				
 				break;
 			}
 			//Remove me
 			case REMSUBSCRIBER:{
-				Logs.removeSubscriber(msg.getSubscriber1());
+				Logs.receivedREMSUBSCRIBERmsg(msg.getSubscriber1());
 				channel.removeSubscriber(msg.getSubscriber1());
 				break;
 			}

@@ -91,4 +91,8 @@ public class GroupChannel extends Thread{
 	public boolean hasParent(){
 		return (parent != null);
 	}
+	
+	public boolean iAmRoot(){
+		return (mySubscription.equals(root));
+	}
 }

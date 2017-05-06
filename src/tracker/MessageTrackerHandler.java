@@ -40,7 +40,7 @@ public class MessageTrackerHandler extends Thread {
 		switch (msg.getType()) {
 		//Who is the root ?
 		case WHOISROOT:{
-			Logs.whoIsRootMessage();
+			Logs.receivedWHOISROOTmsg();
 			
 			if(tracker.getRoot() == null)
 				tracker.setRoot(sender);
@@ -51,13 +51,17 @@ public class MessageTrackerHandler extends Thread {
 		}
 		//I'm new Try to add me
 		case NEWSUBSCRIBER:{
-			Logs.newSubscriber(msg.getSubscriber1());
+			Logs.receivedNEWSUBSCRIBERmsg(msg.getSubscriber1());
 
 			Subscriber parent = tracker.addToTopology(sender);
 			
 			if(parent == null){
 				System.out.println("No free peers available");
 				break;
+			}
+			else if(tracker.getRoot().equals(msg.getSubscriber1())){
+				tracker.setRoot(parent);
+				Logs.newRoot(parent);
 			}
 			
 			TopologyMessage message = new TopologyMessage(Util.TopologyMessageType.PARENT,parent);
