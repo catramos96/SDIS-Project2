@@ -48,6 +48,11 @@ public class Logs {
 	}
 	
 	public static void activityMessage(ActivityMessage msg, Subscriber sender){
-		System.out.println("RECEIVED - ACTIVITY: " + msg.getType() + ":" + sender.getSubscriberInfo());
+		String print = new String("RECEIVED - ACTIVITY: " + msg.getType().toString());
+		
+		if(msg.getType().compareTo(Util.ActivityMessageType.ACTIVITY) != 0)
+			print += ":" + sender.getSubscriberInfo();
+		
+		System.out.println(print);
 	}
 }

@@ -1,4 +1,5 @@
 package peer;
+import message.ActivityMessage;
 import message.TopologyMessage;
 import network.GroupChannel;
 import network.Subscriber;
@@ -31,6 +32,10 @@ public class MessagePeerHandler extends Thread{
 			/*
 			 * PROTOCOLO
 			 */
+		}
+		else if(Util.isActivityMessageType(type)){
+			ActivityMessage msg = ActivityMessage.parseMessage(message);
+			handleActivityMessage(msg);
 		}
 		else{
 			System.out.println(content);
@@ -109,6 +114,20 @@ public class MessagePeerHandler extends Thread{
 				break;
 			}
 		 }
+		
+	}
+	
+	public void handleActivityMessage(ActivityMessage msg){
+		
+		Logs.activityMessage(msg, sender);
+		
+		if(msg.getType().compareTo(Util.ActivityMessageType.ACTIVITY) == 0){
+			ActivityMessage message = new ActivityMessage(Util.ActivityMessageType.ONLINE);
+			channel.sendMessageToTracker(message);
+		}
+		else{
+			System.out.println("ERROR: Wrong type of activity messaeg received");
+		}
 		
 	}
 

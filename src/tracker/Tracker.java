@@ -6,8 +6,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import javax.annotation.Resources;
+
+import message.ActivityMessage;
+import message.TopologyMessage;
 import network.DatagramListener;
 import network.Subscriber;
+import resources.Logs;
 import resources.Util;
 
 public class Tracker{
@@ -17,6 +26,9 @@ public class Tracker{
 	private HashMap<Subscriber,Boolean> activity = null;
 	private HashMap<Subscriber,Subscriber> parentage = null;
 	private DatagramListener channel = null;
+	
+	//to check activity 
+	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 	
 	public Tracker(int port){
 	
@@ -29,24 +41,23 @@ public class Tracker{
 			this.channel.start();
 			
 			System.out.println("TRACKER: <" + InetAddress.getLocalHost().getHostAddress() + ":" + port + ">");
+			
+			final Runnable checkActivity = new Runnable() {
+				public void run() { 
+					for(Map.Entry<Subscriber, Boolean> entry : activity.entrySet()){
+						if(!entry.getValue())
+							subscriberOffline(entry.getKey());
+						else{
+							subscriberOnline(entry.getKey());
+						}
+					}
+				}
+			};
+			scheduler.scheduleAtFixedRate(checkActivity, Util.CHECK_ACTV_TIME, Util.CHECK_ACTV_TIME, TimeUnit.SECONDS);
+			
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		}
-		/*TESTE*/	
-		/*try {
-			Thread.sleep(5000);
-		} catch (InterruptedException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		TopologyMessage msg = null;
-		try {
-			msg = new TopologyMessage(Util.TopologyMessageType.ROOT,new Subscriber(InetAddress.getByName(new String("127.0.0.1")),5));
-		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		channel.send(msg.buildMessage(), root.getAddress(), root.getPort());*/
 	}
 	
 	/*
@@ -96,15 +107,63 @@ public class Tracker{
 		activity.put(subscriber, active);
 	}
 	
-	public synchronized void inactiveSubscriber(Subscriber subscriber){
-		activity.remove(subscriber);
-		Subscriber parent = getParent(subscriber);
-		
-		if(parent != null){
-			ArrayList<Subscriber> parentChilds = topology.get(parent);
-			parentChilds.remove(subscriber);
-		}
+	public synchronized void subscriberOnline(Subscriber subscriber){
+		new Thread(new Runnable(){
+
+			@Override
+			public void run() {
+				setSubscriberActivity(subscriber, false);
+				ActivityMessage message = new ActivityMessage(Util.ActivityMessageType.ACTIVITY);
+				channel.send(message.buildMessage(), subscriber.getAddress(), subscriber.getPort());
+			}
+			
+		}).start();
 	}
+	
+	public synchronized void subscriberOffline(Subscriber subscriber){
+		new Thread(new Runnable(){
+
+			@Override
+			public void run() {
+				ArrayList<Subscriber> nextSubscribers = getNextSubscribers(subscriber);
+				boolean firstSub = true;
+				
+				TopologyMessage rootMessage = null;
+				
+				for(Subscriber s : nextSubscribers){
+					//Find a new root if the peer who logged out was the root
+					if(subscriber.equals(root) && firstSub){
+						setRoot(s);
+						Logs.newTopology("ROOT", s);
+						rootMessage = new TopologyMessage(Util.TopologyMessageType.ROOT,s);
+					}
+					//New parents for the children
+					else if(!subscriber.equals(root)){
+						Subscriber newParent = addToTopology(s);
+						TopologyMessage message = new TopologyMessage(Util.TopologyMessageType.PARENT,newParent);
+						channel.send(message.buildMessage(), s.getAddress(), s.getPort());
+					}
+					
+					//Send the new root for all the pending peers
+					if(rootMessage != null)
+						channel.send(rootMessage.buildMessage(), s.getAddress(), s.getPort());
+				}
+				
+				Subscriber parent = getParent(subscriber);
+				
+				if(parent != null){
+					//Warn parent of the peer who logged out
+					TopologyMessage message = new TopologyMessage(Util.TopologyMessageType.REMSUBSCRIBER,subscriber);
+					channel.send(message.buildMessage(), parent.getAddress(), parent.getPort());
+					
+					//remove subscriber in the parent childs
+					ArrayList<Subscriber> parentChilds = topology.get(parent);
+					parentChilds.remove(subscriber);
+				}
+			}
+		}).start();
+	}
+
 	
 	/*
 	 * GETS & SETS
