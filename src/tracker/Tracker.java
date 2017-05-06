@@ -96,8 +96,14 @@ public class Tracker{
 		activity.put(subscriber, active);
 	}
 	
-	public synchronized void removeActivitySubscriber(Subscriber subscriber){
+	public synchronized void inactiveSubscriber(Subscriber subscriber){
 		activity.remove(subscriber);
+		Subscriber parent = getParent(subscriber);
+		
+		if(parent != null){
+			ArrayList<Subscriber> parentChilds = topology.get(parent);
+			parentChilds.remove(subscriber);
+		}
 	}
 	
 	/*

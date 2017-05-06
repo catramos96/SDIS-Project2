@@ -1,5 +1,6 @@
 package resources;
 
+import message.ActivityMessage;
 import message.TopologyMessage;
 import network.Subscriber;
 import resources.Util.TopologyMessageType;
@@ -44,5 +45,9 @@ public class Logs {
 	
 	public static void remTopology(String remT,Subscriber s){
 		System.out.println("REMOVED  - " + remT + ":" + s.getSubscriberInfo());
+	}
+	
+	public static void activityMessage(ActivityMessage msg, Subscriber sender){
+		System.out.println("RECEIVED - ACTIVITY: " + msg.getType() + ":" + sender.getSubscriberInfo());
 	}
 }

@@ -1,5 +1,6 @@
 package tracker;
 
+import java.nio.channels.Channel;
 import java.util.ArrayList;
 
 import message.ActivityMessage;
@@ -99,6 +100,8 @@ public class MessageTrackerHandler extends Thread {
 	
 	public void handleActivityMessage(ActivityMessage msg){
 		
+		Logs.activityMessage(msg, sender);
+		
 		switch (msg.getType()) {
 		case ONLINE:{
 			tracker.setSubscriberActivity(sender, true);
@@ -106,15 +109,36 @@ public class MessageTrackerHandler extends Thread {
 		}
 		case OFFLINE:{
 			ArrayList<Subscriber> nextSubscribers = tracker.getNextSubscribers(sender);
+			boolean firstSub = true;
 			
-			//New Parents
+			TopologyMessage rootMessage = null;
+			
 			for(Subscriber s : nextSubscribers){
-				Subscriber newParent = tracker.addToTopology(s);
-				TopologyMessage message = new TopologyMessage(Util.TopologyMessageType.PARENT,newParent);
-				tracker.getChannel().send(message.buildMessage(), s.getAddress(), s.getPort());
+				//Find a new root if the peer who logged out was the root
+				if(sender.equals(tracker.getRoot()) && firstSub){
+					tracker.setRoot(s);
+					Logs.newTopology("ROOT", s);
+					rootMessage = new TopologyMessage(Util.TopologyMessageType.ROOT,s);
+				}
+				//New parents for the children
+				else if(!sender.equals(tracker.getRoot())){
+					Subscriber newParent = tracker.addToTopology(s);
+					TopologyMessage message = new TopologyMessage(Util.TopologyMessageType.PARENT,newParent);
+					tracker.getChannel().send(message.buildMessage(), s.getAddress(), s.getPort());
+				}
+				
+				//Send the new root for all the pending peers
+				if(rootMessage != null)
+					tracker.getChannel().send(rootMessage.buildMessage(), s.getAddress(), s.getPort());
 			}
 			
-			tracker.removeActivitySubscriber(sender);
+			//Warn parent of the peer who logged out
+			Subscriber parent = null;
+			if((parent = tracker.getParent(sender)) != null){
+				TopologyMessage message = new TopologyMessage(Util.TopologyMessageType.REMSUBSCRIBER,sender);
+				tracker.getChannel().send(message.buildMessage(), parent.getAddress(), parent.getPort());
+			}
+			tracker.inactiveSubscriber(sender);
 			break;
 		}
 		default:{

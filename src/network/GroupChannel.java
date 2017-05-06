@@ -1,6 +1,7 @@
 package network;
 import java.util.ArrayList;
 
+import message.ActivityMessage;
 import message.Message;
 import message.TopologyMessage;
 import peer.Peer;
@@ -28,16 +29,13 @@ public class GroupChannel extends Thread{
 		sendMessageToTracker(msg);
 		Logs.sentTopologyMessage(msg);
 		
-		try {
-			Thread.sleep(3000);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		msg = new TopologyMessage(Util.TopologyMessageType.NEWSUBSCRIBER,mySubscription);
-		sendMessageToTracker(msg);
-		Logs.sentTopologyMessage(msg);
+		//Action before logout
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+			public void run() {
+				ActivityMessage activity = new ActivityMessage(Util.ActivityMessageType.OFFLINE);
+				sendMessageToTracker(activity);
+			}
+		});
 	}
 	
 	/*
