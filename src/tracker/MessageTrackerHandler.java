@@ -37,35 +37,57 @@ public class MessageTrackerHandler extends Thread {
 	
 	public void handleTopologyMessage(TopologyMessage msg){
 		
+		Logs.receivedTopologyMessage(msg);
+		
 		switch (msg.getType()) {
 		//Who is the root ?
-		case WHOISROOT:{
-			Logs.receivedWHOISROOTmsg();
-			
-			if(tracker.getRoot() == null)
-				tracker.setRoot(sender);
-			
+		case WHOISROOT:{			
 			TopologyMessage message = new TopologyMessage(Util.TopologyMessageType.ROOT,tracker.getRoot());
 			tracker.getChannel().send(message.buildMessage(), sender.getAddress(), sender.getPort());
+			Logs.sentTopologyMessage(message);
 			break;
 		}
 		//I'm new Try to add me
-		case NEWSUBSCRIBER:{
-			Logs.receivedNEWSUBSCRIBERmsg(msg.getSubscriber1());
-
-			Subscriber parent = tracker.addToTopology(sender);
+		case NEWSUBSCRIBER:{	
+			Subscriber parent = null;
 			
-			if(parent == null){
-				System.out.println("No free peers available");
+			//Send root
+			if(tracker.getRoot() == null){
+				Logs.newTopology("ROOT", sender);
+				tracker.setRoot(sender);
+			}
+			
+			TopologyMessage message = new TopologyMessage(Util.TopologyMessageType.ROOT,tracker.getRoot());
+			tracker.getChannel().send(message.buildMessage(), sender.getAddress(), sender.getPort());
+			Logs.sentTopologyMessage(message);
+			
+			if(tracker.hasSubscriber(sender)){
+				if(tracker.getRoot().equals(sender))
+					break;
+				
+				parent = tracker.getParent(sender);
+				
+				message = new TopologyMessage(Util.TopologyMessageType.PARENT,parent);
+				tracker.getChannel().send(message.buildMessage(), sender.getAddress(), sender.getPort());
+				Logs.sentTopologyMessage(message);
 				break;
 			}
-			else if(tracker.getRoot().equals(msg.getSubscriber1())){
-				tracker.setRoot(parent);
-				Logs.newRoot(parent);
-			}
 			
-			TopologyMessage message = new TopologyMessage(Util.TopologyMessageType.PARENT,parent);
-			tracker.getChannel().send(message.buildMessage(), sender.getAddress(), sender.getPort());
+			//Add to topology
+			parent = tracker.addToTopology(sender);
+			Logs.newTopology("SUBSCRIBER", sender);
+			
+			if(parent == null) break;
+			else if(tracker.getRoot().equals(msg.getSubscriber1())){	//parent of the root -> parent is the new root
+				tracker.setRoot(parent);
+				Logs.newTopology("ROOT", parent);
+			}
+			else{
+				//send parent
+				message = new TopologyMessage(Util.TopologyMessageType.PARENT,parent);
+				tracker.getChannel().send(message.buildMessage(), sender.getAddress(), sender.getPort());
+				Logs.sentTopologyMessage(message);
+			}
 			break;
 		}
 		default:{

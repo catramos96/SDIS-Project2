@@ -1,48 +1,48 @@
 package resources;
 
+import message.TopologyMessage;
 import network.Subscriber;
+import resources.Util.TopologyMessageType;
 
 public class Logs {
 
 	public static void MyAddress(Subscriber s){
-		System.out.println("ME: <" + s.getAddress().getHostAddress() + " " + s.getPort() + ">");
+		System.out.println("ME:      " + s.getSubscriberInfo());
 	}
 	
 	//Handling Topology Messages
 	
-	public static void receivedROOTmsg(Subscriber s){
-		System.out.println("TOPOLOGY - ROOT: <" + s.getAddress().getHostAddress() + ":" + s.getPort() + ">");
+	public static void receivedTopologyMessage(TopologyMessage message){
+		/*String print = new String("RECEIVED - TOPOLOGY:" + message.getType().toString() + ":" + 
+						message.getSubscriber1().getSubscriberInfo());
+		if(message.getSubscriber2() != null)
+			print += message.getSubscriber2().getSubscriberInfo();
+		
+		System.out.println(print);*/
 	}
 	
-	public static void receivedPARENTmsg(Subscriber s){
-		System.out.println("TOPOLOGY - PARENT: <" + s.getAddress().getHostAddress() + ":" + s.getPort() + ">");
+	public static void sentTopologyMessage(TopologyMessage message){
+		/*String print = new String("SENT     - TOPOLOGY:" + message.getType().toString() + ": <" + 
+						message.getSubscriber1().getAddress().getHostAddress() + ":" + message.getSubscriber1().getPort() + ">");
+		if(message.getSubscriber2() != null)
+			print += " <" + message.getSubscriber2().getAddress().getHostAddress() + ":" + message.getSubscriber2().getPort() + ">";
+		
+		System.out.println(print);*/
 	}
-	
-	public static void receivedNEWSUBSCRIBERmsg(Subscriber s){
-		System.out.println("TOPOLOGY - NEWSUBSCRIBER: <" + s.getAddress().getHostAddress() + ":" + s.getPort() + ">");
-	}
-	
-	public static void receivedSUBSCRIBERmsg(Subscriber s){
-		System.out.println("TOPOLOGY - SUBSCRIBER: <" + s.getAddress().getHostAddress() + ":" + s.getPort() + ">");
-	}
-	
-	public static void receivedWHOISROOTmsg(){
-		System.out.println("TOPOLOGY - WHOISROOT");
-	}
-	
-	public static void receivedREMSUBSCRIBERmsg(Subscriber s){
-		System.out.println("TOPOLOGY - REMSUBSCRIBER: <" + s.getAddress().getHostAddress() + ":" + s.getPort() + ">");
-	}
-	
 	//Topology Messages
 	
 	public static void notTopologyMessage(){
-		System.out.println("ERROR - TOPOLOGY: Message is not of type Topology!");
+		System.out.println("ERROR    - TOPOLOGY: Message is not of type Topology!");
 	}
 	public static void notActivityMessage(){
-		System.out.println("ERROR - ACTIVITY: Message is not of type Activity!");
+		System.out.println("ERROR    - ACTIVITY: Message is not of type Activity!");
 	}
-	public static void newRoot(Subscriber s){
-		System.out.println("NEW - ROOT: <" + s.getAddress().getHostAddress() + ":" + s.getPort() + ">");
+	
+	public static void newTopology(String newT, Subscriber s){
+		System.out.println("NEW      - " + newT + ":" + s.getSubscriberInfo());
+	}
+	
+	public static void remTopology(String remT,Subscriber s){
+		System.out.println("REMOVED  - " + remT + ":" + s.getSubscriberInfo());
 	}
 }

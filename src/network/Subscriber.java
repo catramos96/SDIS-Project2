@@ -6,7 +6,7 @@ import java.net.UnknownHostException;
 public class Subscriber {
 
 	private InetAddress address = null;
-	private int port = -1;
+	private Integer port = -1;
 	
 	public Subscriber(InetAddress address,int port){
 		this.address = address;
@@ -56,10 +56,24 @@ public class Subscriber {
 		this.port = port;
 	}
 	
+	public String getSubscriberInfo(){
+		return new String("<" + address.getHostAddress() + ":" + port + ">");
+	}
+	
 	@Override
 	public boolean equals(Object other){
-		return (this.address == ((Subscriber)other).getAddress() && 
+		return (this.address.getHostAddress().compareTo(((Subscriber)other).getAddress().getHostAddress()) == 0 && 
 				this.port == ((Subscriber) other).getPort());
 		
+	}
+	
+	@Override
+	public int hashCode() {
+	    int hashCode = 1;
+
+	    hashCode = hashCode * 7 + this.address.hashCode();
+	    hashCode += hashCode * 7 + this.port.hashCode();
+
+	    return hashCode;
 	}
 }

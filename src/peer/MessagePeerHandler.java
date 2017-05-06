@@ -40,51 +40,68 @@ public class MessagePeerHandler extends Thread{
 	
 	public void handleTopologyMessage(TopologyMessage msg){
 	
+		Logs.receivedTopologyMessage(msg);
+
 		switch (msg.getType()) {
 			//I'm the root
 			case ROOT:{
-				channel.setRoot(msg.getSubscriber1());
-				Logs.receivedROOTmsg(msg.getSubscriber1());
-				
-				if(!channel.hasParent()){
-					TopologyMessage message = new TopologyMessage(Util.TopologyMessageType.NEWSUBSCRIBER,peer.getMySubscriptionInfo());
-					channel.sendMessageToTracker(message);
+				if((channel.iAmRoot() && !channel.getMySubscription().equals(msg.getSubscriber1())) ||
+					!channel.iAmRoot()){
+					channel.setRoot(msg.getSubscriber1());
+					Logs.newTopology("ROOT", msg.getSubscriber1());
+					
+					/*if(!channel.hasParent()){
+						TopologyMessage message = new TopologyMessage(Util.TopologyMessageType.NEWSUBSCRIBER,peer.getMySubscriptionInfo());
+						channel.sendMessageToTracker(message);
+						Logs.sentTopologyMessage(message);
+					}*/
 				}
-				else
-					channel.sendMessageToSubscribers(msg);
+				
+				channel.sendMessageToSubscribers(msg);
+				Logs.sentTopologyMessage(msg);
 				break;
 			}
-			//I'm your parent
+			//Your parent
 			case PARENT:{
-				Logs.receivedPARENTmsg(msg.getSubscriber1());
 				TopologyMessage warnMessage;
 				
+				//If the roots has a parent -> parent is the new root
 				if(channel.iAmRoot()){
 					warnMessage = new TopologyMessage(Util.TopologyMessageType.ROOT,msg.getSubscriber1());
 					channel.sendMessageToRoot(warnMessage);
-					Logs.newRoot(msg.getSubscriber1());
+					Logs.sentTopologyMessage(warnMessage);
+					
+					channel.setRoot(msg.getSubscriber1());
+					Logs.newTopology("ROOT", msg.getSubscriber1());
 				}
-				else if(channel.hasParent()){
+				//If it already had a parent -> update new parent and warn the old parent to remove me from his childs
+				else if(channel.hasParent() && !channel.getParent().equals(msg.getSubscriber1())){
 					warnMessage = new TopologyMessage(Util.TopologyMessageType.REMSUBSCRIBER,peer.getMySubscriptionInfo());
 					channel.sendMessageToParent(warnMessage);
+					Logs.sentTopologyMessage(warnMessage);
 				}
-				
+
+				//update parent
 				channel.setParent(msg.getSubscriber1());
+				Logs.newTopology("PARENT",msg.getSubscriber1());
 				
+				//warn that i'm his subscriber
 				warnMessage = new TopologyMessage(Util.TopologyMessageType.SUBSCRIBER,peer.getMySubscriptionInfo());
 				channel.sendMessageToParent(warnMessage);
+				Logs.sentTopologyMessage(warnMessage);
+
 				break;
 			}
 			//I'm your subscriber
 			case SUBSCRIBER:{
-				Logs.receivedSUBSCRIBERmsg(msg.getSubscriber1());
-				channel.addSubscriber(msg.getSubscriber1());				
+				if(channel.addSubscriber(msg.getSubscriber1()))
+					Logs.newTopology("SUBSCRIBER", msg.getSubscriber1());
 				break;
 			}
 			//Remove me
 			case REMSUBSCRIBER:{
-				Logs.receivedREMSUBSCRIBERmsg(msg.getSubscriber1());
 				channel.removeSubscriber(msg.getSubscriber1());
+				Logs.remTopology("SUBSCRIBER", msg.getSubscriber1());
 				break;
 			}
 			default:{

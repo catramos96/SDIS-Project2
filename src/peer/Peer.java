@@ -31,10 +31,6 @@ public class Peer {
 			//Group1
 			subscribedGroup = new GroupChannel(this,new Subscriber(address,port));
 			subscribedGroup.start();
-		
-			//Try to communicate with root
-			TopologyMessage msg = new TopologyMessage(Util.TopologyMessageType.WHOISROOT);
-			subscribedGroup.sendMessageToTracker(msg);
 			
 		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block

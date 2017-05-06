@@ -1,10 +1,11 @@
 package tracker;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-
 import network.DatagramListener;
 import network.Subscriber;
 import resources.Util;
@@ -14,38 +15,63 @@ public class Tracker{
 	private Subscriber root = null;
 	private LinkedHashMap<Subscriber,ArrayList<Subscriber>> topology = null; //ordered by insertion time
 	private HashMap<Subscriber,Boolean> activity = null;
+	private HashMap<Subscriber,Subscriber> parentage = null;
 	private DatagramListener channel = null;
 	
 	public Tracker(int port){
-		this.topology = new LinkedHashMap<Subscriber,ArrayList<Subscriber>>();
-		this.activity = new HashMap<Subscriber,Boolean>();
-		this.channel = new DatagramListener(this,port);
-		
-		this.channel.start();
+	
+		try {
+			this.topology = new LinkedHashMap<Subscriber,ArrayList<Subscriber>>();
+			this.activity = new HashMap<Subscriber,Boolean>();
+			this.parentage = new HashMap<Subscriber,Subscriber>();
+			this.channel = new DatagramListener(this,port);
+			
+			this.channel.start();
+			
+			System.out.println("TRACKER: <" + InetAddress.getLocalHost().getHostAddress() + ":" + port + ">");
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		}
+		/*TESTE*/	
+		/*try {
+			Thread.sleep(5000);
+		} catch (InterruptedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		TopologyMessage msg = null;
+		try {
+			msg = new TopologyMessage(Util.TopologyMessageType.ROOT,new Subscriber(InetAddress.getByName(new String("127.0.0.1")),5));
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		channel.send(msg.buildMessage(), root.getAddress(), root.getPort());*/
 	}
 	
 	/*
 	 * TOPOLOGY
 	 */
 	
-	public Subscriber addToTopology(Subscriber newSubscriber){
+	public synchronized Subscriber addToTopology(Subscriber newSubscriber){
 
 		activity.put(newSubscriber, true);
 		
 		Map.Entry<Subscriber,ArrayList<Subscriber>> tmpMap;
 		
-		Subscriber free = null;
+		Subscriber parent = null;
 		tmpMap = getFirstFree(newSubscriber);
 		
 		if(topology.size() > 0){
-		free = tmpMap.getKey();
-		ArrayList<Subscriber> next = tmpMap.getValue();
-		next.add(newSubscriber);
-		topology.put(free, next);
+			parent = tmpMap.getKey();
+			ArrayList<Subscriber> childs = tmpMap.getValue();
+			childs.add(newSubscriber);
+			topology.put(parent, childs);
+			parentage.put(newSubscriber, parent);
 		}
 		
 		topology.put(newSubscriber, new ArrayList<Subscriber>());
-		return free;
+		return parent;
 	}
 	
 	public synchronized Map.Entry<Subscriber,ArrayList<Subscriber>> getFirstFree(Subscriber s){
@@ -90,6 +116,12 @@ public class Tracker{
 		this.root = root;
 	}
 	
+	public synchronized Subscriber getParent(Subscriber child){
+		return parentage.get(child);
+	}
 	
+	public synchronized boolean hasSubscriber(Subscriber s){
+		return (topology.get(s) != null);
+	}
 
 }
