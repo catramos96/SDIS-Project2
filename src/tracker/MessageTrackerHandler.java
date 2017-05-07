@@ -62,7 +62,7 @@ public class MessageTrackerHandler extends Thread {
 				if(tracker.getRoot().equals(sender))
 					break;
 				
-				parent = tracker.getParent(sender);
+				parent = tracker.getInfo(sender).parent;
 				
 				if(parent != null){
 					message = new TopologyMessage(Util.TopologyMessageType.PARENT,parent);

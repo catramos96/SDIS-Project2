@@ -22,9 +22,8 @@ import resources.Util;
 public class Tracker{
 	
 	private Subscriber root = null;
-	private LinkedHashMap<Subscriber,ArrayList<Subscriber>> topology = null; //ordered by insertion time
-	private HashMap<Subscriber,Boolean> activity = null;
-	private HashMap<Subscriber,Subscriber> parentage = null;
+	
+	private LinkedHashMap<Subscriber,TrackedInfo> topology = null;
 	private DatagramListener channel = null;
 	
 	//to check activity 
@@ -34,9 +33,7 @@ public class Tracker{
 	{
 	
 		try {
-			this.topology = new LinkedHashMap<Subscriber,ArrayList<Subscriber>>();
-			this.activity = new HashMap<Subscriber,Boolean>();
-			this.parentage = new HashMap<Subscriber,Subscriber>();
+			this.topology = new LinkedHashMap<Subscriber,TrackedInfo>();
 			this.channel = new DatagramListener(this,port);
 			this.channel.start();
 			
@@ -58,38 +55,35 @@ public class Tracker{
 			public synchronized void run() 
 			{ 
 				try {
+				
+					LinkedHashMap<Subscriber,TrackedInfo> tmp = (LinkedHashMap<Subscriber, TrackedInfo>) topology.clone();
+					System.out.println("==== CHECK ACTIVITY ==== SUBSCRIPTORS: " + topology.size() + " ====");
 					
-				System.out.println("activity");
-				
-				//Request Activity
-				ActivityMessage message = new ActivityMessage(Util.ActivityMessageType.ACTIVITY);
-				ArrayList<Subscriber> toRemove = new ArrayList<Subscriber>();
-				
-				for(Map.Entry<Subscriber, Boolean> entry : activity.entrySet()){
-					channel.send(message.buildMessage(), entry.getKey().getAddress(), entry.getKey().getPort());
-				}
-				
-				Thread.sleep(1000); 	//value tmp
-				
-				//Check Activity
-				for(Entry<Subscriber, Boolean> entry : activity.entrySet()){
+					//Request Activity
+					ActivityMessage message = new ActivityMessage(Util.ActivityMessageType.ACTIVITY);
+					for(Subscriber s : topology.keySet()){
+						channel.send(message.buildMessage(),s.getAddress(), s.getPort());
+					}
 					
-					printSubscriber(entry.getKey());
+					Thread.sleep(1000); 	//value tmp
 					
-					if(!entry.getValue()){
-						subscriberOffline(entry.getKey());
-						toRemove.add(entry.getKey());
-			    	}
-					else
-						setSubscriberActivity(entry.getKey(), false);
-				}
-			    
-			    for(Subscriber s : toRemove){
-			    	activity.remove(s);
-			    }
-			    
-			    if(topology.size() == 0)
-			    	root = null;
+					//Check Activity
+					for(Entry<Subscriber, TrackedInfo> entry : tmp.entrySet()){
+						
+						TrackedInfo info = entry.getValue();
+						Subscriber subscriber = entry.getKey();
+						
+						printSubscriber(subscriber);
+						
+						if(!info.active){
+							subscriberOffline(subscriber);
+				    	}
+						else
+							info.active = false;
+					}
+				    
+				    if(topology.size() == 0)
+				    	root = null;
 			    
 				} catch (InterruptedException e){
 					e.printStackTrace();
@@ -101,42 +95,37 @@ public class Tracker{
 	
 	public synchronized Subscriber addToTopology(Subscriber newSubscriber){
 		
-		if(!activity.containsKey(newSubscriber))
-			activity.put(newSubscriber, false);
-		
 		if(!topology.containsKey(newSubscriber))
-			topology.put(newSubscriber, new ArrayList<Subscriber>());
-		
-		if(getParent(newSubscriber) != null)
-			return getParent(newSubscriber);
+			topology.put(newSubscriber, new TrackedInfo());
+		else if(topology.get(newSubscriber).parent != null)
+			return topology.get(newSubscriber).parent;
 			
-		Map.Entry<Subscriber,ArrayList<Subscriber>> tmpMap = getFirstFree(newSubscriber);
-		Subscriber parent = null;
+		Map.Entry<Subscriber,TrackedInfo> tmpMap = getFirstFree(newSubscriber);
+		TrackedInfo info = topology.get(newSubscriber);
 		
-		if(topology.size() > 0 && tmpMap != null){			
-			parent = tmpMap.getKey();
-			topology.get(parent).add(newSubscriber);
-			parentage.put(newSubscriber, parent);
+		if(topology.size() > 0 && tmpMap != null){		
+			tmpMap.getValue().childs.add(newSubscriber);
+			info.setParent(tmpMap.getKey());
 		}
 		
-		return parent;
+		return info.parent;
 	}
 	
-	public synchronized Map.Entry<Subscriber,ArrayList<Subscriber>> getFirstFree(Subscriber s){
+	public synchronized Map.Entry<Subscriber,TrackedInfo> getFirstFree(Subscriber s){
 		
-		ArrayList<Subscriber> myChilds = new ArrayList<Subscriber>();
-		myChilds = topology.get(s);
+		ArrayList<Subscriber> myChilds = topology.get(s).childs;
 		
-		for(Map.Entry<Subscriber,ArrayList<Subscriber>> entry : topology.entrySet()){
-			System.out.println(entry.getKey().getPort());
+		for(Map.Entry<Subscriber, TrackedInfo> entry : topology.entrySet()){
+			Subscriber tmpS = entry.getKey();
+			TrackedInfo tmpInfo = entry.getValue();
 			
 			//next subscribers might be in bottom levels
-			if(myChilds.contains(entry.getKey())){
+			if(myChilds.contains(tmpS)){
 				return null;
 			}
 			
-			if(entry.getValue().size() < Util.MAX_SUBSCRIBERS_CHILDS && 
-				!entry.getKey().equals(s)){
+			if(tmpInfo.childs.size() < Util.MAX_SUBSCRIBERS_CHILDS && 
+				!tmpS.equals(s)){
 				return entry;
 			}
 		}
@@ -145,14 +134,8 @@ public class Tracker{
 	}
 	
 	public synchronized ArrayList<Subscriber> getNextSubscribers(Subscriber parent){
-		ArrayList<Subscriber> next = new ArrayList<Subscriber>();
-		
-		if(topology.containsKey(parent))
-			next = topology.get(parent);
-		
-		return next;
-	}
-	
+		return topology.get(parent).childs;
+	}	
 	
 	public synchronized Subscriber chooseBetterForRoot(ArrayList<Subscriber> candidates){
 		for(Subscriber s : topology.keySet()){
@@ -167,62 +150,63 @@ public class Tracker{
 	 */
 	
 	public synchronized void setSubscriberActivity(Subscriber subscriber, boolean active){
-		activity.put(subscriber, active);
+		topology.get(subscriber).setActivity(active);
 	}
 	
 	public synchronized void subscriberOffline(Subscriber subscriber){
-		
-		ArrayList<Subscriber> nextSubscribers = (ArrayList<Subscriber>) topology.get(subscriber).clone();
 		TopologyMessage rootMessage = null;
-		Subscriber parent = getParent(subscriber);
+		TrackedInfo info = topology.get(subscriber);
+		ArrayList<Subscriber> childs = (ArrayList<Subscriber>) info.childs.clone();
 		
 		//if has parent
-		if(parent != null){
+		if(info.parent != null){
 
 			//remove subscriber in the parent childs
-			topology.get(parent).remove(subscriber);
-			
-			//remove parantage entry
-			parentage.remove(subscriber);
+			topology.get(info.parent).childs.remove(subscriber);
 			
 			//Warn parent of the peer who logged out
 			TopologyMessage message = new TopologyMessage(Util.TopologyMessageType.REMSUBSCRIBER,subscriber);
-			channel.send(message.buildMessage(), parent.getAddress(), parent.getPort());
+			channel.send(message.buildMessage(), info.parent.getAddress(), info.parent.getPort());
+			
+			//remove parantage entry
+			info.setParent(null);
 		}
-		
+
 		//remove subscriber from topology
 		topology.remove(subscriber);
-		
+
 		//if the root isn't online -> find new root
-		Subscriber betterRoot;
+		Subscriber betterRoot = null;
 		if(root.equals(subscriber)){
 			
-			if(nextSubscribers.size() == 0){
+			if(childs.size() == 0){
 				root = null;
 				return;
 			}
 			
-			betterRoot = chooseBetterForRoot(nextSubscribers);
-			
-			setRoot(betterRoot);
+			betterRoot = chooseBetterForRoot(childs);
+			this.root = betterRoot;
 			Logs.newTopology("ROOT", betterRoot);
 
-			parentage.remove(betterRoot);
+			topology.get(betterRoot).setParent(null);
 			
 			rootMessage = new TopologyMessage(Util.TopologyMessageType.ROOT,betterRoot);
 			channel.send(rootMessage.buildMessage(), betterRoot.getAddress(), betterRoot.getPort());
 			
-			nextSubscribers.remove(betterRoot);
+			childs.remove(betterRoot);
 		}
 		
-		for(Subscriber s : nextSubscribers){
-			parentage.remove(s);
+		for(Subscriber s : childs){
+
+			topology.get(s).setParent(null);
+			
 			Subscriber newParent = addToTopology(s);
+
 			if(newParent != null){
 				TopologyMessage message = new TopologyMessage(Util.TopologyMessageType.PARENT,newParent);
 				channel.send(message.buildMessage(), s.getAddress(), s.getPort());
 			}
-			
+
 			//Send the new root for all the pending peers
 			if(rootMessage != null)
 				channel.send(rootMessage.buildMessage(), s.getAddress(), s.getPort());
@@ -246,25 +230,27 @@ public class Tracker{
 		this.root = root;
 	}
 	
-	public synchronized Subscriber getParent(Subscriber child){
-		return parentage.get(child);
-	}
-	
 	public synchronized boolean hasSubscriber(Subscriber s){
 		return (topology.get(s) != null);
 	}
 	
 	public void printSubscriber(Subscriber s){
+		
+		TrackedInfo info = topology.get(s);
+		
 		String print = new String();
-		print = "\n" + s.getSubscriberInfo() + "   P: ";
+		print = "\nS: " + s.getSubscriberInfo() + "   P: ";
 		
-		if(parentage.containsKey(s))
-			print += getParent(s).getSubscriberInfo() + "   A: " + activity.get(s);
+		if(info.parent != null)
+			print += info.parent.getSubscriberInfo() + "   A: " + info.active;
 		
-		for(Subscriber tmp : topology.get(s)){
+		for(Subscriber tmp : info.childs){
 			print += "\n          " + tmp.getSubscriberInfo();
 		}
 		System.out.println(print);
 	}
 
+	public TrackedInfo getInfo(Subscriber s){
+		return topology.get(s);
+	}
 }
