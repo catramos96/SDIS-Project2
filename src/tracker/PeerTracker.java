@@ -2,6 +2,7 @@ package tracker;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.util.concurrent.ExecutionException;
 
 import network.Subscriber;
 
@@ -17,6 +18,10 @@ public class PeerTracker {
 		
 		int port = Integer.parseInt(args[0]);
 		
-		new Tracker(port);
+		try {
+			new Tracker(port);
+		} catch (ExecutionException | InterruptedException e) {
+			e.printStackTrace();
+		}
 	}
 }

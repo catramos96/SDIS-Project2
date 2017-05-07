@@ -94,6 +94,6 @@ public class Util {
 	
 	//Topologia
 	public static final int MAX_SUBSCRIBERS_CHILDS = 3;
-	public static final int CHECK_ACTV_TIME = 30;
+	public static final int CHECK_ACTV_TIME = 10;
 	
 }

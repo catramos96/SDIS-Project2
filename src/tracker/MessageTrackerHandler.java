@@ -1,8 +1,4 @@
 package tracker;
-
-import java.nio.channels.Channel;
-import java.util.ArrayList;
-
 import message.ActivityMessage;
 import message.TopologyMessage;
 import network.Subscriber;
@@ -68,15 +64,18 @@ public class MessageTrackerHandler extends Thread {
 				
 				parent = tracker.getParent(sender);
 				
-				message = new TopologyMessage(Util.TopologyMessageType.PARENT,parent);
-				tracker.getChannel().send(message.buildMessage(), sender.getAddress(), sender.getPort());
-				Logs.sentTopologyMessage(message);
+				if(parent != null){
+					message = new TopologyMessage(Util.TopologyMessageType.PARENT,parent);
+					tracker.getChannel().send(message.buildMessage(), sender.getAddress(), sender.getPort());
+					Logs.sentTopologyMessage(message);
+				}
 				break;
 			}
 			
 			//Add to topology
 			parent = tracker.addToTopology(sender);
 			Logs.newTopology("SUBSCRIBER", sender);
+			tracker.setSubscriberActivity(sender, true);
 			
 			if(parent == null) break;
 			else if(tracker.getRoot().equals(msg.getSubscriber1())){	//parent of the root -> parent is the new root

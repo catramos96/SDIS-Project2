@@ -25,7 +25,7 @@ public class Subscriber {
 	/*
 	 * SETS AND GETS
 	 */
-	
+
 	public void setSubscriber(InetAddress address, int port){
 		this.address = address;
 		this.port = port;

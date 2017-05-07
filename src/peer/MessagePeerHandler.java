@@ -50,27 +50,23 @@ public class MessagePeerHandler extends Thread{
 		switch (msg.getType()) {
 			//I'm the root
 			case ROOT:{
-				if((channel.iAmRoot() && !channel.getMySubscription().equals(msg.getSubscriber1())) ||
-					!channel.iAmRoot()){
+				boolean sameRoot = channel.getMySubscription().equals(msg.getSubscriber1());
+				
+				if(!sameRoot){
 					channel.setRoot(msg.getSubscriber1());
+					channel.setParent(msg.getSubscriber1());
 					Logs.newTopology("ROOT", msg.getSubscriber1());
-					
-					/*if(!channel.hasParent()){
-						TopologyMessage message = new TopologyMessage(Util.TopologyMessageType.NEWSUBSCRIBER,peer.getMySubscriptionInfo());
-						channel.sendMessageToTracker(message);
-						Logs.sentTopologyMessage(message);
-					}*/
+					channel.sendMessageToSubscribers(msg);
+					Logs.sentTopologyMessage(msg);
 				}
 				
-				channel.sendMessageToSubscribers(msg);
-				Logs.sentTopologyMessage(msg);
 				break;
 			}
 			//Your parent
 			case PARENT:{
 				TopologyMessage warnMessage;
 				
-				//If the roots has a parent -> parent is the new root
+				//If the root  has a parent -> parent is the new root
 				if(channel.iAmRoot()){
 					warnMessage = new TopologyMessage(Util.TopologyMessageType.ROOT,msg.getSubscriber1());
 					channel.sendMessageToRoot(warnMessage);
@@ -124,9 +120,6 @@ public class MessagePeerHandler extends Thread{
 		if(msg.getType().compareTo(Util.ActivityMessageType.ACTIVITY) == 0){
 			ActivityMessage message = new ActivityMessage(Util.ActivityMessageType.ONLINE);
 			channel.sendMessageToTracker(message);
-		}
-		else{
-			System.out.println("ERROR: Wrong type of activity messaeg received");
 		}
 		
 	}
