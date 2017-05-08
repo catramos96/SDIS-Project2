@@ -1,8 +1,12 @@
 package network;
 import java.util.ArrayList;
 
+import message.ActivityMessage;
 import message.Message;
+import message.TopologyMessage;
 import peer.Peer;
+import resources.Logs;
+import resources.Util;
 
 public class GroupChannel extends Thread{
 
@@ -19,6 +23,19 @@ public class GroupChannel extends Thread{
 		this.root = peer.getMySubscriptionInfo();			
 		this.mySubscription = peer.getMySubscriptionInfo();
 		comunicationChannel.start();
+		
+		//Ask tracker to be added
+		TopologyMessage msg = new TopologyMessage(Util.TopologyMessageType.NEWSUBSCRIBER,mySubscription);
+		sendMessageToTracker(msg);
+		Logs.sentTopologyMessage(msg);
+		
+		//Action before logout
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+			public void run() {
+				ActivityMessage activity = new ActivityMessage(Util.ActivityMessageType.OFFLINE);
+				sendMessageToTracker(activity);
+			}
+		});
 	}
 	
 	/*
@@ -52,10 +69,12 @@ public class GroupChannel extends Thread{
 	 * Topology Functions
 	 */
 	
-	public void addSubscriber(Subscriber newSubscriber){
+	public boolean addSubscriber(Subscriber newSubscriber){
 		if(hasSubscriber(newSubscriber) == null){
 			nextSubscribers.add(newSubscriber);
+			return true;
 		}
+		return false;
 	}
 	
 	public void removeSubscriber(Subscriber subscriber){
@@ -66,7 +85,7 @@ public class GroupChannel extends Thread{
 	
 	public Subscriber hasSubscriber(Subscriber subscriber){
 		for(Subscriber s : nextSubscribers){
-			if(s == subscriber)
+			if(s.equals(subscriber))
 				return s;
 		}
 		return null;
@@ -90,5 +109,17 @@ public class GroupChannel extends Thread{
 	
 	public boolean hasParent(){
 		return (parent != null);
+	}
+	
+	public boolean iAmRoot(){
+		return (mySubscription.equals(root));
+	}
+	
+	public Subscriber getMySubscription(){
+		return mySubscription;
+	}
+	
+	public Subscriber getParent(){
+		return parent;
 	}
 }

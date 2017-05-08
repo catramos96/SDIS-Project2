@@ -2,6 +2,8 @@ package resources;
 
 import java.util.Random;
 
+import javax.annotation.Resources;
+
 /**
  * Class Util containing important constants and others.
  */
@@ -92,5 +94,6 @@ public class Util {
 	
 	//Topologia
 	public static final int MAX_SUBSCRIBERS_CHILDS = 3;
+	public static final int CHECK_ACTV_TIME = 10;
 	
 }
