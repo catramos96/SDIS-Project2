@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.net.InetAddress;
 
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
@@ -33,7 +32,7 @@ public class SSLlistenerServer extends Thread {
 	private void createServerSocket() throws IOException {
 		SSLServerSocketFactory ssf = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
 		socket = (SSLServerSocket) ssf.createServerSocket(port);
-		socket.setNeedClientAuth(true);
+		socket.setNeedClientAuth(REQUEST_AUTHENTICATION);
 		if(cypherSuites.length == 0) {
 			socket.setEnabledCipherSuites(ssf.getDefaultCipherSuites());
 		} else {
@@ -46,37 +45,23 @@ public class SSLlistenerServer extends Thread {
 
 	public void start() {
 		System.out.println("SERVER : starting service");
+
 		
-
 		while(LISTENING) {
-			
-			SSLSocket skct;
-			PrintWriter out;
-			BufferedReader in;
-
-			
 			try {
-				skct = (SSLSocket) socket.accept();
-				out = new PrintWriter(skct.getOutputStream(),true);
-				in  = new BufferedReader(new InputStreamReader(skct.getInputStream()));
-			} catch (IOException e) {
-				System.out.println("SERVER : start service SSL failed");
-				LISTENING = false;
-				return;
+				
+				SSLSocket skct = (SSLSocket) socket.accept();
+				System.out.println("lauch SSLClientConnection");
+				
+				PrintWriter	out = new PrintWriter(skct.getOutputStream(),true);
+				BufferedReader in  = new BufferedReader(new InputStreamReader(skct.getInputStream()));
+				
+			    (new Thread(new SSLClientConnection(out,in))).start();
+			
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
 			}
-			
-			System.out.println("try to read");
-			try {
-				String buffer = in.readLine(); 
-					out.println(buffer); //TEST
-				System.out.println(buffer);
-			} catch (IOException e) {
-				System.out.println("SERVER : Fail to read from socket");
-				e.printStackTrace();
-			}
-			
-			
-			
 		}
 	}
 }

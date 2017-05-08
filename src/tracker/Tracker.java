@@ -1,5 +1,6 @@
 package tracker;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -18,6 +19,7 @@ import network.DatagramListener;
 import network.Subscriber;
 import resources.Logs;
 import resources.Util;
+import security.SSLlistenerServer;
 
 public class Tracker{
 	
@@ -25,17 +27,29 @@ public class Tracker{
 	
 	private LinkedHashMap<Subscriber,TrackedInfo> topology = null;
 	private DatagramListener channel = null;
+	private SSLlistenerServer SecChannel = null;
 	
 	//to check activity 
 	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 	
 	public Tracker(int port) throws ExecutionException, InterruptedException
 	{
-	
+		
+		
+		try {
+			SecChannel = new SSLlistenerServer(4499,new String[0]);
+			SecChannel.start();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return;
+		}
+		
 		try {
 			this.topology = new LinkedHashMap<Subscriber,TrackedInfo>();
-			this.channel = new DatagramListener(this,port);
-			this.channel.start();
+		
+		//	this.channel = new DatagramListener(this,port);
+		//	this.channel.start();
 			
 			System.out.println("TRACKER: <" + InetAddress.getLocalHost().getHostAddress() + ":" + port + ">");
 			
@@ -43,7 +57,13 @@ public class Tracker{
 			
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
+			return;
 		}
+		
+		
+		
+		
+		
 	}
 	
 	/*

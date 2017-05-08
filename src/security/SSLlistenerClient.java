@@ -16,7 +16,9 @@ public class SSLlistenerClient extends Thread{
 	private InetAddress address;
 	private int port;
 	private String[] cypherSuites;
-
+	private PrintWriter out;
+	private BufferedReader in;
+	
 	public SSLlistenerClient(String hostname, int port, String[] cypherSuites) throws UnknownHostException {
 		this.address = InetAddress.getByName(hostname);
 		this.port = port;
@@ -36,23 +38,34 @@ public class SSLlistenerClient extends Thread{
 			} else {
 				socket.setEnabledCipherSuites(cypherSuites);
 			}
-
-			PrintWriter out = new PrintWriter(socket.getOutputStream(),true);
-			BufferedReader in  = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			
 			
-			String message = "testasdadasdasdadasdasdsadasdasdasd";
+			
+			System.out.println("Client : criar buffers");
+			out = new PrintWriter(socket.getOutputStream(),true);
+			in  = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+			
+		
+			String message = "REGIST";
+			
+			System.out.println("Client : antes de enviar");
 			out.println(message);
-
+			
 			System.out.println("Eviei mensagem");
 
-			
-			String s = in.readLine();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
 
+	}
+	
+	void sendMessage(String msg){
+		out.println(msg);
+	}
+
+	String receiveMessage() throws IOException {
+		return in.readLine();
 	}
 }

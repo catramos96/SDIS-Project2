@@ -9,6 +9,7 @@ import network.GroupChannel;
 import network.Subscriber;
 import resources.Logs;
 import resources.Util;
+import security.SSLlistenerClient;
 
 public class Peer {
 	/*informations*/
@@ -16,8 +17,20 @@ public class Peer {
 	private DatagramListener comunicationChannel = null;
 	private GroupChannel subscribedGroup = null;
 	private Subscriber mySubscription = null;
-	
+	private SSLlistenerClient client = null;
 	public Peer(String[] trackerInfo,int myport){
+		
+		
+		
+		try {
+			client = new SSLlistenerClient("localhost", 4499, new String[0]); //TODO 
+			client.start();
+		} catch (UnknownHostException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+		
 		
 		try {
 			

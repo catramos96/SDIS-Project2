@@ -55,4 +55,9 @@ public class Logs {
 		
 		System.out.println(print);
 	}
+	
+	
+	public static void message(String msg) {
+		System.out.println(msg);
+	}
 }
