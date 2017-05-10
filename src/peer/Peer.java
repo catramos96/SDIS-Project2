@@ -1,9 +1,11 @@
 package peer;
 
+import filesystem.FileManager;
 import message.MessageRMI;
 import network.DatagramListener;
 import network.GroupChannel;
 import network.Subscriber;
+import protocols.BackupInitiator;
 import resources.Logs;
 
 import java.net.InetAddress;
@@ -15,15 +17,19 @@ import java.rmi.server.UnicastRemoteObject;
 public class Peer implements MessageRMI {
 	/*informations*/
 	private int ID = 0;
+	private FileManager fileManager;
+
 	private DatagramListener comunicationChannel = null;
 	private GroupChannel subscribedGroup = null;
 	private Subscriber mySubscription = null;
 	
-	public Peer(String[] trackerInfo,int myport,String remoteObjName){
-		
+	public Peer(int peer_id, String[] trackerInfo, String remoteObjName){
+
+	    this.setFileManager(new FileManager(getID()));
+	    this.ID = peer_id;
+
 		try {
-			
-			mySubscription = new Subscriber(InetAddress.getLocalHost().getHostAddress(), myport);
+			mySubscription = new Subscriber(InetAddress.getLocalHost().getHostAddress(), this.ID);
 			Logs.MyAddress(mySubscription);
 			
 			//tracker
@@ -37,7 +43,6 @@ public class Peer implements MessageRMI {
             startRMI(remoteObjName);
 			
 		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -69,6 +74,7 @@ public class Peer implements MessageRMI {
     public String backup(final String filename, final int repDeg) throws RemoteException
     {
         System.out.println("Backup initiated...");
+        new BackupInitiator(this,filename, repDeg).start();
         return null;
     }
 
@@ -98,5 +104,25 @@ public class Peer implements MessageRMI {
     {
         System.out.println("State initiated...");
         return null;
+    }
+
+    public FileManager getFileManager()
+    {
+        return fileManager;
+    }
+
+    public void setFileManager(FileManager fileManager)
+    {
+        this.fileManager = fileManager;
+    }
+
+    public int getID()
+    {
+        return ID;
+    }
+
+    public void setID(int ID)
+    {
+        this.ID = ID;
     }
 }

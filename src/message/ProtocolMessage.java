@@ -1,14 +1,11 @@
 package message;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-
-//import resources.//Logs;
 import resources.Util;
 import resources.Util.ProtocolMessageType;
+
+import java.io.*;
+
+//import resources.//Logs;
 
 /**
  * Class ProtocolMessageType
@@ -27,7 +24,6 @@ import resources.Util.ProtocolMessageType;
 public class ProtocolMessage extends Message
 {
 	//ProtocolMessageType information
-	private char[] version;
 	private int senderId = -1;
 	private String fileId = null;
 	private int chunkNo = -1;
@@ -62,19 +58,17 @@ public class ProtocolMessage extends Message
 	/**
 	 * Constructor of ProtocolMessageType for the type PUTCHUNK
 	 * @param type - Type of the message, it has to be a PUTCHUNK
-	 * @param version - Version of the protocols
 	 * @param senderId - Sender identification
 	 * @param fileId - File identification
 	 * @param chunkNo - Chunk identification number
 	 * @param replicationDeg - Desired replication degree of the associated chunk
 	 * @param body - Content of the associated chunk
 	 */
-	public ProtocolMessage(Util.ProtocolMessageType type, char[] version, int senderId, String fileId, int chunkNo, int replicationDeg, byte[] body)
+	public ProtocolMessage(Util.ProtocolMessageType type, int senderId, String fileId, int chunkNo, int replicationDeg, byte[] body)
 	{
 		if(!type.name().equals("PUTCHUNK"))
 			//Logs.wrongMessageConstructor(type);
 		this.type = type;
-		this.version = version;
 		this.senderId = senderId;
 		this.fileId = fileId;
 		this.chunkNo = chunkNo;
@@ -85,17 +79,15 @@ public class ProtocolMessage extends Message
 	/**
 	 * Constructor of ProtocolMessageType for the types GETCHUNK, REMOVED, GOTCHUNKENH
 	 * @param type - Type of the message, it has to be one of the types mentioned above
-	 * @param version - Version of the protocols
 	 * @param senderId - Sender identification
 	 * @param fileId - File identification
 	 * @param chunkNo - Chunk identification number
 	 */
-	public ProtocolMessage(Util.ProtocolMessageType type, char[] version, int senderId, String fileId, int chunkNo)
+	public ProtocolMessage(Util.ProtocolMessageType type, int senderId, String fileId, int chunkNo)
 	{
 		if(!(type.name().equals("STORED")|| type.name().equals("GETCHUNK") || type.name().equals("REMOVED") || type.name().equals("GOTCHUNKENH")))
 			//Logs.wrongMessageConstructor(type);
 		this.type = type;
-		this.version = version;
 		this.senderId = senderId;
 		this.fileId = fileId;
 		this.chunkNo = chunkNo;
@@ -104,13 +96,12 @@ public class ProtocolMessage extends Message
 	/**
 	 * Constructor of ProtocolMessageType for the type CHUNK
 	 * @param type - Type of the message, it has to be a CHUNK
-	 * @param version - Version of the protocols
 	 * @param senderId - Sender identification
 	 * @param fileId - File identification
 	 * @param chunkNo - Chunk identification number
 	 * @param body - Content of the associated chunk
 	 */
-	public ProtocolMessage(Util.ProtocolMessageType type, char[] version, int senderId, String fileId, int chunkNo, byte[] body)
+	public ProtocolMessage(Util.ProtocolMessageType type, int senderId, String fileId, int chunkNo, byte[] body)
 	{
 		if(!type.name().equals("CHUNK")){
 			//Logs.wrongMessageConstructor(type);
@@ -118,7 +109,6 @@ public class ProtocolMessage extends Message
 		else
 		{
 			this.type = type;
-			this.version = version;
 			this.senderId = senderId;
 			this.fileId = fileId;
 			this.chunkNo = chunkNo;
@@ -129,18 +119,16 @@ public class ProtocolMessage extends Message
 	/**
 	 * Constructor of ProtocolMessageType for the types DELETE, GETINITIATOR, INITIATOR.
 	 * @param type - Type of the message, it has to be one of the types mentioned above
-	 * @param version - Version of the protocols
 	 * @param senderId - Sender identification
 	 * @param fileId - File identification
 	 */
-	public ProtocolMessage(Util.ProtocolMessageType type, char[] version, int senderId, String fileId) {
+	public ProtocolMessage(Util.ProtocolMessageType type, int senderId, String fileId) {
 		if(!(type.name().equals("DELETE") || type.name().equals("GETINITIATOR") || type.name().equals("INITIATOR"))){
 			//Logs.wrongMessageConstructor(type);
 		}
 		else
 		{
 			this.type = type;
-			this.version = version;
 			this.senderId = senderId;
 			this.fileId = fileId;
 		}
@@ -149,21 +137,19 @@ public class ProtocolMessage extends Message
 	/**
 	 * Constructor of ProtocolMessageType for the type GETCHUNKENH
 	 * @param type - Type of the message, it has to be a GETCHUNKENH
-	 * @param version - Version of the protocols
 	 * @param senderId - Sender identification
 	 * @param fileId - File identification
 	 * @param chunkNo - Chunk identification number
 	 * @param address - Address of the sender
 	 * @param port - Port of the sender
 	 */
-	public ProtocolMessage(Util.ProtocolMessageType type, char[] version, int senderId, String fileId, int chunkNo, String address, int port){
+	public ProtocolMessage(Util.ProtocolMessageType type, int senderId, String fileId, int chunkNo, String address, int port){
 		if(!type.name().equals("GETCHUNKENH")){
 			//Logs.wrongMessageConstructor(type);
 		}
 		else
 		{
 			this.type = type;
-			this.version = version;
 			this.senderId = senderId;
 			this.fileId = fileId;
 			this.chunkNo = chunkNo;
@@ -181,7 +167,7 @@ public class ProtocolMessage extends Message
 	@Override
 	public byte[] buildMessage() {
 		
-		String content = type.name() + " " + version[0]+version[1]+version[2] + " " + senderId + " " + fileId + " ";
+		String content = type.name() + " " + senderId + " " + fileId + " ";
 		
 		if(((ProtocolMessageType)type).compareTo(Util.ProtocolMessageType.DELETE) != 0 || 
 			((ProtocolMessageType)type).compareTo(Util.ProtocolMessageType.GETINITIATOR) != 0 || 
@@ -270,14 +256,6 @@ public class ProtocolMessage extends Message
 	public int getSenderId() {
 		return senderId;
 	}
-
-	/**
-	 * Function to get the version of the protocols associated with the message.
-	 * @return Protocols version
-	 */
-	public char[] getVersion() {
-		return version;
-	}
 	
 	/**
 	 * Function to get the address of the sender associated with the message.
@@ -321,7 +299,6 @@ public class ProtocolMessage extends Message
 			Util.ProtocolMessageType type_rcv = validateMessageType(parts[0]);
 
 			//Common to all messages types
-			char[] version_rcv = validateVersion(parts[1],peerVersion);
 			int senderId_rcv = Integer.parseInt(parts[2]);
 			String fileId_rcv = parts[3];
 
@@ -339,10 +316,10 @@ public class ProtocolMessage extends Message
 			//Exception for the type GETCHUNKENH
 			String address_rcv = null;
 			Integer port_rcv = null;
-			if(type_rcv.compareTo(Util.ProtocolMessageType.GETCHUNKENH) == 0){
+			/*if(type_rcv.compareTo(Util.ProtocolMessageType.GETCHUNKENH) == 0){
 				address_rcv = parts[5];
 				port_rcv = Integer.parseInt(parts[6]);
-			}
+			}*/
 
 			//Removes the last sequences of white spaces (\s) and null characters (\0)
 			//String msg_received = (new String(packet.getData()).replaceAll("[\0 \\s]*$", ""));
@@ -352,15 +329,15 @@ public class ProtocolMessage extends Message
 
 			//Creates the message with the respective attributes
 			if(type_rcv.compareTo(Util.ProtocolMessageType.DELETE) == 0 || type_rcv.compareTo(Util.ProtocolMessageType.GETINITIATOR) == 0 || type_rcv.compareTo(Util.ProtocolMessageType.INITIATOR) == 0)
-				parsed = new ProtocolMessage(type_rcv,version_rcv,senderId_rcv,fileId_rcv);	
+				parsed = new ProtocolMessage(type_rcv,senderId_rcv,fileId_rcv);
 			else if(type_rcv.compareTo(Util.ProtocolMessageType.GETCHUNK) == 0 || type_rcv.compareTo(Util.ProtocolMessageType.STORED) == 0 || type_rcv.compareTo(Util.ProtocolMessageType.REMOVED) == 0 || type_rcv.compareTo(Util.ProtocolMessageType.GOTCHUNKENH) == 0)
-				parsed = new ProtocolMessage(type_rcv,version_rcv,senderId_rcv,fileId_rcv,chunkNo_rcv) ;	
+				parsed = new ProtocolMessage(type_rcv,senderId_rcv,fileId_rcv,chunkNo_rcv) ;
 			else if(type_rcv.compareTo(Util.ProtocolMessageType.PUTCHUNK) == 0)
-				parsed = new ProtocolMessage(type_rcv,version_rcv,senderId_rcv,fileId_rcv,chunkNo_rcv,replicationDeg_rcv,body);
+				parsed = new ProtocolMessage(type_rcv,senderId_rcv,fileId_rcv,chunkNo_rcv,replicationDeg_rcv,body);
 			else if(type_rcv.compareTo(Util.ProtocolMessageType.CHUNK) == 0)
-				parsed = new ProtocolMessage(type_rcv,version_rcv,senderId_rcv,fileId_rcv,chunkNo_rcv,body);
-			else if(type_rcv.compareTo(Util.ProtocolMessageType.GETCHUNKENH) == 0)
-				parsed = new ProtocolMessage(type_rcv,version_rcv,senderId_rcv,fileId_rcv,chunkNo_rcv,address_rcv,port_rcv);
+				parsed = new ProtocolMessage(type_rcv,senderId_rcv,fileId_rcv,chunkNo_rcv,body);
+            /*else if(type_rcv.compareTo(Util.ProtocolMessageType.GETCHUNKENH) == 0)
+				parsed = new ProtocolMessage(type_rcv,senderId_rcv,fileId_rcv,chunkNo_rcv,address_rcv,port_rcv);*/
 
 			reader.close();
 			stream.close();
@@ -377,21 +354,6 @@ public class ProtocolMessage extends Message
 	/*
 	 * Validations
 	 */
-
-	/**
-	 * Validates the version of the message by comparing its version with the peer version.
-	 * @param messageV - Version of the message
-	 * @param peerVersion - Version of the peer
-	 * @return Not null if the versions are compatible, null otherwise
-	 */
-	private static char[] validateVersion(String messageV, char[] peerVersion) 
-	{
-		char[] vs = messageV.toCharArray();
-		if(vs[0] == peerVersion[0] && vs[1] == peerVersion[1] && vs[2] == peerVersion[2])
-			return vs;
-
-		return null;	
-	}
 	
 	/**
 	 * Validates the type of the message.
@@ -402,7 +364,5 @@ public class ProtocolMessage extends Message
 	{
 		return Util.ProtocolMessageType.valueOf(type);
 	}
-
-	
 	
 }
