@@ -4,20 +4,40 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.InetAddress;
+import java.net.SocketAddress;
 
 import javax.net.ssl.SSLSocket;
 
+import tracker.Tracker;
+
+
 public class SSLClientConnection implements Runnable{
 	
-	private PrintWriter out = null;
-	private BufferedReader in = null;	
-	private Boolean ONLINE = false;
+	private PrintWriter out;
+	private BufferedReader in;	
+	private Tracker tracker;
+	private InetAddress remoteAdress;
 	
-	public SSLClientConnection(PrintWriter out2, BufferedReader in2) {
-		out = out2;
-		in  = in2;
+	public SSLClientConnection(SSLSocket sckt, Tracker tracker) {
 		
-		System.out.println("constructor sslConnection");
+		try {
+			out = new PrintWriter(sckt.getOutputStream(),true);
+			in  = new BufferedReader(new InputStreamReader(sckt.getInputStream()));
+			this.tracker = tracker;
+			
+			
+			remoteAdress = sckt.getInetAddress();
+			
+			System.out.println(remoteAdress.getHostAddress());
+			System.out.println("constructor sslConnection");
+		} catch (IOException e) {
+			System.out.println("Unable to start conection");
+			e.printStackTrace();
+		}
+		
+		
+		
 	}
 	
 
@@ -33,27 +53,37 @@ public class SSLClientConnection implements Runnable{
 	@Override
 	public void run() {
 		System.out.println("start sslConnection");
-		ONLINE = true;
-		
-		while(ONLINE) {
-			System.out.println("try to read");
+		System.out.println("try to read");
 			try {
-				String buffer = in.readLine(); 
-				out.println(buffer); //TEST
+				String buffer = receiveMessage(); //TODO DEFENIR 1 TImEOUT
+				messageHandler(buffer);
+				buffer = "SERVER CLOSING CONNECTION";
+				sendMessage(buffer); //TEST
 				System.out.println(buffer);
+				out.close();
+				in.close();
 			} catch (IOException e) {
-				System.out.println("SERVER : Fail to read from socket");
+				System.out.println("SERVER : Fail connection with CLIENT");
 				e.printStackTrace();
 			}	
-		}
+	}
+	
+	
+	private void messageHandler(String message) {
+		String [] content = message.split(" ");
 		
-		
-		ONLINE = false;
-		out.close();
-		try {
-			in.close();
-		} catch (IOException e) {
-			e.printStackTrace();
+		if(content.length < 1){
+			System.out.println("ERRO:" + content);
 		}
+		else if(content[0].equals("REGIST")) {
+			registHandler(content);
+		}
+	}
+	
+	private void registHandler(String [] content) {
+		tracker.addIP(remoteAdress);
+	}
+	private void loginHandler(String [] content) {
+		System.out.println("TENTOU LOGIN");
 	}
 }

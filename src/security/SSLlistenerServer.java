@@ -9,6 +9,8 @@ import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 
+import tracker.Tracker;
+
 public class SSLlistenerServer extends Thread {
 
 	private String[] cypherSuites;
@@ -17,15 +19,16 @@ public class SSLlistenerServer extends Thread {
 	private SSLServerSocket socket;
 
 	private boolean LISTENING = true;
+	private Tracker tracker;
 
 	private static final boolean REQUEST_AUTHENTICATION = true;
 	/*
 	 * For server side
 	 */
-	public SSLlistenerServer(int port, String [] cypherSuites) throws IOException {
+	public SSLlistenerServer(int port, String [] cypherSuites, Tracker tracker) throws IOException {
 		this.port = port;
 		this.cypherSuites = cypherSuites;
-
+		this.tracker = tracker;
 		createServerSocket();
 	}
 
@@ -45,19 +48,13 @@ public class SSLlistenerServer extends Thread {
 
 	public void start() {
 		System.out.println("SERVER : starting service");
-
 		
 		while(LISTENING) {
 			try {
-				
 				SSLSocket skct = (SSLSocket) socket.accept();
 				System.out.println("lauch SSLClientConnection");
 				
-				PrintWriter	out = new PrintWriter(skct.getOutputStream(),true);
-				BufferedReader in  = new BufferedReader(new InputStreamReader(skct.getInputStream()));
-				
-			    (new Thread(new SSLClientConnection(out,in))).start();
-			
+			    (new Thread(new SSLClientConnection(skct,tracker))).start();		
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();

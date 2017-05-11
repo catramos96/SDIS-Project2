@@ -1,10 +1,8 @@
 package tracker;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.util.concurrent.ExecutionException;
 
-import network.Subscriber;
 
 public class PeerTracker {
 

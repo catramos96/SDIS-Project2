@@ -18,6 +18,7 @@ public class Peer {
 	private GroupChannel subscribedGroup = null;
 	private Subscriber mySubscription = null;
 	private SSLlistenerClient client = null;
+	
 	public Peer(String[] trackerInfo,int myport){
 		
 		

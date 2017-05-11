@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -28,7 +27,7 @@ public class Tracker{
 	private LinkedHashMap<Subscriber,TrackedInfo> topology = null;
 	private DatagramListener channel = null;
 	private SSLlistenerServer SecChannel = null;
-	
+	private LinkedHashMap<String,InetAddress> validIPs = null;
 	//to check activity 
 	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 	
@@ -37,33 +36,26 @@ public class Tracker{
 		
 		
 		try {
-			SecChannel = new SSLlistenerServer(4499,new String[0]);
+			validIPs = new LinkedHashMap<String,InetAddress>();
+			SecChannel = new SSLlistenerServer(4499,new String[0], this);
 			SecChannel.start();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			return;
 		}
 		
 		try {
 			this.topology = new LinkedHashMap<Subscriber,TrackedInfo>();
 		
-		//	this.channel = new DatagramListener(this,port);
-		//	this.channel.start();
+			this.channel = new DatagramListener(this,port);
+			this.channel.start();
 			
 			System.out.println("TRACKER: <" + InetAddress.getLocalHost().getHostAddress() + ":" + port + ">");
 			
 			checkSubscribersActivity();
-			
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
-			return;
 		}
-		
-		
-		
-		
-		
 	}
 	
 	/*
@@ -107,6 +99,14 @@ public class Tracker{
 			    
 				} catch (InterruptedException e){
 					e.printStackTrace();
+				}
+				
+				//VALID IP's
+				@SuppressWarnings("unchecked")
+				LinkedHashMap<String,InetAddress> copyIP = (LinkedHashMap<String,InetAddress>) validIPs.clone();
+				System.out.println("=====REGISTERED IP's");
+				for(Entry<String,InetAddress> ip : copyIP.entrySet()){
+					System.out.println(ip.getKey());
 				}
 			}
 		};
@@ -273,4 +273,13 @@ public class Tracker{
 	public TrackedInfo getInfo(Subscriber s){
 		return topology.get(s);
 	}
+	
+	
+	public void addIP(InetAddress ip) {
+		validIPs.put(ip.getHostAddress(), ip);
+	}
+	public void removeIP(String ip) {
+		validIPs.remove(ip);
+	}
+	
 }

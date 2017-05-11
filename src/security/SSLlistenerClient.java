@@ -40,24 +40,21 @@ public class SSLlistenerClient extends Thread{
 			}
 			
 			
-			
 			System.out.println("Client : criar buffers");
 			out = new PrintWriter(socket.getOutputStream(),true);
 			in  = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			
-		
-			String message = "REGIST";
+			register();
 			
-			System.out.println("Client : antes de enviar");
-			out.println(message);
-			
-			System.out.println("Eviei mensagem");
-
+			out.close();
+			in.close();
+			socket.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
+		
+		
 
 	}
 	
@@ -67,5 +64,13 @@ public class SSLlistenerClient extends Thread{
 
 	String receiveMessage() throws IOException {
 		return in.readLine();
+	}
+	
+	
+	private void register(){
+		String message = "REGIST";
+		System.out.println("Client : antes de enviar");
+		out.println(message);
+		System.out.println("Eviei mensagem");
 	}
 }
