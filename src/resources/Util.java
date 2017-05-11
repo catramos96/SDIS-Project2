@@ -2,8 +2,6 @@ package resources;
 
 import java.util.Random;
 
-import javax.annotation.Resources;
-
 /**
  * Class Util containing important constants and others.
  */

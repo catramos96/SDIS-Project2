@@ -10,6 +10,10 @@ public class MessageTrackerHandler extends Thread {
 	private Subscriber sender = null;
 	
 	public MessageTrackerHandler(byte[] message, Subscriber sender, Tracker tracker){
+		
+		if(!tracker.authorizedIP(sender.getAddress().getHostAddress())) {
+			return;
+		}
 		this.tracker = tracker;
 		this.sender = sender;
 		

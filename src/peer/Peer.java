@@ -8,7 +8,7 @@ import network.GroupChannel;
 import network.Subscriber;
 import protocols.BackupInitiator;
 import resources.Logs;
-
+import security.SSLlistenerClient;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.rmi.RemoteException;
@@ -24,11 +24,20 @@ public class Peer implements MessageRMI {
     private DatagramListener comunicationChannel = null;
     private GroupChannel subscribedGroup = null;
     private Subscriber mySubscription = null;
-
+	private SSLlistenerClient client = null;
+	
     public Peer(int peer_id, String[] trackerInfo, String remoteObjName){
         this.ID = peer_id;
         this.setFileManager(new FileManager(getID()));
         this.database = new Database();
+        
+        try {
+			client = new SSLlistenerClient("localhost", 4499, new String[0]); //TODO 
+			client.start();
+		} catch (UnknownHostException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 
         try {
             mySubscription = new Subscriber(InetAddress.getLocalHost().getHostAddress(), this.ID);

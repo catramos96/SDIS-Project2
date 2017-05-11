@@ -1,9 +1,10 @@
 package tracker;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -18,6 +19,8 @@ import network.DatagramListener;
 import network.Subscriber;
 import resources.Logs;
 import resources.Util;
+import security.SSLClientConnection;
+import security.SSLlistenerServer;
 
 public class Tracker{
 	
@@ -25,22 +28,31 @@ public class Tracker{
 	
 	private LinkedHashMap<Subscriber,TrackedInfo> topology = null;
 	private DatagramListener channel = null;
-	
+	private HashSet<String>  validIPs = null;
 	//to check activity 
 	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 	
 	public Tracker(int port) throws ExecutionException, InterruptedException
 	{
-	
+		
+		try {
+			validIPs = new HashSet<String>();
+			(new Thread(new SSLlistenerServer(4499,new String[0], this))).start();;
+		
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 		try {
 			this.topology = new LinkedHashMap<Subscriber,TrackedInfo>();
+		
 			this.channel = new DatagramListener(this,port);
 			this.channel.start();
 			
 			System.out.println("TRACKER: <" + InetAddress.getLocalHost().getHostAddress() + ":" + port + ">");
 			
 			checkSubscribersActivity();
-			
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		}
@@ -88,6 +100,12 @@ public class Tracker{
 				} catch (InterruptedException e){
 					e.printStackTrace();
 				}
+				
+				//VALID IP's
+				@SuppressWarnings("unchecked")
+				 HashSet<String> copyIP = (HashSet<String>) validIPs.clone();
+				System.out.println("=====REGISTERED IP's ===TOTAL: " + copyIP.size() + " ===");
+				copyIP.forEach(System.out::println);
 			}
 		};
 		scheduler.scheduleAtFixedRate(checkActivity, Util.CHECK_ACTV_TIME, Util.CHECK_ACTV_TIME, TimeUnit.SECONDS);
@@ -253,4 +271,17 @@ public class Tracker{
 	public TrackedInfo getInfo(Subscriber s){
 		return topology.get(s);
 	}
+	
+	
+	public void addIP(InetAddress ip) {
+		validIPs.add(ip.getHostAddress());
+	}
+	public void removeIP(String ip) {
+		validIPs.remove(ip);
+	}
+	
+	public boolean authorizedIP (String ip) {
+		return validIPs.contains(ip);
+	}
+	
 }

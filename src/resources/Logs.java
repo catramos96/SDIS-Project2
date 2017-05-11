@@ -3,7 +3,6 @@ package resources;
 import message.ActivityMessage;
 import message.TopologyMessage;
 import network.Subscriber;
-import resources.Util.TopologyMessageType;
 
 public class Logs {
 
@@ -54,5 +53,10 @@ public class Logs {
 			print += ":" + sender.getSubscriberInfo();
 		
 		System.out.println(print);
+	}
+	
+	
+	public static void message(String msg) {
+		System.out.println(msg);
 	}
 }
