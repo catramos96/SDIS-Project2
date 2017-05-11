@@ -5,8 +5,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.InetAddress;
-import java.net.SocketAddress;
-
 import javax.net.ssl.SSLSocket;
 
 import tracker.Tracker;
@@ -18,6 +16,7 @@ public class SSLClientConnection implements Runnable{
 	private BufferedReader in;	
 	private Tracker tracker;
 	private InetAddress remoteAdress;
+	private SSLSocket sckt;
 	
 	public SSLClientConnection(SSLSocket sckt, Tracker tracker) {
 		
@@ -26,9 +25,8 @@ public class SSLClientConnection implements Runnable{
 			in  = new BufferedReader(new InputStreamReader(sckt.getInputStream()));
 			this.tracker = tracker;
 			
-			
+			this.sckt = sckt;
 			remoteAdress = sckt.getInetAddress();
-			
 			System.out.println(remoteAdress.getHostAddress());
 			System.out.println("constructor sslConnection");
 		} catch (IOException e) {
@@ -57,11 +55,13 @@ public class SSLClientConnection implements Runnable{
 			try {
 				String buffer = receiveMessage(); //TODO DEFENIR 1 TImEOUT
 				messageHandler(buffer);
-				buffer = "SERVER CLOSING CONNECTION";
+				System.out.println("message:" + buffer);
+				buffer = "SERVER CLOSING CONNECTION \n";
 				sendMessage(buffer); //TEST
 				System.out.println(buffer);
 				out.close();
 				in.close();
+				sckt.close();
 			} catch (IOException e) {
 				System.out.println("SERVER : Fail connection with CLIENT");
 				e.printStackTrace();
@@ -78,12 +78,13 @@ public class SSLClientConnection implements Runnable{
 		else if(content[0].equals("REGIST")) {
 			registHandler(content);
 		}
+		else {
+			System.out.println("Dont recognise message:" + content);
+		}
 	}
 	
 	private void registHandler(String [] content) {
 		tracker.addIP(remoteAdress);
 	}
-	private void loginHandler(String [] content) {
-		System.out.println("TENTOU LOGIN");
-	}
+	
 }

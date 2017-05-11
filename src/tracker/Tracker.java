@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -18,6 +19,7 @@ import network.DatagramListener;
 import network.Subscriber;
 import resources.Logs;
 import resources.Util;
+import security.SSLClientConnection;
 import security.SSLlistenerServer;
 
 public class Tracker{
@@ -26,19 +28,17 @@ public class Tracker{
 	
 	private LinkedHashMap<Subscriber,TrackedInfo> topology = null;
 	private DatagramListener channel = null;
-	private SSLlistenerServer SecChannel = null;
-	private LinkedHashMap<String,InetAddress> validIPs = null;
+	private HashSet<String>  validIPs = null;
 	//to check activity 
 	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 	
 	public Tracker(int port) throws ExecutionException, InterruptedException
 	{
 		
-		
 		try {
-			validIPs = new LinkedHashMap<String,InetAddress>();
-			SecChannel = new SSLlistenerServer(4499,new String[0], this);
-			SecChannel.start();
+			validIPs = new HashSet<String>();
+			(new Thread(new SSLlistenerServer(4499,new String[0], this))).start();;
+		
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -103,11 +103,9 @@ public class Tracker{
 				
 				//VALID IP's
 				@SuppressWarnings("unchecked")
-				LinkedHashMap<String,InetAddress> copyIP = (LinkedHashMap<String,InetAddress>) validIPs.clone();
-				System.out.println("=====REGISTERED IP's");
-				for(Entry<String,InetAddress> ip : copyIP.entrySet()){
-					System.out.println(ip.getKey());
-				}
+				 HashSet<String> copyIP = (HashSet<String>) validIPs.clone();
+				System.out.println("=====REGISTERED IP's ===TOTAL: " + copyIP.size() + " ===");
+				copyIP.forEach(System.out::println);
 			}
 		};
 		scheduler.scheduleAtFixedRate(checkActivity, Util.CHECK_ACTV_TIME, Util.CHECK_ACTV_TIME, TimeUnit.SECONDS);
@@ -276,10 +274,14 @@ public class Tracker{
 	
 	
 	public void addIP(InetAddress ip) {
-		validIPs.put(ip.getHostAddress(), ip);
+		validIPs.add(ip.getHostAddress());
 	}
 	public void removeIP(String ip) {
 		validIPs.remove(ip);
+	}
+	
+	public boolean authorizedIP (String ip) {
+		return validIPs.contains(ip);
 	}
 	
 }

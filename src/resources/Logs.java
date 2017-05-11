@@ -3,7 +3,6 @@ package resources;
 import message.ActivityMessage;
 import message.TopologyMessage;
 import network.Subscriber;
-import resources.Util.TopologyMessageType;
 
 public class Logs {
 

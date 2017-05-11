@@ -1,6 +1,5 @@
 package message;
 
-import network.Subscriber;
 import resources.Logs;
 import resources.Util;
 import resources.Util.ActivityMessageType;

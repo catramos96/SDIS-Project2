@@ -6,26 +6,19 @@ import java.net.UnknownHostException;
 
 public class FileSharing 
 {
-
 	public static void main(String[] args) throws IOException
 	{		
-		if(args.length != 2)
+		if(args.length != 3)
 		{
-			System.out.println("java peer.FileSharing <myport> <address:port>");
+			System.out.println("java peer.FileSharing <peer_id> <remoteObjName> <address:port>");
 			return;
 		}
 
-		/*char[] protocol_version = args[0].toCharArray();
+		int peer_id = Integer.parseInt(args[0]);
+        String remoteObjName = args[1];
+		String[] root = addressVerification(args[2]);
 
-		int peer_id = Integer.parseInt(args[1]);
-
-		String remoteObjName = args[2];*/
-		//peer_ap <address>:<port>
-		
-		//TMP
-		int port = Integer.parseInt(args[0]);
-		String[] root = addressVerification(args[1]);
-		new Peer(root,port);
+		new Peer(peer_id,root,remoteObjName);
 		
 		/*String[] parts_mc = addressVerification(args[3]);
 		String[] parts_mdb = addressVerification(args[4]);

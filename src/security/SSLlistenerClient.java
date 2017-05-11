@@ -11,7 +11,7 @@ import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
-public class SSLlistenerClient extends Thread{
+public class SSLlistenerClient {
 
 	private InetAddress address;
 	private int port;
@@ -38,6 +38,7 @@ public class SSLlistenerClient extends Thread{
 			} else {
 				socket.setEnabledCipherSuites(cypherSuites);
 			}
+			
 			
 			
 			System.out.println("Client : criar buffers");
@@ -68,7 +69,7 @@ public class SSLlistenerClient extends Thread{
 	
 	
 	private void register(){
-		String message = "REGIST";
+		String message = "REGIST\n";
 		System.out.println("Client : antes de enviar");
 		out.println(message);
 		System.out.println("Eviei mensagem");

@@ -2,8 +2,6 @@ package resources;
 
 import java.util.Random;
 
-import javax.annotation.Resources;
-
 /**
  * Class Util containing important constants and others.
  */
@@ -71,7 +69,7 @@ public class Util {
 	
 	public static int PACKET_MAX_SIZE = 65000;
 	
-	//Chunk
+	//ChunkInfo
 	public static int CHUNK_MAX_SIZE = 64000;
 	
 	//FileManager - Directories

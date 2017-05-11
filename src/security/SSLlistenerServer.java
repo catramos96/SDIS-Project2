@@ -1,17 +1,13 @@
 package security;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 
 import tracker.Tracker;
 
-public class SSLlistenerServer extends Thread {
+public class SSLlistenerServer implements Runnable {
 
 	private String[] cypherSuites;
 	private int port;
@@ -44,9 +40,10 @@ public class SSLlistenerServer extends Thread {
 
 
 	}
-
-
-	public void start() {
+	
+	@Override
+	public void run() {
+	
 		System.out.println("SERVER : starting service");
 		
 		while(LISTENING) {
@@ -60,5 +57,6 @@ public class SSLlistenerServer extends Thread {
 				e1.printStackTrace();
 			}
 		}
+		
 	}
 }

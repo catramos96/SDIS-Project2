@@ -1,16 +1,18 @@
 package network;
 
+import peer.MessagePeerHandler;
+import peer.Peer;
+import protocols.ChunkBackupProtocol;
+import resources.Util;
+import tracker.MessageTrackerHandler;
+import tracker.Tracker;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
-
-import peer.MessagePeerHandler;
-import peer.Peer;
-import resources.Util;
-import tracker.MessageTrackerHandler;
-import tracker.Tracker;
+import java.util.HashMap;
 
 public class DatagramListener extends Thread{
 	
@@ -19,9 +21,12 @@ public class DatagramListener extends Thread{
 	private Peer peer = null;
 	private Tracker tracker = null;
 	private GroupChannel subscribers = null;
+
+    private HashMap<String, ChunkBackupProtocol> backupInitiators;
 	
 	public DatagramListener(Peer peer,GroupChannel channel){
 		this.peer = peer;
+        this.backupInitiators = new HashMap<String, ChunkBackupProtocol>();
 		this.subscribers = channel;
 		try {
 			socket = new DatagramSocket(peer.getMySubscriptionInfo().getPort());
@@ -32,6 +37,7 @@ public class DatagramListener extends Thread{
 	
 	public DatagramListener(Tracker tracker, int port){
 		this.tracker = tracker;
+        this.backupInitiators = new HashMap<String, ChunkBackupProtocol>();
 		try {
 			socket = new DatagramSocket(port);
 		} catch (SocketException e) {
@@ -72,15 +78,23 @@ public class DatagramListener extends Thread{
 	
 		while(running)
 		{
-			DatagramPacket packet = receive();
+		    DatagramPacket packet = receive();
 			if(peer != null)
-				new MessagePeerHandler(packet.getData(),new Subscriber(packet.getAddress(),packet.getPort()),peer,subscribers).start();
+				new MessagePeerHandler(packet.getData(),new Subscriber(packet.getAddress(),packet.getPort()),peer,subscribers,backupInitiators).start();
 			else if(tracker != null)
 				new MessageTrackerHandler(packet.getData(),new Subscriber(packet.getAddress(),packet.getPort()),tracker).start();
 		}
 		
 		//close connection
 		socket.close();
-	}	
+	}
+
+    public void addBackupInitiator(String chunkKey, ChunkBackupProtocol backup) {
+        backupInitiators.put(chunkKey, backup);
+    }
+
+    public void removeBackupInitiator(String chunkKey){
+        backupInitiators.remove(chunkKey);
+    }
 	
 }
