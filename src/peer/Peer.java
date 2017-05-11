@@ -1,5 +1,6 @@
 package peer;
 
+import filesystem.Database;
 import filesystem.FileManager;
 import message.MessageRMI;
 import network.DatagramListener;
@@ -15,49 +16,50 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.server.UnicastRemoteObject;
 
 public class Peer implements MessageRMI {
-	/*informations*/
-	private int ID = 0;
-	private FileManager fileManager;
+    /*informations*/
+    private int ID;
+    private FileManager fileManager;
+    private Database database;
 
-	private DatagramListener comunicationChannel = null;
-	private GroupChannel subscribedGroup = null;
-	private Subscriber mySubscription = null;
-	
-	public Peer(int peer_id, String[] trackerInfo, String remoteObjName){
+    private DatagramListener comunicationChannel = null;
+    private GroupChannel subscribedGroup = null;
+    private Subscriber mySubscription = null;
 
-	    this.setFileManager(new FileManager(getID()));
-	    this.ID = peer_id;
+    public Peer(int peer_id, String[] trackerInfo, String remoteObjName){
+        this.ID = peer_id;
+        this.setFileManager(new FileManager(getID()));
+        this.database = new Database();
 
-		try {
-			mySubscription = new Subscriber(InetAddress.getLocalHost().getHostAddress(), this.ID);
-			Logs.MyAddress(mySubscription);
-			
-			//tracker
-			InetAddress address = InetAddress.getByName(trackerInfo[0]);
-			int port = Integer.parseInt(trackerInfo[1]);
-			
-			//Group1
-			subscribedGroup = new GroupChannel(this,new Subscriber(address,port));
-			subscribedGroup.start();
+        try {
+            mySubscription = new Subscriber(InetAddress.getLocalHost().getHostAddress(), this.ID);
+            Logs.MyAddress(mySubscription);
+
+            //tracker
+            InetAddress address = InetAddress.getByName(trackerInfo[0]);
+            int port = Integer.parseInt(trackerInfo[1]);
+
+            //Group1
+            subscribedGroup = new GroupChannel(this,new Subscriber(address,port));
+            subscribedGroup.start();
 
             startRMI(remoteObjName);
-			
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-		}
-	}
-	
-	public GroupChannel getSubscribedGroup(){
-		return subscribedGroup;
-	}
-	
-	public DatagramListener getChannel(){
-		return comunicationChannel;
-	}
-	
-	public Subscriber getMySubscriptionInfo(){
-		return mySubscription;
-	}
+
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public GroupChannel getSubscribedGroup(){
+        return subscribedGroup;
+    }
+
+    public DatagramListener getChannel(){
+        return comunicationChannel;
+    }
+
+    public Subscriber getMySubscriptionInfo(){
+        return mySubscription;
+    }
 
     private void startRMI(String remoteObjectName)
     {
@@ -125,4 +127,8 @@ public class Peer implements MessageRMI {
     {
         this.ID = ID;
     }
+
+    public Database getDatabase() {return database;}
+
+    public void setDatabase(final Database database) {this.database = database;}
 }

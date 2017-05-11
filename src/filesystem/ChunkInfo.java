@@ -14,8 +14,8 @@ import java.util.ArrayList;
  * @attribute int replicationDeg - replication degree desired
  * @attribute ArrayList<Integer> peers - List of peers with the chunk associated (count = actual replication degree)
  */
-public class Chunk {
-
+public class ChunkInfo
+{
     private int chunkNo = -1;
     private String fileId = null;
     private byte[] data = null;
@@ -28,7 +28,7 @@ public class Chunk {
      * @param chunkNo
      * @param replicationDeg
      */
-    public Chunk(String fileNo, int chunkNo, int replicationDeg){
+    public ChunkInfo(String fileNo, int chunkNo, int replicationDeg){
         this.fileId = fileNo;
         this.chunkNo = chunkNo;
         this.replicationDeg = replicationDeg;
@@ -40,7 +40,7 @@ public class Chunk {
      * @param chunkNo
      * @param data
      */
-    public Chunk(String fileId, int chunkNo, byte[] data){
+    public ChunkInfo(String fileId, int chunkNo, byte[] data){
         this.setChunkNo(chunkNo);
         this.setFileId(fileId);
         this.setData(data);
@@ -107,6 +107,10 @@ public class Chunk {
 
     public void setData(byte[] data) {
         this.data = data;
+    }
+
+    public String getChunkKey() {
+        return (this.chunkNo+this.fileId);
     }
 
 }

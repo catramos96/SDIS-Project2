@@ -15,7 +15,7 @@ import java.io.*;
  * @attribute version - Version of the sender peer protocols
  * @attribute senderId - Sender peer identification number
  * @attribute fileId - File identification
- * @attribute chunkNo - Chunk identification number
+ * @attribute chunkNo - ChunkInfo identification number
  * @attribute replicationDeg - Desired replication degree of the chunk associated
  * @attribute address - Address of the sender peer (ENHANCEMENT)
  * @attribute port - Port of the sender peer (ENHANCEMENT)
@@ -60,7 +60,7 @@ public class ProtocolMessage extends Message
 	 * @param type - Type of the message, it has to be a PUTCHUNK
 	 * @param senderId - Sender identification
 	 * @param fileId - File identification
-	 * @param chunkNo - Chunk identification number
+	 * @param chunkNo - ChunkInfo identification number
 	 * @param replicationDeg - Desired replication degree of the associated chunk
 	 * @param body - Content of the associated chunk
 	 */
@@ -81,7 +81,7 @@ public class ProtocolMessage extends Message
 	 * @param type - Type of the message, it has to be one of the types mentioned above
 	 * @param senderId - Sender identification
 	 * @param fileId - File identification
-	 * @param chunkNo - Chunk identification number
+	 * @param chunkNo - ChunkInfo identification number
 	 */
 	public ProtocolMessage(Util.ProtocolMessageType type, int senderId, String fileId, int chunkNo)
 	{
@@ -98,7 +98,7 @@ public class ProtocolMessage extends Message
 	 * @param type - Type of the message, it has to be a CHUNK
 	 * @param senderId - Sender identification
 	 * @param fileId - File identification
-	 * @param chunkNo - Chunk identification number
+	 * @param chunkNo - ChunkInfo identification number
 	 * @param body - Content of the associated chunk
 	 */
 	public ProtocolMessage(Util.ProtocolMessageType type, int senderId, String fileId, int chunkNo, byte[] body)
@@ -139,7 +139,7 @@ public class ProtocolMessage extends Message
 	 * @param type - Type of the message, it has to be a GETCHUNKENH
 	 * @param senderId - Sender identification
 	 * @param fileId - File identification
-	 * @param chunkNo - Chunk identification number
+	 * @param chunkNo - ChunkInfo identification number
 	 * @param address - Address of the sender
 	 * @param port - Port of the sender
 	 */
@@ -219,7 +219,7 @@ public class ProtocolMessage extends Message
 
 	/**
 	 * Function to get the chunk number associated with the message.
-	 * @return Chunk associated to the message
+	 * @return ChunkInfo associated to the message
 	 */
 	public int getChunkNo() {
 		return chunkNo;
@@ -279,12 +279,10 @@ public class ProtocolMessage extends Message
 	 * passed as a parameter (peerVersion) is compatible with the message protocol version.
 	 * 
 	 * @param message
-	 * @param peerVersion
 	 * @return ProtocolMessageType Object
 	 */
-	
-	//============================================== SUBSTITUIR =================
-	public static ProtocolMessage parseMessage(byte[] message, char[] peerVersion)
+
+	public static ProtocolMessage parseMessage(byte[] message)
 	{
 		ProtocolMessage parsed = null;
 

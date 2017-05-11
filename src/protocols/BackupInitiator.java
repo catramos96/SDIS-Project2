@@ -1,6 +1,7 @@
 package protocols;
 
-import filesystem.Chunk;
+import filesystem.ChunkInfo;
+import filesystem.FileInfo;
 import message.ProtocolMessage;
 import peer.Peer;
 import resources.Util;
@@ -10,14 +11,14 @@ import java.util.ArrayList;
 
 public class BackupInitiator extends Thread
 {
-    private String filename;
+    private String filepath;
     private int    repDeg;
     private Peer   peer;
 
-    public BackupInitiator(Peer peer, String filename, int repDeg)
+    public BackupInitiator(Peer peer, String filepath, int repDeg)
     {
         this.peer = peer;
-        this.filename = filename;
+        this.filepath = filepath;
         this.repDeg = repDeg;
 
     }
@@ -25,7 +26,7 @@ public class BackupInitiator extends Thread
     private boolean fileExist()
     {
         //verifies original file existence
-        File f = new File(this.filename);
+        File f = new File(this.filepath);
         if(!f.exists())
         {
             System.out.println("File doesn't exist!");
@@ -40,19 +41,24 @@ public class BackupInitiator extends Thread
         if(!fileExist())
             return;
 
-        //TODO: verifies if this file was already backed up
-        //TODO: verifies if the file was modified -> delete protocol
+        if(peer.getDatabase().hasStoredFileWithFilename(filepath))
+        {
+            //TODO execute delete protocol
+        }
 
         //split file in chunks
-        ArrayList<Chunk> chunks = peer.getFileManager().splitFileInChunks(filename);
+        ArrayList<ChunkInfo> chunks = peer.getFileManager().splitFileInChunks(filepath);
 
-        //TODO: record files at db
+        String fileID = peer.getFileManager().getFileIdFromFilename(filepath);
+        FileInfo fileinfo = new FileInfo(fileID,filepath,chunks.size(),repDeg);
 
-        for (Chunk c: chunks)
+        //starts recording file
+        peer.getDatabase().saveStoredFile(filepath, fileinfo);
+
+        for (ChunkInfo c: chunks)
         {
             ProtocolMessage msg = new ProtocolMessage(Util.ProtocolMessageType.PUTCHUNK,peer.getID(),c.getFileId(),c.getChunkNo(),repDeg,c.getData());
-
-            //TODO : send message
+            new ChunkBackupProtocol(peer.getSubscribedGroup(),msg).start();
         }
 
     }

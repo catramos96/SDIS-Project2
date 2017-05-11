@@ -1,12 +1,13 @@
 package network;
-import java.util.ArrayList;
-
 import message.ActivityMessage;
 import message.Message;
 import message.TopologyMessage;
 import peer.Peer;
+import protocols.ChunkBackupProtocol;
 import resources.Logs;
 import resources.Util;
+
+import java.util.ArrayList;
 
 public class GroupChannel extends Thread{
 
@@ -90,7 +91,18 @@ public class GroupChannel extends Thread{
 		}
 		return null;
 	}
-	
+
+    /*
+     * others
+     */
+    public void addBackupInitiator(String chunkKey, ChunkBackupProtocol backup) {
+        comunicationChannel.addBackupInitiator(chunkKey,backup);
+    }
+
+    public void removeBackupInitiator(String chunkKey){
+       comunicationChannel.removeBackupInitiator(chunkKey);
+    }
+
 	/*
 	 * GETS & SETS
 	 */
