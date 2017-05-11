@@ -64,10 +64,12 @@ public class ProtocolMessage extends Message
 	 * @param replicationDeg - Desired replication degree of the associated chunk
 	 * @param body - Content of the associated chunk
 	 */
-	public ProtocolMessage(Util.ProtocolMessageType type, int senderId, String fileId, int chunkNo, int replicationDeg, byte[] body)
+	public ProtocolMessage(ProtocolMessageType type, int senderId, String fileId, int chunkNo, int replicationDeg, byte[] body)
 	{
-		if(!type.name().equals("PUTCHUNK"))
-			//Logs.wrongMessageConstructor(type);
+        if (!type.name().equals("PUTCHUNK"))
+            System.out.println("error creating message");
+            //Logs.wrongMessageConstructor(type);
+
 		this.type = type;
 		this.senderId = senderId;
 		this.fileId = fileId;
@@ -83,10 +85,11 @@ public class ProtocolMessage extends Message
 	 * @param fileId - File identification
 	 * @param chunkNo - ChunkInfo identification number
 	 */
-	public ProtocolMessage(Util.ProtocolMessageType type, int senderId, String fileId, int chunkNo)
+	public ProtocolMessage(ProtocolMessageType type, int senderId, String fileId, int chunkNo)
 	{
-		if(!(type.name().equals("STORED")|| type.name().equals("GETCHUNK") || type.name().equals("REMOVED") || type.name().equals("GOTCHUNKENH")))
-			//Logs.wrongMessageConstructor(type);
+		if(!(type.name().equals("STORED")|| type.name().equals("GETCHUNK") || type.name().equals("REMOVED") || type.name().equals("GOTCHUNKENH")))//Logs.wrongMessageConstructor(type);
+            System.out.println("error creating message");
+
 		this.type = type;
 		this.senderId = senderId;
 		this.fileId = fileId;
@@ -101,9 +104,10 @@ public class ProtocolMessage extends Message
 	 * @param chunkNo - ChunkInfo identification number
 	 * @param body - Content of the associated chunk
 	 */
-	public ProtocolMessage(Util.ProtocolMessageType type, int senderId, String fileId, int chunkNo, byte[] body)
+	public ProtocolMessage(ProtocolMessageType type, int senderId, String fileId, int chunkNo, byte[] body)
 	{
 		if(!type.name().equals("CHUNK")){
+            System.out.println("error creating message");
 			//Logs.wrongMessageConstructor(type);
 		}
 		else
@@ -122,8 +126,9 @@ public class ProtocolMessage extends Message
 	 * @param senderId - Sender identification
 	 * @param fileId - File identification
 	 */
-	public ProtocolMessage(Util.ProtocolMessageType type, int senderId, String fileId) {
+	public ProtocolMessage(ProtocolMessageType type, int senderId, String fileId) {
 		if(!(type.name().equals("DELETE") || type.name().equals("GETINITIATOR") || type.name().equals("INITIATOR"))){
+            System.out.println("error creating message");
 			//Logs.wrongMessageConstructor(type);
 		}
 		else
@@ -143,8 +148,9 @@ public class ProtocolMessage extends Message
 	 * @param address - Address of the sender
 	 * @param port - Port of the sender
 	 */
-	public ProtocolMessage(Util.ProtocolMessageType type, int senderId, String fileId, int chunkNo, String address, int port){
+	public ProtocolMessage(ProtocolMessageType type, int senderId, String fileId, int chunkNo, String address, int port){
 		if(!type.name().equals("GETCHUNKENH")){
+            System.out.println("error creating message");
 			//Logs.wrongMessageConstructor(type);
 		}
 		else
@@ -294,21 +300,23 @@ public class ProtocolMessage extends Message
 			String header = reader.readLine();
 			String[] parts = header.split("\\s");
 
-			Util.ProtocolMessageType type_rcv = validateMessageType(parts[0]);
+			ProtocolMessageType type_rcv = validateMessageType(parts[0]);
+
+            System.out.println("message type "+type_rcv.name());
 
 			//Common to all messages types
-			int senderId_rcv = Integer.parseInt(parts[2]);
-			String fileId_rcv = parts[3];
+			int senderId_rcv = Integer.parseInt(parts[1]);
+			String fileId_rcv = parts[2];
 
 			//Exception for the types DELETE, GETINITIATOR, INITIATOR.
 			int chunkNo_rcv = -1;
 			if(type_rcv.compareTo(Util.ProtocolMessageType.DELETE) != 0 && type_rcv.compareTo(Util.ProtocolMessageType.GETINITIATOR) != 0 && type_rcv.compareTo(Util.ProtocolMessageType.INITIATOR) != 0 )
-				chunkNo_rcv = Integer.parseInt(parts[4]);
+				chunkNo_rcv = Integer.parseInt(parts[3]);
 
 			//Exception for type PUTCHUNK
 			int replicationDeg_rcv = -1;
 			if(type_rcv.compareTo(Util.ProtocolMessageType.PUTCHUNK) == 0){
-				replicationDeg_rcv = Integer.parseInt(parts[5]);
+				replicationDeg_rcv = Integer.parseInt(parts[4]);
 			}
 			
 			//Exception for the type GETCHUNKENH

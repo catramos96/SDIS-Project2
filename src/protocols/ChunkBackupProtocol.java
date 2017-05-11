@@ -50,14 +50,14 @@ public class ChunkBackupProtocol extends Thread{
 			//if(msgRecord.receivedPutchunkMessage(fileNo, chunkNo))
 			//	return;
 
-            //TODO esta correto? (cat)
             //send message
-			channel.sendMessageToParent(msg);
+            channel.sendMessageToRoot(msg);
             System.out.println("putchunk sent");
 
             //waits
 			try {
-				Thread.sleep(waitingTime);
+                System.out.println(waitingTime);
+                Thread.sleep(waitingTime);
 			} 
 			catch (InterruptedException e) {
 				e.printStackTrace();

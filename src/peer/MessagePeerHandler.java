@@ -124,10 +124,12 @@ public class MessagePeerHandler extends Thread{
 
     public void handleProtocolMessage(ProtocolMessage msg)
     {
+        channel.sendMessageToSubscribers(msg);
+
         //Only processes messages sent by others
         if((peer.getID() != msg.getSenderId()) )
         {
-            System.out.println("Received message");
+            System.out.println("Received protocol message");
 
             switch (msg.getType()) {
 
@@ -223,8 +225,7 @@ public class MessagePeerHandler extends Thread{
 			 */
             if(alreadyExists)
             {
-                //TODO duvida (Cat)
-                channel.sendMessageToParent(msg);
+                channel.sendMessageToRoot(msg);
                 System.out.println("store sent");
             }
             else
@@ -233,8 +234,7 @@ public class MessagePeerHandler extends Thread{
                 Util.randomDelay();
 
                 //send STORED message
-                //TODO duvida (cat)
-                channel.sendMessageToParent(msg);
+                channel.sendMessageToRoot(msg);
                 System.out.println("store sent");
 
                 //save chunk in memory
@@ -260,8 +260,7 @@ public class MessagePeerHandler extends Thread{
             //Send message to the multicast to warn the other peers so they can update their replication degree of the chunk
             ProtocolMessage msg = new ProtocolMessage(Util.ProtocolMessageType.REMOVED,peer.getID(),chunks.get(i).getFileId(),chunks.get(i).getChunkNo());
 
-            //TODO duvida (Cat)
-            channel.sendMessageToParent(msg);
+            channel.sendMessageToRoot(msg);
             System.out.println("removed sent");
 
             //Deletes the chunk from the peers disk
