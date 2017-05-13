@@ -465,6 +465,7 @@ public class FileManager {
 
         //peer directory name
         diskDIR += "Peer"+ peerID;
+
         dir = new File(new String(diskDIR));
         if(!dirExists(dir))
         {
@@ -515,6 +516,10 @@ public class FileManager {
 
         return name;
     }
+    
+    public File getFile(String filename) {
+    	return new File(diskDIR + filename);
+    }
 
 	/*
 	 * Gets and sets
@@ -523,8 +528,8 @@ public class FileManager {
     public int getTotalSpace(){
         return totalSpace;
     }
-
-    public int getRemainingSpace(){
+    
+   public int getRemainingSpace(){
         return this.remainingSpace;
     }
 }
