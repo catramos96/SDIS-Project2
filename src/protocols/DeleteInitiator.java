@@ -32,15 +32,17 @@ public class DeleteInitiator extends Thread{
     @Override
     public void run()
     {
-        //verifies if this file was backed up at this peer
-        FileInfo info = peer.getDatabase().getFileData(filepath);
+        System.out.println("Delete info :");
 
-        if(info == null)
+        //verifies if this file was backed up at this peer
+        if(!peer.getDatabase().hasStoredFileWithFilename(filepath))
         {
             //message = filename + " not backed up by this peer!"
             System.out.println("File not backed up");
             return;
         }
+
+        FileInfo info = peer.getDatabase().getFileData(filepath);
 
         //create message
         String fileId = info.getFileId();

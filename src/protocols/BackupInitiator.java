@@ -70,5 +70,7 @@ public class BackupInitiator extends Thread
             new ChunkBackupProtocol(peer.getSubscribedGroup(),msg).start();
         }
 
+        System.out.println("Backup info :");
+        System.out.println(peer.getDatabase().ListFiles());
     }
 }

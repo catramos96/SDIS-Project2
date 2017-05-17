@@ -211,4 +211,15 @@ public class Database {
         notify();
         return out;
     }
+
+    public synchronized String ListFiles(){
+        String out = "";
+
+        for(String key : sentFiles.keySet()) {
+            //FileInfo value = sentFiles.get(key);
+            out +="File " +key+"\n";
+        }
+        notify();
+        return out;
+    }
 }

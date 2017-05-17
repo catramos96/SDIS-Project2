@@ -8,6 +8,7 @@ import network.GroupChannel;
 import network.MessageRecord;
 import network.Subscriber;
 import protocols.BackupInitiator;
+import protocols.DeleteInitiator;
 import protocols.RestoreInitiator;
 import resources.Logs;
 import security.Encrypt;
@@ -140,6 +141,7 @@ public class Peer implements MessageRMI {
 	public String delete(final String filename) throws RemoteException
 	{
 		System.out.println("Delete initiated...");
+		new DeleteInitiator(this, filename).start();
 		return null;
 	}
 
