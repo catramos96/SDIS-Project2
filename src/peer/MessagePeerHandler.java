@@ -7,6 +7,7 @@ import message.TopologyMessage;
 import network.GroupChannel;
 import network.Subscriber;
 import protocols.ChunkBackupProtocol;
+import protocols.RestoreInitiator;
 import resources.Logs;
 import resources.Util;
 
@@ -331,25 +332,12 @@ public class MessagePeerHandler extends Thread{
 	 * @param body - Chunks content
 	 */
 	private synchronized void handleChunk(String fileId, int chunkNo, byte[] body){
-		/*
-        //chunk message received by initiator peer
-        FileInfo info = peer.getRecord().getRestoredFileInfoById(fileId);
-
-        //This peer is able to restore the file
-        if(info != null){
-            //record chunk as restored
-            if(peer.getRecord().recordRestoredChunk(fileId,chunkNo,body))
-                Logs.chunkRestored(chunkNo);
-
-            //enhancement
-            if(peer.isEnhancement()){
-                //sends message GOTCHUNKENH to the multicast
-                Message msg = new Message(Util.MessageType.GOTCHUNKENH,peer.getVersion(),peer.getID(), fileId, chunkNo);
-                peer.getMc().send(msg);
-                Logs.sentMessageLog(msg);
-            }
-        }
-		 */
+		RestoreInitiator restoreInitiator = peer.getRestoreInitiator(fileId);
+		
+		// stores chunk if peer has initiated the restore protocol
+		if (restoreInitiator != null) {
+			restoreInitiator.addChunk(chunkNo, body);
+		}
 	}
 
 

@@ -10,7 +10,7 @@ import network.GroupChannel;
 public class ChunkRestoreProtocol extends Thread {
     private final GroupChannel channel;
     private final ProtocolMessage msg;
-    
+
 	private static final int MAX_TRIES = 5;
 
     /**

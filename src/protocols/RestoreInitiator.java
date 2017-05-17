@@ -3,6 +3,7 @@ package protocols;
 import peer.Peer;
 import resources.Util;
 import filesystem.FileInfo;
+import message.Message;
 import message.ProtocolMessage;
 
 /**
@@ -12,6 +13,10 @@ public class RestoreInitiator extends Thread {
     private Peer peer;
     private String filePath;
 
+	private static final int MAX_TRIES = 5;
+    
+    private byte[][] data;
+
     /**
      * Constructor of RestoreInitiator
      */
@@ -20,6 +25,10 @@ public class RestoreInitiator extends Thread {
         this.filePath = filePath;
     }
 
+    public void addChunk(int chunkNo, byte[] chunkData) {
+    	data[chunkNo] = chunkData;
+    }
+    
     @Override
     public void run() {
         FileInfo fileInfo = peer.getDatabase().getFileData(filePath);
@@ -28,13 +37,33 @@ public class RestoreInitiator extends Thread {
         if (fileInfo == null) {
             System.out.println("The requested file: " + filePath + " doesn't exist in the database.");
         }
+        
+        data = new byte[fileInfo.getNumChunks()][];
 
         String fileID = fileInfo.getFileId();
         int numberChunks = fileInfo.getNumChunks();
+        
+        peer.addRestoreInitiator(fileID, this);
 
         for (int i = 0; i < numberChunks; i++) {
             ProtocolMessage msg = new ProtocolMessage(Util.ProtocolMessageType.GETCHUNK, peer.getID(), fileID, i);
-            new ChunkRestoreProtocol(peer.getSubscribedGroup(), msg).start();
+            
+            // Tries sending GETCHUNK message for MAX_TRIES
+            for (int attempts = 0; attempts < MAX_TRIES; attempts++) {
+            	// Sends message again if peer still hasn't received chunk
+				if(data[i] == null) {
+		            peer.getSubscribedGroup().sendMessageToRoot(msg);
+					Util.randomDelay();
+				} else {
+					break;
+				}
+			}
+            
+            // Checks if chunk has been recovered.
+			if (data[i] == null) {
+				System.out.println("Failed to recover " + filePath + ".");
+				return;
+			}
         }
     }
 }

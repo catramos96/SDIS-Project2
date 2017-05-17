@@ -22,6 +22,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
+import java.util.HashMap;
 
 import javax.crypto.NoSuchPaddingException;
 
@@ -32,7 +33,9 @@ public class Peer implements MessageRMI {
 	private Database database;
 
 	/*MessageRecord*/
-	public MessageRecord msgRecord = null;
+	private MessageRecord msgRecord = null;
+
+	private HashMap<String, RestoreInitiator> restoreInitiators;
 
 	private DatagramListener comunicationChannel = null;
 	private GroupChannel subscribedGroup = null;
@@ -45,7 +48,7 @@ public class Peer implements MessageRMI {
 		this.setFileManager(new FileManager(getID()));
 		this.database = new Database();
 		this.msgRecord = new MessageRecord();
-
+		this.restoreInitiators = new HashMap<String, RestoreInitiator>();
 
 		try {
 			this.encrypt = new Encrypt(this);
@@ -182,5 +185,16 @@ public class Peer implements MessageRMI {
 	public MessageRecord getMessageRecord() {
 		return msgRecord;
 	}
-
+	
+    public void addRestoreInitiator(String fileId, RestoreInitiator restore) {
+    	restoreInitiators.put(fileId, restore);
+    }
+    
+    public RestoreInitiator getRestoreInitiator(String fileId) {
+    	return restoreInitiators.get(fileId);
+    }
+    
+    public void removerestoreInitiator(String fileId) {
+    	restoreInitiators.remove(fileId);
+    }
 }
