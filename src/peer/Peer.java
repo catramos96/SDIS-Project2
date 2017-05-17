@@ -5,8 +5,10 @@ import filesystem.FileManager;
 import message.MessageRMI;
 import network.DatagramListener;
 import network.GroupChannel;
+import network.MessageRecord;
 import network.Subscriber;
 import protocols.BackupInitiator;
+import protocols.RestoreInitiator;
 import resources.Logs;
 import security.Encrypt;
 import security.SSLlistenerClient;
@@ -20,6 +22,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
+import java.util.HashMap;
 
 import javax.crypto.NoSuchPaddingException;
 
@@ -28,6 +31,11 @@ public class Peer implements MessageRMI {
 	private int ID;
 	private FileManager fileManager;
 	private Database database;
+
+	/*MessageRecord*/
+	private MessageRecord msgRecord = null;
+
+	private HashMap<String, RestoreInitiator> restoreInitiators;
 
 	private DatagramListener comunicationChannel = null;
 	private GroupChannel subscribedGroup = null;
@@ -39,7 +47,8 @@ public class Peer implements MessageRMI {
 		this.ID = peer_id;
 		this.setFileManager(new FileManager(getID()));
 		this.database = new Database();
-
+		this.msgRecord = new MessageRecord();
+		this.restoreInitiators = new HashMap<String, RestoreInitiator>();
 
 		try {
 			this.encrypt = new Encrypt(this);
@@ -123,6 +132,7 @@ public class Peer implements MessageRMI {
 	public String restore(final String filename) throws RemoteException
 	{
 		System.out.println("Restore initiated...");
+		new RestoreInitiator(this, filename).start();
 		return null;
 	}
 
@@ -172,4 +182,19 @@ public class Peer implements MessageRMI {
 
 	public void setDatabase(final Database database) {this.database = database;}
 
+	public MessageRecord getMessageRecord() {
+		return msgRecord;
+	}
+	
+    public void addRestoreInitiator(String fileId, RestoreInitiator restore) {
+    	restoreInitiators.put(fileId, restore);
+    }
+    
+    public RestoreInitiator getRestoreInitiator(String fileId) {
+    	return restoreInitiators.get(fileId);
+    }
+    
+    public void removerestoreInitiator(String fileId) {
+    	restoreInitiators.remove(fileId);
+    }
 }

@@ -6,3 +6,4 @@
 /bin
 /peersDisk
 /src/*/*.class
+nohup.out
