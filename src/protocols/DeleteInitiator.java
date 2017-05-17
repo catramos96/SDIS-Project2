@@ -49,7 +49,7 @@ public class DeleteInitiator extends Thread{
         ProtocolMessage msg = new ProtocolMessage(Util.ProtocolMessageType.DELETE,peer.getID(),info.getFileId());
 
         //send message twice because UDP is not reliable
-        peer.getSubscribedGroup().sendMessageToRoot(msg);
+        peer.getSubscribedGroup().sendMessageToRoot(msg,Util.ChannelType.MC);
         System.out.println("Delete");
         //Logs.sentMessageLog(msg);
 
@@ -59,7 +59,7 @@ public class DeleteInitiator extends Thread{
             //Logs.exception("run", "DeleteTrigger", e.toString());
             e.printStackTrace();
         }
-        peer.getSubscribedGroup().sendMessageToRoot(msg);
+        peer.getSubscribedGroup().sendMessageToRoot(msg,Util.ChannelType.MC);
         System.out.println("Delete");
         //Logs.sentMessageLog(msg);
 

@@ -32,10 +32,10 @@ public class Logs {
 	//Topology Messages
 	
 	public static void notTopologyMessage(){
-		System.out.println("ERROR    - TOPOLOGY: Message is not of type Topology!");
+		errorMsg("TOPOLOGY: Message is not of type Topology!");
 	}
 	public static void notActivityMessage(){
-		System.out.println("ERROR    - ACTIVITY: Message is not of type Activity!");
+		errorMsg("ACTIVITY: Message is not of type Activity!");
 	}
 	
 	public static void newTopology(String newT, Subscriber s){
@@ -58,5 +58,9 @@ public class Logs {
 	
 	public static void message(String msg) {
 		System.out.println(msg);
+	}
+	
+	public static void errorMsg(String msg){
+		System.out.println("ERROR    - " + msg);
 	}
 }

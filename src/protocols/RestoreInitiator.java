@@ -57,7 +57,7 @@ public class RestoreInitiator extends Thread {
             for (int attempts = 0; attempts < MAX_TRIES; attempts++) {
             	// Sends message again if peer still hasn't received chunk
 				if(data[i] == null) {
-		            peer.getSubscribedGroup().sendMessageToRoot(msg);
+		            peer.getSubscribedGroup().sendMessageToRoot(msg,Util.ChannelType.MC);
 					Util.randomDelay();
 				} else {
 					break;

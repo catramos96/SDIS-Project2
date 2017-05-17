@@ -80,18 +80,18 @@ public class Peer implements MessageRMI {
 
 
 		try {
-			mySubscription = new Subscriber(InetAddress.getLocalHost().getHostAddress(), this.ID);
-			Logs.MyAddress(mySubscription);
+			mySubscription = new Subscriber(InetAddress.getLocalHost().getHostAddress(), -1);
 
 			//tracker
-			InetAddress address = InetAddress.getByName(trackerInfo[0]);
-			int port = Integer.parseInt(trackerInfo[1]);
+			Subscriber tracker = new Subscriber(trackerInfo[0],Integer.parseInt(trackerInfo[1]));
 
 			//Group1
-			subscribedGroup = new GroupChannel(this,new Subscriber(address,port));
+			subscribedGroup = new GroupChannel(this,tracker);
 			subscribedGroup.start();
 
 			startRMI(remoteObjName);
+			
+			Logs.MyAddress(mySubscription);
 
 		} catch (UnknownHostException e) {
 			e.printStackTrace();

@@ -9,6 +9,8 @@ import resources.Util;
 
 import java.util.ArrayList;
 
+import javax.annotation.Resource;
+
 public class GroupChannel extends Thread{
 
 	private Subscriber tracker = null;
@@ -16,24 +18,44 @@ public class GroupChannel extends Thread{
 	private Subscriber parent = null;
 	private Subscriber mySubscription = null;
 	private ArrayList<Subscriber> nextSubscribers = new ArrayList<Subscriber>();	//max size = 5
-	private DatagramListener communicationChannel = null;
+	
+	private DatagramListener topChannel = null;			//For Topology/Activity
+	private DatagramListener mcChannel = null;			//For Protocol
+	private DatagramListener mdrChannel = null;
+	private DatagramListener mdbChannel = null;
+
 
 	public GroupChannel(Peer peer, Subscriber tracker){
-		this.communicationChannel = new DatagramListener(peer,this);
+		
+		this.topChannel = new DatagramListener(peer,this,Util.ChannelType.TOP);
+		this.topChannel.start();
+
+		this.mcChannel = new DatagramListener(peer, this,Util.ChannelType.MC);
+		this.mcChannel.start();
+
+		this.mdrChannel = new DatagramListener(peer,this,Util.ChannelType.MDR);
+		this.mdrChannel.start();
+
+		this.mdbChannel = new DatagramListener(peer, this,Util.ChannelType.MDB);
+		this.mdbChannel.start();
+		
 		this.tracker = tracker;
-		this.root = peer.getMySubscriptionInfo();			
+		
+		peer.getMySubscriptionInfo().setPorts(topChannel.getSocketPort(),mcChannel.getSocketPort(),mdrChannel.getSocketPort(),mdbChannel.getSocketPort());
 		this.mySubscription = peer.getMySubscriptionInfo();
-		communicationChannel.start();
+		this.root = peer.getMySubscriptionInfo();		
+		
+		Logs.errorMsg(mySubscription.getSubscriberInfo());
 		
 		//Ask tracker to be added
 		TopologyMessage msg = new TopologyMessage(Util.TopologyMessageType.NEWSUBSCRIBER,mySubscription);
+		
 		sendMessageToTracker(msg);
-		Logs.sentTopologyMessage(msg);
 		
 		//Action before logout
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			public void run() {
-				ActivityMessage activity = new ActivityMessage(Util.ActivityMessageType.OFFLINE);
+				ActivityMessage activity = new ActivityMessage(Util.ActivityMessageType.OFFLINE,mySubscription);
 				sendMessageToTracker(activity);
 			}
 		});
@@ -43,27 +65,60 @@ public class GroupChannel extends Thread{
 	 * Information Flow Functions
 	 */
 	
-	public void sendPrivateMessage(Message message, Subscriber destination){
-		communicationChannel.send(message.buildMessage(), destination.getAddress(), destination.getPort());
-	}
+	//Topology Channel
 	
 	public void sendMessageToTracker(Message message){
-		communicationChannel.send(message.buildMessage(), tracker.getAddress(), tracker.getPort());
+		topChannel.send(message.buildMessage(), tracker.getAddress(), tracker.getDefPort());
 	}
 	
-	public void sendMessageToSubscribers(Message message){
+	//All Channels
+	
+	public void sendPrivateMessage(Message message, Subscriber destination, Util.ChannelType type){
+		DatagramListener channel = getChannel(type);
+		int port = destination.getPort(type);
+		
+		if(port != -1 && channel != null)
+			channel.send(message.buildMessage(), destination.getAddress(), port);
+		else
+			Logs.errorMsg("Could not send message because port or channel not found!");
+	}	
+	
+	public void sendMessageToSubscribers(Message message, Util.ChannelType type){
+		
+		DatagramListener channel = getChannel(type);
+		int port;
+		
 		for(Subscriber subscriber : nextSubscribers){
-			communicationChannel.send(message.buildMessage(), subscriber.getAddress(), subscriber.getPort());
+			port = subscriber.getPort(type);
+			
+			if(port != -1 && channel != null)
+				channel.send(message.buildMessage(), subscriber.getAddress(), port);
+			else{
+				Logs.errorMsg("Could not send message because port or channel not found!");
+				break;
+			}
 		}
 	}
 	
-	public void sendMessageToRoot(Message message){
-		communicationChannel.send(message.buildMessage(), root.getAddress(), root.getPort());
+	public void sendMessageToRoot(Message message, Util.ChannelType type){
+		DatagramListener channel = getChannel(type);
+		int port = root.getPort(type);
+		
+		if(port != -1 && channel != null)
+			channel.send(message.buildMessage(), root.getAddress(), port);
+		else
+			Logs.errorMsg("Could not send message because port or channel not found!");
 	}
 	
-	public void sendMessageToParent(Message message){
-		if(parent != null)
-			communicationChannel.send(message.buildMessage(), parent.getAddress(), parent.getPort());
+	public void sendMessageToParent(Message message, Util.ChannelType type){
+		DatagramListener channel = getChannel(type);
+		int port = parent.getPort(type);
+		
+		if(port != -1 && channel != null)
+			channel.send(message.buildMessage(), parent.getAddress(), port);
+		else
+			Logs.errorMsg("Could not send message because port or channel not found!");
+		
 	}
 	
 	/*
@@ -95,13 +150,17 @@ public class GroupChannel extends Thread{
     /*
      * others
      */
+	
+	// NEED FIX
+	
     public void addBackupInitiator(String chunkKey, ChunkBackupProtocol backup) {
-        communicationChannel.addBackupInitiator(chunkKey,backup);
+       /* comunicationChannel.addBackupInitiator(chunkKey,backup);*/
     }
 
-    public void removeBackupInitiator(String chunkKey) {
-    	communicationChannel.removeBackupInitiator(chunkKey);
+    public void removeBackupInitiator(String chunkKey){
+      /* comunicationChannel.removeBackupInitiator(chunkKey);*/
     }
+    
 
 	/*
 	 * GETS & SETS
@@ -133,5 +192,21 @@ public class GroupChannel extends Thread{
 	
 	public Subscriber getParent(){
 		return parent;
+	}
+	
+	public DatagramListener getChannel(Util.ChannelType type){
+		switch (type) {
+		case TOP:
+			return topChannel;
+		case MC:
+			return mcChannel;
+		case MDR:
+			return mdrChannel;
+		case MDB:
+			return mdbChannel;
+		default:
+			break;
+		}
+		return null;
 	}
 }

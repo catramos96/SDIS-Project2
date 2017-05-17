@@ -74,7 +74,7 @@ public class Tracker{
 					//Request Activity
 					ActivityMessage message = new ActivityMessage(Util.ActivityMessageType.ACTIVITY);
 					for(Subscriber s : topology.keySet()){
-						channel.send(message.buildMessage(),s.getAddress(), s.getPort());
+						channel.send(message.buildMessage(),s.getAddress(), s.getDefPort());
 					}
 					
 					Thread.sleep(1000); 	//value tmp
@@ -93,9 +93,10 @@ public class Tracker{
 						else
 							info.active = false;
 					}
-				    
-				    if(topology.size() == 0)
+					
+					if(topology.size() == 0)
 				    	root = null;
+					
 			    
 				} catch (InterruptedException e){
 					e.printStackTrace();
@@ -108,7 +109,7 @@ public class Tracker{
 				copyIP.forEach(System.out::println);
 			}
 		};
-		scheduler.scheduleAtFixedRate(checkActivity, Util.CHECK_ACTV_TIME, Util.CHECK_ACTV_TIME, TimeUnit.SECONDS);
+		scheduler.scheduleAtFixedRate(checkActivity, Util.CHECK_ACTV_TIME , Util.CHECK_ACTV_TIME, TimeUnit.SECONDS);
 	}
 	
 	public synchronized Subscriber addToTopology(Subscriber newSubscriber){
@@ -168,7 +169,20 @@ public class Tracker{
 	 */
 	
 	public synchronized void setSubscriberActivity(Subscriber subscriber, boolean active){
-		topology.get(subscriber).setActivity(active);
+		
+		
+		if(hasSubscriber(subscriber))
+			topology.get(subscriber).setActivity(true);
+		else{
+			Logs.errorMsg("NUMBER TOP: " + topology.size());
+			Logs.errorMsg(subscriber.getSubscriberInfo());
+			for(Subscriber s : topology.keySet()){
+				Logs.errorMsg(s.getSubscriberInfo());
+				if(s.equals(subscriber))
+					Logs.errorMsg("equals");
+			}
+		}
+			
 	}
 	
 	public synchronized void subscriberOffline(Subscriber subscriber){
@@ -184,7 +198,7 @@ public class Tracker{
 			
 			//Warn parent of the peer who logged out
 			TopologyMessage message = new TopologyMessage(Util.TopologyMessageType.REMSUBSCRIBER,subscriber);
-			channel.send(message.buildMessage(), info.parent.getAddress(), info.parent.getPort());
+			channel.send(message.buildMessage(), info.parent.getAddress(), info.parent.getDefPort());
 			
 			//remove parantage entry
 			info.setParent(null);
@@ -209,7 +223,7 @@ public class Tracker{
 			topology.get(betterRoot).setParent(null);
 			
 			rootMessage = new TopologyMessage(Util.TopologyMessageType.ROOT,betterRoot);
-			channel.send(rootMessage.buildMessage(), betterRoot.getAddress(), betterRoot.getPort());
+			channel.send(rootMessage.buildMessage(), betterRoot.getAddress(), betterRoot.getDefPort());
 			
 			childs.remove(betterRoot);
 		}
@@ -222,12 +236,12 @@ public class Tracker{
 
 			if(newParent != null){
 				TopologyMessage message = new TopologyMessage(Util.TopologyMessageType.PARENT,newParent);
-				channel.send(message.buildMessage(), s.getAddress(), s.getPort());
+				channel.send(message.buildMessage(), s.getAddress(), s.getDefPort());
 			}
 
 			//Send the new root for all the pending peers
 			if(rootMessage != null)
-				channel.send(rootMessage.buildMessage(), s.getAddress(), s.getPort());
+				channel.send(rootMessage.buildMessage(), s.getAddress(), s.getDefPort());
 		}
 	}
 
