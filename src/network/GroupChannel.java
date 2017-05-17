@@ -16,14 +16,14 @@ public class GroupChannel extends Thread{
 	private Subscriber parent = null;
 	private Subscriber mySubscription = null;
 	private ArrayList<Subscriber> nextSubscribers = new ArrayList<Subscriber>();	//max size = 5
-	private DatagramListener comunicationChannel = null;
+	private DatagramListener communicationChannel = null;
 
 	public GroupChannel(Peer peer, Subscriber tracker){
-		this.comunicationChannel = new DatagramListener(peer,this);
+		this.communicationChannel = new DatagramListener(peer,this);
 		this.tracker = tracker;
 		this.root = peer.getMySubscriptionInfo();			
 		this.mySubscription = peer.getMySubscriptionInfo();
-		comunicationChannel.start();
+		communicationChannel.start();
 		
 		//Ask tracker to be added
 		TopologyMessage msg = new TopologyMessage(Util.TopologyMessageType.NEWSUBSCRIBER,mySubscription);
@@ -44,26 +44,26 @@ public class GroupChannel extends Thread{
 	 */
 	
 	public void sendPrivateMessage(Message message, Subscriber destination){
-		comunicationChannel.send(message.buildMessage(), destination.getAddress(), destination.getPort());
+		communicationChannel.send(message.buildMessage(), destination.getAddress(), destination.getPort());
 	}
 	
 	public void sendMessageToTracker(Message message){
-		comunicationChannel.send(message.buildMessage(), tracker.getAddress(), tracker.getPort());
+		communicationChannel.send(message.buildMessage(), tracker.getAddress(), tracker.getPort());
 	}
 	
 	public void sendMessageToSubscribers(Message message){
 		for(Subscriber subscriber : nextSubscribers){
-			comunicationChannel.send(message.buildMessage(), subscriber.getAddress(), subscriber.getPort());
+			communicationChannel.send(message.buildMessage(), subscriber.getAddress(), subscriber.getPort());
 		}
 	}
 	
 	public void sendMessageToRoot(Message message){
-		comunicationChannel.send(message.buildMessage(), root.getAddress(), root.getPort());
+		communicationChannel.send(message.buildMessage(), root.getAddress(), root.getPort());
 	}
 	
 	public void sendMessageToParent(Message message){
 		if(parent != null)
-			comunicationChannel.send(message.buildMessage(), parent.getAddress(), parent.getPort());
+			communicationChannel.send(message.buildMessage(), parent.getAddress(), parent.getPort());
 	}
 	
 	/*
@@ -96,11 +96,11 @@ public class GroupChannel extends Thread{
      * others
      */
     public void addBackupInitiator(String chunkKey, ChunkBackupProtocol backup) {
-        comunicationChannel.addBackupInitiator(chunkKey,backup);
+        communicationChannel.addBackupInitiator(chunkKey,backup);
     }
 
-    public void removeBackupInitiator(String chunkKey){
-       comunicationChannel.removeBackupInitiator(chunkKey);
+    public void removeBackupInitiator(String chunkKey) {
+    	communicationChannel.removeBackupInitiator(chunkKey);
     }
 
 	/*

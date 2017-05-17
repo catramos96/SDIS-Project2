@@ -98,7 +98,6 @@ public class MessageRecord {
 	 */
 	public void addChunkMessage(String fileNo, int chunkNo){
 		ArrayList<Integer> chunks = new ArrayList<Integer>();
-
 		if(chunkMessages.containsKey(fileNo)){
 			chunks = chunkMessages.get(fileNo);
 			if(chunks.contains(chunkNo))

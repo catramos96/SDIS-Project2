@@ -5,8 +5,10 @@ import filesystem.FileManager;
 import message.MessageRMI;
 import network.DatagramListener;
 import network.GroupChannel;
+import network.MessageRecord;
 import network.Subscriber;
 import protocols.BackupInitiator;
+import protocols.RestoreInitiator;
 import resources.Logs;
 import security.Encrypt;
 import security.SSLlistenerClient;
@@ -29,6 +31,9 @@ public class Peer implements MessageRMI {
 	private FileManager fileManager;
 	private Database database;
 
+	/*MessageRecord*/
+	public MessageRecord msgRecord = null;
+
 	private DatagramListener comunicationChannel = null;
 	private GroupChannel subscribedGroup = null;
 	private Subscriber mySubscription = null;
@@ -39,6 +44,7 @@ public class Peer implements MessageRMI {
 		this.ID = peer_id;
 		this.setFileManager(new FileManager(getID()));
 		this.database = new Database();
+		this.msgRecord = new MessageRecord();
 
 
 		try {
@@ -123,6 +129,7 @@ public class Peer implements MessageRMI {
 	public String restore(final String filename) throws RemoteException
 	{
 		System.out.println("Restore initiated...");
+		new RestoreInitiator(this, filename).start();
 		return null;
 	}
 
@@ -171,5 +178,9 @@ public class Peer implements MessageRMI {
 	public Database getDatabase() {return database;}
 
 	public void setDatabase(final Database database) {this.database = database;}
+
+	public MessageRecord getMessageRecord() {
+		return msgRecord;
+	}
 
 }
