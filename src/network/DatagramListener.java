@@ -28,8 +28,14 @@ public class DatagramListener extends Thread{
 		this.peer = peer;
         this.backupInitiators = new HashMap<String, ChunkBackupProtocol>();
 		this.subscribers = channel;
+		
+		int port = peer.getMySubscriptionInfo().getDefPort();
+		
 		try {
-			socket = new DatagramSocket(peer.getMySubscriptionInfo().getPort());
+			if(port == -1)
+				socket = new DatagramSocket();
+			else
+				socket = new DatagramSocket(port);
 		} catch (SocketException e) {
 			e.printStackTrace();
 		}
@@ -96,4 +102,9 @@ public class DatagramListener extends Thread{
     public void removeBackupInitiator(String chunkKey){
         backupInitiators.remove(chunkKey);
     }
+    
+    public int getSocketPort(){
+    	return socket.getLocalPort();
+    }
+	
 }

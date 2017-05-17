@@ -60,13 +60,13 @@ public class MessagePeerHandler extends Thread{
 		switch (msg.getType()) {
 		//I'm the root
 		case ROOT:{
-			boolean sameRoot = channel.getMySubscription().equals(msg.getSubscriber1());
+			boolean sameRoot = channel.getMySubscription().equals(msg.getSubscriber());
 
 			if(!sameRoot){
-				channel.setRoot(msg.getSubscriber1());
-				channel.setParent(msg.getSubscriber1());
-				Logs.newTopology("ROOT", msg.getSubscriber1());
-				channel.sendMessageToSubscribers(msg);
+				channel.setRoot(msg.getSubscriber());
+				channel.setParent(msg.getSubscriber());
+				Logs.newTopology("ROOT", msg.getSubscriber());
+				channel.sendMessageToSubscribers(msg,Util.ChannelType.TOP);
 				Logs.sentTopologyMessage(msg);
 			}
 
@@ -78,41 +78,41 @@ public class MessagePeerHandler extends Thread{
 
 			//If the root  has a parent -> parent is the new root
 			if(channel.iAmRoot()){
-				warnMessage = new TopologyMessage(Util.TopologyMessageType.ROOT,msg.getSubscriber1());
-				channel.sendMessageToRoot(warnMessage);
+				warnMessage = new TopologyMessage(Util.TopologyMessageType.ROOT,msg.getSubscriber());
+				channel.sendMessageToRoot(warnMessage,Util.ChannelType.TOP);
 				Logs.sentTopologyMessage(warnMessage);
 
-				channel.setRoot(msg.getSubscriber1());
-				Logs.newTopology("ROOT", msg.getSubscriber1());
+				channel.setRoot(msg.getSubscriber());
+				Logs.newTopology("ROOT", msg.getSubscriber());
 			}
 			//If it already had a parent -> update new parent and warn the old parent to remove me from his childs
-			else if(channel.hasParent() && !channel.getParent().equals(msg.getSubscriber1())){
+			else if(channel.hasParent() && !channel.getParent().equals(msg.getSubscriber())){
 				warnMessage = new TopologyMessage(Util.TopologyMessageType.REMSUBSCRIBER,peer.getMySubscriptionInfo());
-				channel.sendMessageToParent(warnMessage);
+				channel.sendMessageToParent(warnMessage,Util.ChannelType.TOP);
 				Logs.sentTopologyMessage(warnMessage);
 			}
 
 			//update parent
-			channel.setParent(msg.getSubscriber1());
-			Logs.newTopology("PARENT",msg.getSubscriber1());
+			channel.setParent(msg.getSubscriber());
+			Logs.newTopology("PARENT",msg.getSubscriber());
 
 			//warn that i'm his subscriber
 			warnMessage = new TopologyMessage(Util.TopologyMessageType.SUBSCRIBER,peer.getMySubscriptionInfo());
-			channel.sendMessageToParent(warnMessage);
+			channel.sendMessageToParent(warnMessage,Util.ChannelType.TOP);
 			Logs.sentTopologyMessage(warnMessage);
 
 			break;
 		}
 		//I'm your subscriber
 		case SUBSCRIBER:{
-			if(channel.addSubscriber(msg.getSubscriber1()))
-				Logs.newTopology("SUBSCRIBER", msg.getSubscriber1());
+			if(channel.addSubscriber(msg.getSubscriber()))
+				Logs.newTopology("SUBSCRIBER", msg.getSubscriber());
 			break;
 		}
 		//Remove me
 		case REMSUBSCRIBER:{
-			channel.removeSubscriber(msg.getSubscriber1());
-			Logs.remTopology("SUBSCRIBER", msg.getSubscriber1());
+			channel.removeSubscriber(msg.getSubscriber());
+			Logs.remTopology("SUBSCRIBER", msg.getSubscriber());
 			break;
 		}
 		default:{
@@ -125,7 +125,7 @@ public class MessagePeerHandler extends Thread{
 
 	public void handleProtocolMessage(ProtocolMessage msg)
 	{
-		channel.sendMessageToSubscribers(msg);
+		channel.sendMessageToSubscribers(msg,Util.ChannelType.MC);
 
 		//Only processes messages sent by others
 		if((peer.getID() != msg.getSenderId()) )
@@ -174,7 +174,7 @@ public class MessagePeerHandler extends Thread{
 		Logs.activityMessage(msg, sender);
 
 		if(msg.getType().compareTo(Util.ActivityMessageType.ACTIVITY) == 0){
-			ActivityMessage message = new ActivityMessage(Util.ActivityMessageType.ONLINE);
+			ActivityMessage message = new ActivityMessage(Util.ActivityMessageType.ONLINE,channel.getMySubscription());
 			channel.sendMessageToTracker(message);
 		}
 
@@ -226,7 +226,7 @@ public class MessagePeerHandler extends Thread{
 			 */
 			if(alreadyExists)
 			{
-				channel.sendMessageToRoot(msg);
+				channel.sendMessageToRoot(msg,Util.ChannelType.MDB);
 				System.out.println("store sent");
 			}
 			else
@@ -235,7 +235,7 @@ public class MessagePeerHandler extends Thread{
 				Util.randomDelay();
 
 				//send STORED message
-				channel.sendMessageToRoot(msg);
+				channel.sendMessageToRoot(msg,Util.ChannelType.MDB);
 				System.out.println("store sent");
 
 				//save chunk in memory
@@ -261,7 +261,7 @@ public class MessagePeerHandler extends Thread{
 			//Send message to the multicast to warn the other peers so they can update their replication degree of the chunk
 			ProtocolMessage msg = new ProtocolMessage(Util.ProtocolMessageType.REMOVED,peer.getID(),chunks.get(i).getFileId(),chunks.get(i).getChunkNo());
 
-			channel.sendMessageToRoot(msg);
+			channel.sendMessageToRoot(msg,Util.ChannelType.MC);
 			System.out.println("removed sent");
 
 			//Deletes the chunk from the peers disk
@@ -311,7 +311,7 @@ public class MessagePeerHandler extends Thread{
 
 			//If meanwhile the chunk content wasn't sent by another peer
 			if(!peer.getMessageRecord().receivedChunkMessage(fileId, chunkNo)) {
-				channel.sendMessageToRoot(msg);
+				channel.sendMessageToRoot(msg,Util.ChannelType.MDR);
 			}
 		}
 	}

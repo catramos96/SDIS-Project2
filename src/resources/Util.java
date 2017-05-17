@@ -7,7 +7,7 @@ import java.util.Random;
  */
 public class Util {
 	
-	//Protocol
+	//PROTOCOL
 	public static final int MAX_TRIES = 5;				//Max tries
 	public static final int RND_DELAY = 400;			//Max random delay
 	public static final int WAITING_TIME = 1000;
@@ -15,10 +15,12 @@ public class Util {
 														//400+800+1600+3200+6400 (5 rep) + AVG1600
 	public static final int TIME_REINFORCEMENT = 2;
 	
-	//Peer
+	//PEER
+	
 	public static final int DISK_SPACE_DEFAULT = 1000000;
 	
-	//ProtocolMessageType
+	//MESSAGES
+	
 	public static final char CR = 0xD;								
 	public static final char LF = 0xA;
 	public static final String LINE_SEPARATOR = "" + CR + LF;
@@ -40,7 +42,7 @@ public class Util {
 	
 	public static enum TopologyMessageType
 	{
-		WHOISROOT,ROOT,PARENT,SUBSCRIBER,MOVSUBSCRIBER,NEWSUBSCRIBER,REMSUBSCRIBER
+		WHOISROOT,ROOT,PARENT,SUBSCRIBER,NEWSUBSCRIBER,REMSUBSCRIBER
 	}
 	
 	public static boolean isTopologyMessageType(String test){
@@ -93,5 +95,11 @@ public class Util {
 	//Topologia
 	public static final int MAX_SUBSCRIBERS_CHILDS = 3;
 	public static final int CHECK_ACTV_TIME = 10;
+	
+	//CHANNELS
+	
+	public static enum ChannelType{
+		TOP, MC,MDR, MDB
+	}
 	
 }

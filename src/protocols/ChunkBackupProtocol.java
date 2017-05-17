@@ -51,7 +51,7 @@ public class ChunkBackupProtocol extends Thread{
 			//	return;
 
             //send message
-            channel.sendMessageToRoot(msg);
+            channel.sendMessageToRoot(msg,Util.ChannelType.MC);
             System.out.println("putchunk sent");
 
             //waits

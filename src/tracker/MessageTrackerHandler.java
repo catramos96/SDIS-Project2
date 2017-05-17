@@ -44,7 +44,7 @@ public class MessageTrackerHandler extends Thread {
 		//Who is the root ?
 		case WHOISROOT:{			
 			TopologyMessage message = new TopologyMessage(Util.TopologyMessageType.ROOT,tracker.getRoot());
-			tracker.getChannel().send(message.buildMessage(), sender.getAddress(), sender.getPort());
+			tracker.getChannel().send(message.buildMessage(), sender.getAddress(), sender.getDefPort());
 			Logs.sentTopologyMessage(message);
 			break;
 		}
@@ -54,42 +54,42 @@ public class MessageTrackerHandler extends Thread {
 			
 			//Send root
 			if(tracker.getRoot() == null){
-				Logs.newTopology("ROOT", sender);
-				tracker.setRoot(sender);
+				tracker.setRoot(msg.getSubscriber());
+				Logs.newTopology("ROOT", tracker.getRoot());
 			}
 			
 			TopologyMessage message = new TopologyMessage(Util.TopologyMessageType.ROOT,tracker.getRoot());
-			tracker.getChannel().send(message.buildMessage(), sender.getAddress(), sender.getPort());
+			tracker.getChannel().send(message.buildMessage(), sender.getAddress(), sender.getDefPort());
 			Logs.sentTopologyMessage(message);
 			
-			if(tracker.hasSubscriber(sender)){
-				if(tracker.getRoot().equals(sender))
+			if(tracker.hasSubscriber(msg.getSubscriber())){
+				if(tracker.getRoot().equals(msg.getSubscriber()))
 					break;
 				
-				parent = tracker.getInfo(sender).parent;
+				parent = tracker.getInfo(msg.getSubscriber()).parent;
 				
 				if(parent != null){
 					message = new TopologyMessage(Util.TopologyMessageType.PARENT,parent);
-					tracker.getChannel().send(message.buildMessage(), sender.getAddress(), sender.getPort());
+					tracker.getChannel().send(message.buildMessage(), sender.getAddress(), sender.getDefPort());
 					Logs.sentTopologyMessage(message);
 				}
 				break;
 			}
 			
 			//Add to topology
-			parent = tracker.addToTopology(sender);
-			Logs.newTopology("SUBSCRIBER", sender);
-			tracker.setSubscriberActivity(sender, true);
+			parent = tracker.addToTopology(msg.getSubscriber());
+			Logs.newTopology("SUBSCRIBER", msg.getSubscriber());
+			tracker.setSubscriberActivity(msg.getSubscriber(), true);
 			
 			if(parent == null) break;
-			else if(tracker.getRoot().equals(msg.getSubscriber1())){	//parent of the root -> parent is the new root
+			else if(tracker.getRoot().equals(msg.getSubscriber())){	//parent of the root -> parent is the new root
 				tracker.setRoot(parent);
 				Logs.newTopology("ROOT", parent);
 			}
 			else{
 				//send parent
 				message = new TopologyMessage(Util.TopologyMessageType.PARENT,parent);
-				tracker.getChannel().send(message.buildMessage(), sender.getAddress(), sender.getPort());
+				tracker.getChannel().send(message.buildMessage(), sender.getAddress(), sender.getDefPort());
 				Logs.sentTopologyMessage(message);
 			}
 			break;
@@ -103,15 +103,15 @@ public class MessageTrackerHandler extends Thread {
 	
 	public void handleActivityMessage(ActivityMessage msg){
 		
-		Logs.activityMessage(msg, sender);
+		Logs.activityMessage(msg,msg.getSubscriber());
 		
 		switch (msg.getType()) {
 		case ONLINE:{
-			tracker.setSubscriberActivity(sender, true);
+			tracker.setSubscriberActivity(msg.getSubscriber(), true);
 			break;
 		}
 		case OFFLINE:{
-			tracker.subscriberOffline(sender);
+			tracker.subscriberOffline(msg.getSubscriber());
 			break;
 		}
 		default:{
