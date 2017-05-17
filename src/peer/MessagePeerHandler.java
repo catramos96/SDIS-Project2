@@ -20,13 +20,15 @@ public class MessagePeerHandler extends Thread{
 	private Subscriber sender = null;
 	private GroupChannel channel = null;
 	private HashMap<String, ChunkBackupProtocol> chunkProts;
+	private Util.ChannelType fromChannelType;
 
-	public MessagePeerHandler(byte[] message, Subscriber sender, Peer peer, GroupChannel channel, HashMap<String, ChunkBackupProtocol> chunkProts){
+	public MessagePeerHandler(Util.ChannelType channelType, byte[] message, Subscriber sender, Peer peer, GroupChannel channel, HashMap<String, ChunkBackupProtocol> chunkProts){
 
 		this.sender = sender;
 		this.peer = peer;
 		this.channel = channel;
 		this.chunkProts = chunkProts;
+		this.fromChannelType = channelType;
 
 		String content = new String(message);
 
@@ -125,7 +127,8 @@ public class MessagePeerHandler extends Thread{
 
 	public void handleProtocolMessage(ProtocolMessage msg)
 	{
-		channel.sendMessageToSubscribers(msg,Util.ChannelType.MC);
+		//send to subscribers by the receiving channel type
+		channel.sendMessageToSubscribers(msg,fromChannelType);
 
 		//Only processes messages sent by others
 		if((peer.getID() != msg.getSenderId()) )

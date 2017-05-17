@@ -27,16 +27,16 @@ public class GroupChannel extends Thread{
 
 	public GroupChannel(Peer peer, Subscriber tracker){
 		
-		this.topChannel = new DatagramListener(peer,this);
+		this.topChannel = new DatagramListener(peer,this,Util.ChannelType.TOP);
 		this.topChannel.start();
 
-		this.mcChannel = new DatagramListener(peer, this);
+		this.mcChannel = new DatagramListener(peer, this,Util.ChannelType.MC);
 		this.mcChannel.start();
 
-		this.mdrChannel = new DatagramListener(peer,this);
+		this.mdrChannel = new DatagramListener(peer,this,Util.ChannelType.MDR);
 		this.mdrChannel.start();
 
-		this.mdbChannel = new DatagramListener(peer, this);
+		this.mdbChannel = new DatagramListener(peer, this,Util.ChannelType.MDB);
 		this.mdbChannel.start();
 		
 		this.tracker = tracker;
