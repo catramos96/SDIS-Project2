@@ -2,6 +2,11 @@ package protocols;
 
 import peer.Peer;
 import resources.Util;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 import filesystem.FileInfo;
 import message.Message;
 import message.ProtocolMessage;
@@ -65,5 +70,19 @@ public class RestoreInitiator extends Thread {
 				return;
 			}
         }
+        
+        Path p = Paths.get(filePath);
+		String file = p.getFileName().toString();
+		
+		try {
+			peer.getFileManager().restoreFile(file, data);
+		} catch (IOException e) {
+			System.out.println("Failed to recover " + filePath + ".");
+			e.printStackTrace();
+			return;
+		}
+		
+		peer.removerestoreInitiator(fileID);
+		System.out.println(file + " has been restored successfully.");
     }
 }

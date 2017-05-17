@@ -156,22 +156,16 @@ public class FileManager {
      * @param restores
      * @throws IOException
      */
-    public void restoreFile(String filename, HashMap<Integer, byte[]> restores) throws IOException
+    public void restoreFile(String filename, byte[][] data) throws IOException
     {
         FileOutputStream out = new FileOutputStream(diskDIR + Util.RESTORES_DIR +filename);
 
-        for (int i = 0; i < restores.size(); i++)
+        for (int i = 0; i < data.length; i++)
         {
-            //search for chunks from 0 to size
-            if(restores.containsKey(new Integer(i)))
-            {
-                byte data[] = restores.get(new Integer(i));
-                out.write(data);
-            }
-            else{
-                System.out.println("error restoring file");
-            }
+        	byte chunkData[] = data[i];
+            out.write(chunkData);
         }
+        
         out.close();
     }
 
