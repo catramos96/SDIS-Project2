@@ -81,9 +81,7 @@ public class FileInfo implements Serializable
 		this.fileId = fileId;
 	}
 
-	public int getReplicationDeg() {
-		return repDegree;
-	}
+	public int getReplicationDeg() { return repDegree; }
 
 	public String getPath() {
 		return path;

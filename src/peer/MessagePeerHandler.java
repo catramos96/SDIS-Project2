@@ -31,8 +31,7 @@ public class MessagePeerHandler extends Thread{
 
 		int firstSpace = content.indexOf(new String(" "));
 		String type = content.substring(0,firstSpace);
-	
-		
+
 		if(Util.isTopologyMessageType(type)){
 			TopologyMessage msg = TopologyMessage.parseMessage(message);
 			handleTopologyMessage(msg);
@@ -40,7 +39,6 @@ public class MessagePeerHandler extends Thread{
 		else if(Util.isProtocolMessageType(type)){
 			ProtocolMessage msg = ProtocolMessage.parseMessage(message);
 			handleProtocolMessage(msg);
-			//TODO receber o 'backupInitiators' e fazer handle disso no store
 		}
 		else if(Util.isActivityMessageType(type)){
 			ActivityMessage msg = ActivityMessage.parseMessage(message);
@@ -401,16 +399,19 @@ public class MessagePeerHandler extends Thread{
      * @param fileId - File identification
      */
     private synchronized void handleDelete(String fileId){
-        /*
-        //verifies if the current peer has chunks stored from this file
-        if(peer.getRecord().myChunksBelongsToFile(fileId))
+
+        HashMap<String, ChunkInfo> chunks = peer.getDatabase().getStoredChunks();
+
+        for (ChunkInfo chunk : chunks.values())
         {
-            //deletes chunks from disk
-            peer.getFileManager().deleteChunks(fileId);
-            //remove from record
-            peer.getRecord().deleteMyChunksByFile(fileId);
+            if(chunk.getFileId().equals(fileId))
+            {
+                //deletes chunks from disk
+                peer.getFileManager().deleteChunks(fileId);
+                //remove from database
+                peer.getDatabase().removeChunk(chunk.getChunkKey());
+            }
         }
-        */
     }
 
     /**

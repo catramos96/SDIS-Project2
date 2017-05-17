@@ -46,7 +46,7 @@ public class ChunkBackupProtocol extends Thread{
 		{
 			System.out.println("Try number : "+rep);
 			
-			//TODO : if it receives a putchunk for the same file and chunk, the backup will end ?
+			//TODO : (duvida) if it receives a putchunk for the same file and chunk, the backup will end ?
 			//if(msgRecord.receivedPutchunkMessage(fileNo, chunkNo))
 			//	return;
 

@@ -20,7 +20,6 @@ public class BackupInitiator extends Thread
         this.peer = peer;
         this.filepath = filepath;
         this.repDeg = repDeg;
-
     }
 
     private boolean fileExist()
@@ -43,7 +42,17 @@ public class BackupInitiator extends Thread
 
         if(peer.getDatabase().hasStoredFileWithFilename(filepath))
         {
-            //TODO execute delete protocol
+            //delete old chunks
+            DeleteInitiator dt = new DeleteInitiator(peer, filepath);
+            dt.start();
+            try
+            {
+                dt.join();	 //waits for chunks delete
+            }
+            catch (InterruptedException e) {
+                //Logs.exception("run", "BackupTrigger", e.toString());
+                e.printStackTrace();
+            }
         }
 
         //split file in chunks

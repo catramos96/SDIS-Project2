@@ -150,7 +150,10 @@ public class Database {
 
     public synchronized void removeFile(String path) {
         if(path != null)
+        {
             sentFiles.remove(path);
+            sentFileId.remove(path);
+        }
         notify();
     }
 
