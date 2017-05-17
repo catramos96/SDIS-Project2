@@ -1,7 +1,7 @@
 export CLASSPATH="src"
 
 javac src/*/*.java
-gnome-terminal --working-directory=${PWD} -e "rmiregistry &"
+rmiregistry &
 sleep 2
 gnome-terminal --working-directory=${PWD} -e "java -Djavax.net.ssl.trustStore=truststore -Djavax.net.ssl.trustStorePassword=123456 -Djavax.net.ssl.keyStore=client.keys -Djavax.net.ssl.keyStorePassword=123456 tracker.PeerTracker 8000"
 sleep 1
