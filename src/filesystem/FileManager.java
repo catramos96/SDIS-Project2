@@ -1,10 +1,12 @@
 package filesystem;
 
 import resources.Util;
+import security.Encrypt;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.*;
 import java.nio.file.Files;
+import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -155,10 +157,13 @@ public class FileManager {
      * @param filename
      * @param restores
      * @throws IOException
+     * @throws InvalidKeyException 
      */
-    public void restoreFile(String filename, byte[][] data) throws IOException
-    {
-        FileOutputStream out = new FileOutputStream(diskDIR + Util.RESTORES_DIR +filename);
+    public void restoreFile(String filename, byte[][] data, Encrypt decypher) throws IOException, InvalidKeyException
+    {	
+    	String tmpDir = diskDIR + "tmp/" +filename;
+    	String finalDir = diskDIR + Util.RESTORES_DIR +filename;
+        FileOutputStream out = new FileOutputStream(diskDIR + "tmp/" +filename);
 
         for (int i = 0; i < data.length; i++)
         {
@@ -167,6 +172,12 @@ public class FileManager {
         }
         
         out.close();
+        
+        File crip = new File(tmpDir);
+        File decrip = new File(finalDir);
+       
+        decypher.decrypt(crip, decrip);
+		
     }
 
 	/*
@@ -491,6 +502,14 @@ public class FileManager {
         if(!dirExists(dir))
         {
             //Logs.creatingDir(name);
+            dir.mkdir();
+        }
+        
+        //local tmp dir name
+        name = diskDIR +"/tmp";
+        dir = new File(new String(name));
+        if(!dirExists(dir))
+        {
             dir.mkdir();
         }
     }
