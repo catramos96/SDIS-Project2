@@ -7,6 +7,8 @@ import peer.Peer;
 import resources.Util;
 
 import java.io.File;
+import java.io.IOException;
+import java.security.InvalidKeyException;
 import java.util.ArrayList;
 
 public class BackupInitiator extends Thread
@@ -54,13 +56,32 @@ public class BackupInitiator extends Thread
                 e.printStackTrace();
             }
         }
-
+        
+        File toSend = new File(filepath);
+        String tmpFileDir = peer.getFileManager().diskDIR+"tmp/"+toSend.getName();
+        File tmp = new File(tmpFileDir);
+        
+        try {
+        		tmp.createNewFile();
+        }catch(IOException e1) {
+        	e1.printStackTrace();
+        	return;
+        }
+        
+        try {
+			peer.getEncrypt().encrypt(toSend, tmp);
+		} catch (InvalidKeyException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return;
+		}
+        
         //split file in chunks
-        ArrayList<ChunkInfo> chunks = peer.getFileManager().splitFileInChunks(filepath);
+        ArrayList<ChunkInfo> chunks = peer.getFileManager().splitFileInChunks(tmpFileDir);
 
         String fileID = peer.getFileManager().getFileIdFromFilename(filepath);
         FileInfo fileinfo = new FileInfo(fileID,filepath,chunks.size(),repDeg);
-
+        
         //starts recording file
         peer.getDatabase().saveStoredFile(filepath, fileinfo);
 

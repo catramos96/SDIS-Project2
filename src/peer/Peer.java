@@ -199,4 +199,6 @@ public class Peer implements MessageRMI {
     public void removerestoreInitiator(String fileId) {
     	restoreInitiators.remove(fileId);
     }
+    
+    public Encrypt getEncrypt() { return encrypt;}
 }

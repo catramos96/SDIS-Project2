@@ -6,6 +6,7 @@ import resources.Util;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.InvalidKeyException;
 
 import filesystem.FileInfo;
 import message.Message;
@@ -74,12 +75,17 @@ public class RestoreInitiator extends Thread {
         Path p = Paths.get(filePath);
 		String file = p.getFileName().toString();
 		
+		
+		
 		try {
-			peer.getFileManager().restoreFile(file, data);
+			peer.getFileManager().restoreFile(file, data, peer.getEncrypt());
 		} catch (IOException e) {
 			System.out.println("Failed to recover " + filePath + ".");
 			e.printStackTrace();
 			return;
+		} catch (InvalidKeyException e) {
+			System.out.println("Failed to recover (invalid cypher key): " + filePath + ".");
+			e.printStackTrace();
 		}
 		
 		peer.removerestoreInitiator(fileID);
