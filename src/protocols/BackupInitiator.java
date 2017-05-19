@@ -80,7 +80,7 @@ public class BackupInitiator extends Thread
 
         //encrypt
         File toSend = new File(filepath);
-        String tmpFileDir = peer.getFileManager().diskDIR+"tmp/"+toSend.getName();
+        String tmpFileDir = peer.getFileManager().diskDIR+"/tmp/"+toSend.getName();
         File tmp = new File(tmpFileDir);
         
         try {
@@ -99,7 +99,10 @@ public class BackupInitiator extends Thread
 		}
         
         //split file in chunks
-        ArrayList<ChunkInfo> chunks = peer.getFileManager().splitFileInChunks(tmpFileDir);
+        System.out.println("cyperSize: " + tmp.length());
+        ArrayList<ChunkInfo> chunks = peer.getFileManager().splitFileInChunks(filepath,tmp);
+        System.out.println("cyperSize: " + tmp.length());
+
         FileInfo fileinfo = new FileInfo(fileID,filepath,chunks.size(),repDeg);
 
         peer.addBackupInitiator(fileID,this);
@@ -129,7 +132,6 @@ public class BackupInitiator extends Thread
         //wait for all threads to finish
         for (Map.Entry<String, ChunkBackupProtocol> entry : protocols.entrySet())
         {
-
             try
             {
                 entry.getValue().join();
