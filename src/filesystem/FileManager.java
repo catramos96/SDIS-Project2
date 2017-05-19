@@ -45,19 +45,18 @@ public class FileManager {
      * @param filename
      * @return
      */
-    public ArrayList<ChunkInfo> splitFileInChunks(String filename)
+    public ArrayList<ChunkInfo> splitFileInChunks(String filename, File cypher)
     {
         ArrayList<ChunkInfo> chunkList = new ArrayList<>();	//list of chunks created for this file
         File file = new File(filename);	//open file
-
         //verifies file existence
         if (file.exists())
         {
             try
             {
                 String fileID = hashFileId(file);
-                int numChunks = (int) (file.length() / Util.CHUNK_MAX_SIZE) + 1;
-                byte[] bytes = Files.readAllBytes(file.toPath());
+                int numChunks = (int) (cypher.length() / Util.CHUNK_MAX_SIZE) + 1;
+                byte[] bytes = Files.readAllBytes(cypher.toPath());
                 int byteCount = 0;
 
                 for (int i = 0; i < numChunks; i++)
@@ -161,9 +160,9 @@ public class FileManager {
      */
     public void restoreFile(String filename, byte[][] data, Encrypt decypher) throws IOException, InvalidKeyException
     {	
-    	String tmpDir = diskDIR + "tmp/" +filename;
+    	String tmpDir = diskDIR + "/tmp/" +filename;
     	String finalDir = diskDIR + Util.RESTORES_DIR +filename;
-        FileOutputStream out = new FileOutputStream(diskDIR + "tmp/" +filename);
+        FileOutputStream out = new FileOutputStream(diskDIR + "/tmp/" +filename);
 
         for (int i = 0; i < data.length; i++)
         {

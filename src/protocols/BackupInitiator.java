@@ -58,7 +58,7 @@ public class BackupInitiator extends Thread
         }
         
         File toSend = new File(filepath);
-        String tmpFileDir = peer.getFileManager().diskDIR+"tmp/"+toSend.getName();
+        String tmpFileDir = peer.getFileManager().diskDIR+"/tmp/"+toSend.getName();
         File tmp = new File(tmpFileDir);
         
         try {
@@ -77,7 +77,10 @@ public class BackupInitiator extends Thread
 		}
         
         //split file in chunks
-        ArrayList<ChunkInfo> chunks = peer.getFileManager().splitFileInChunks(tmpFileDir);
+        System.out.println("cyperSize: " + tmp.length());
+        ArrayList<ChunkInfo> chunks = peer.getFileManager().splitFileInChunks(filepath,tmp);
+        
+        System.out.println("cyperSize: " + tmp.length());
 
         String fileID = peer.getFileManager().getFileIdFromFilename(filepath);
         FileInfo fileinfo = new FileInfo(fileID,filepath,chunks.size(),repDeg);
@@ -93,5 +96,8 @@ public class BackupInitiator extends Thread
 
         System.out.println("Backup info :");
         System.out.println(peer.getDatabase().ListFiles());
+       if( tmp.delete()) {
+    	   System.out.println("Backup: temporary files deleted");
+       };
     }
 }
