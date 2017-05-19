@@ -3,9 +3,9 @@ package peer;
 import filesystem.Database;
 import filesystem.FileManager;
 import message.MessageRMI;
+import network.ChannelRecord;
 import network.DatagramListener;
 import network.GroupChannel;
-import network.MessageRecord;
 import network.Subscriber;
 import protocols.BackupInitiator;
 import protocols.DeleteInitiator;
@@ -22,34 +22,35 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
 import java.util.HashMap;
 
-import javax.crypto.NoSuchPaddingException;
-
-public class Peer implements MessageRMI {
+public class Peer implements MessageRMI
+{
 	/*informations*/
 	private int ID;
 	private FileManager fileManager;
 	private Database database;
+	private ChannelRecord channelRecord = null;
 
-	/*MessageRecord*/
-	private MessageRecord msgRecord = null;
+	/*hashmaps with temporary information about actual backups and restores*/
+    private HashMap<String, RestoreInitiator> restoreInitiators;
+    private HashMap<String, BackupInitiator> backupInitiators;
 
-	private HashMap<String, RestoreInitiator> restoreInitiators;
-
+	/*Communication*/
 	private DatagramListener comunicationChannel = null;
 	private GroupChannel subscribedGroup = null;
 	private Subscriber mySubscription = null;
 	private SSLlistenerClient client = null;
+
 	private Encrypt encrypt = null;
 
 	public Peer(int peer_id, String[] trackerInfo, String remoteObjName){
 		this.ID = peer_id;
 		this.setFileManager(new FileManager(getID()));
 		this.database = new Database();
-		this.msgRecord = new MessageRecord();
-		this.restoreInitiators = new HashMap<String, RestoreInitiator>();
+		this.channelRecord = new ChannelRecord();
+		this.restoreInitiators = new HashMap<>();
+        this.backupInitiators = new HashMap<>();
 
 		try {
 			this.encrypt = new Encrypt(this);
@@ -74,7 +75,6 @@ public class Peer implements MessageRMI {
 			e.printStackTrace();
 		} catch (IOException e) {
 			System.out.println("CLIENT: error IO Encrypt module");
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -184,8 +184,8 @@ public class Peer implements MessageRMI {
 
 	public void setDatabase(final Database database) {this.database = database;}
 
-	public MessageRecord getMessageRecord() {
-		return msgRecord;
+	public ChannelRecord getChannelRecord() {
+		return channelRecord;
 	}
 	
     public void addRestoreInitiator(String fileId, RestoreInitiator restore) {
@@ -196,8 +196,16 @@ public class Peer implements MessageRMI {
     	return restoreInitiators.get(fileId);
     }
     
-    public void removerestoreInitiator(String fileId) {
+    public void removeRestoreInitiator(String fileId) {
     	restoreInitiators.remove(fileId);
+    }
+
+    public void addBackupInitiator(String fileId, BackupInitiator backup) { backupInitiators.put(fileId, backup); }
+
+    public BackupInitiator getBackupInitiator(String fileId) { return backupInitiators.get(fileId); }
+
+    public void removeBackupInitiator(String fileId) {
+        backupInitiators.remove(fileId);
     }
     
     public Encrypt getEncrypt() { return encrypt;}

@@ -4,16 +4,18 @@ import message.ProtocolMessage;
 import network.GroupChannel;
 import resources.Util;
 
+import java.util.ArrayList;
 import java.util.Random;
 
 /**
  * Class ChunkBackupProtocol used to backup a chunk of a file until 5 tries.
  */
-public class ChunkBackupProtocol extends Thread{
-    private final Random delay;
-    private int atualRepDeg;
-    private final ProtocolMessage msg;
-    private final GroupChannel channel;
+public class ChunkBackupProtocol extends Thread
+{
+    private final ProtocolMessage   msg;
+    private final GroupChannel      channel;
+    private ArrayList<Integer>      filesystems;
+
 
 	/*			MSG="PUTCHUNK"		  --> Peer		MSG="STORED"		sleep(1sec)
 	 * InitPeer ---------------> MDB ---> Peer -------------------> MC -------------> InitPeer
@@ -23,11 +25,11 @@ public class ChunkBackupProtocol extends Thread{
 	/**
 	 * Constructor of ChunkBackupProtocol
 	 */
-	public ChunkBackupProtocol(GroupChannel channel, ProtocolMessage msg){
+	public ChunkBackupProtocol(GroupChannel channel, ProtocolMessage msg)
+    {
         this.channel = channel;
 		this.msg = msg;
-        this.delay = new Random();
-		this.atualRepDeg = 0;
+        filesystems = new ArrayList<>();
 	}
 
 	@Override
@@ -38,17 +40,10 @@ public class ChunkBackupProtocol extends Thread{
 
         System.out.println("Start Chunk Backup Protocol for chunk no "+msg.getChunkNo());
 
-		//INIT replication degree counting
-        channel.addBackupInitiator(msg.getChunkNo()+msg.getFileId(), this);
-		
 		//try 5 times 
 		while(rep < Util.MAX_TRIES)	
 		{
 			System.out.println("Try number : "+rep);
-			
-			//TODO : if it receives a putchunk for the same file and chunk, the backup will end ?
-			//if(msgRecord.receivedPutchunkMessage(fileNo, chunkNo))
-			//	return;
 
             //send message
             channel.sendMessageToRoot(msg,Util.ChannelType.MC);
@@ -64,26 +59,28 @@ public class ChunkBackupProtocol extends Thread{
 			}
 			
 			//replication degree achieved
-			if(this.atualRepDeg >= msg.getReplicationDeg())
+			if(getActualRepDeg() >= msg.getReplicationDeg())
 			{
 				System.out.println("All chunks restored");
-				break;
+				return;
 			}
 			
 			waitingTime *= Util.TIME_REINFORCEMENT;	//doubles time for each rep
 			rep++;
 		}
-		
-		//END replication degree counting
-        channel.removeBackupInitiator(msg.getChunkNo()+msg.getFileId());
+
+		//TODO confirm
+        //em caso de erro remove as mensagens guardadas ???
+        //msgRecord.removeStoredMessages(fileNo, chunkNo);
 	}
 
-	public void increaseReplicationDegree(){
-	    this.atualRepDeg++;
+    public void updateStores(int senderId)
+    {
+        if(!filesystems.contains(senderId))
+            filesystems.add(senderId);
     }
 
-    public int getAtualRepDeg()
-    {
-        return atualRepDeg;
+    public int getActualRepDeg() {
+        return filesystems.size();
     }
 }

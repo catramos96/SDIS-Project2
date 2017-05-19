@@ -6,35 +6,31 @@ import message.ProtocolMessage;
 import message.TopologyMessage;
 import network.GroupChannel;
 import network.Subscriber;
-import protocols.ChunkBackupProtocol;
+import protocols.BackupInitiator;
 import protocols.RestoreInitiator;
 import resources.Logs;
 import resources.Util;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 public class MessagePeerHandler extends Thread{
 
 	private Peer peer = null;
 	private Subscriber sender = null;
 	private GroupChannel channel = null;
-	private HashMap<String, ChunkBackupProtocol> chunkProts;
 	private Util.ChannelType fromChannelType;
 
-	public MessagePeerHandler(Util.ChannelType channelType, byte[] message, Subscriber sender, Peer peer, GroupChannel channel, HashMap<String, ChunkBackupProtocol> chunkProts){
+	public MessagePeerHandler(Util.ChannelType channelType, byte[] message, Subscriber sender, Peer peer, GroupChannel channel){
 
 		this.sender = sender;
 		this.peer = peer;
 		this.channel = channel;
-		this.chunkProts = chunkProts;
 		this.fromChannelType = channelType;
 
 		String content = new String(message);
 
 		int firstSpace = content.indexOf(new String(" "));
 		String type = content.substring(0,firstSpace);
-
 
 		if(Util.isTopologyMessageType(type)){
 			TopologyMessage msg = TopologyMessage.parseMessage(message);
@@ -43,7 +39,6 @@ public class MessagePeerHandler extends Thread{
 		else if(Util.isProtocolMessageType(type)){
 			ProtocolMessage msg = ProtocolMessage.parseMessage(message);
 			handleProtocolMessage(msg);
-			//TODO receber o 'backupInitiators' e fazer handle disso no store
 		}
 		else if(Util.isActivityMessageType(type)){
 			ActivityMessage msg = ActivityMessage.parseMessage(message);
@@ -138,12 +133,12 @@ public class MessagePeerHandler extends Thread{
 			switch (msg.getType()) {
 
 			case PUTCHUNK:
-				peer.getMessageRecord().addPutchunkMessage(msg.getFileId(), msg.getChunkNo());
+				//peer.getMessageRecord().addPutchunkMessage(msg.getFileId(), msg.getChunkNo());
 				handlePutchunk(msg.getFileId(),msg.getChunkNo(),msg.getReplicationDeg(),msg.getBody());
 				break;
 
 			case STORED:
-				peer.getMessageRecord().addStoredMessage(msg.getFileId(), msg.getChunkNo(), msg.getSenderId());
+				peer.getChannelRecord().addStoredMessage(msg.getChunkNo()+msg.getFileId(), msg.getSenderId());
 				handleStore(msg.getFileId(), msg.getChunkNo(),msg.getSenderId());
 				break;
 
@@ -152,7 +147,7 @@ public class MessagePeerHandler extends Thread{
 				break;
 
 			case CHUNK:
-				peer.getMessageRecord().addChunkMessage(msg.getFileId(), msg.getChunkNo());
+				peer.getChannelRecord().addChunkMessage(msg.getFileId(), msg.getChunkNo());
 				handleChunk(msg.getFileId(), msg.getChunkNo(), msg.getBody());
 				break;
 
@@ -201,7 +196,7 @@ public class MessagePeerHandler extends Thread{
 	private synchronized void handlePutchunk(String fileId, int chunkNo, int repDeg, byte[] body)
 	{
 		//Owner of the file with file id
-		if(peer.getDatabase().sentFileId(fileId))
+		if(peer.getDatabase().hasSentFileByFileID(fileId))
 			return;
 
 		ChunkInfo c = new ChunkInfo(fileId, chunkNo, body);
@@ -210,7 +205,7 @@ public class MessagePeerHandler extends Thread{
 		ProtocolMessage msg = new ProtocolMessage(Util.ProtocolMessageType.STORED,peer.getID(),c.getFileId(),c.getChunkNo());
 
 		//verifies chunk existence in this peer
-		boolean alreadyExists = peer.getDatabase().chunkOnDB(chunkNo+fileId);
+		boolean alreadyExists = peer.getDatabase().hasChunkStored(c.getChunkKey());
 
 		/*
 		 * If the peer doesn't have available space, it will try to free some
@@ -222,14 +217,21 @@ public class MessagePeerHandler extends Thread{
 		//verifies again (after evicting chunks) if has space available
 		if(peer.getFileManager().hasSpaceAvailable(c))
 		{
+            //count store messages from record channel
+            int actualRepDeg = peer.getChannelRecord().getStoredMessagesNum(c.getChunkKey());
 			/*
 			 * If the peer already stored the chunk, it will warn immediately the group channel.
 			 * By doing this, another peer that is pondering on storing the chunk,
 			 * can be updated much faster about the actual replication of the chunk.
 			 */
+
+			//enhancement: just store the exact number of chunks
+			if(actualRepDeg >= repDeg)
+			    return;
+
 			if(alreadyExists)
 			{
-				channel.sendMessageToRoot(msg,Util.ChannelType.MDB);
+                channel.sendMessageToRoot(msg,Util.ChannelType.MDB);
 				System.out.println("store sent");
 			}
 			else
@@ -246,7 +248,13 @@ public class MessagePeerHandler extends Thread{
 
 				//Save chunk info on database
 				peer.getDatabase().saveChunkInfo(chunkNo+fileId,c);
-			}
+
+			    //TODO confirm
+                //peer.getChannelRecord().removeStoredMessages(c.getChunkKey());
+            }
+
+            //update actual replication degree
+            peer.getDatabase().updateActualRepDeg(actualRepDeg,c.getChunkKey());
 		}
 	}
 
@@ -270,6 +278,9 @@ public class MessagePeerHandler extends Thread{
 			//Deletes the chunk from the peers disk
 			String filename = chunks.get(i).getChunkNo() + chunks.get(i).getFileId();
 			peer.getFileManager().deleteFile(filename);
+
+			//update database
+            peer.getDatabase().removeStoredChunk(chunks.get(i).getChunkKey());
 		}
 	}
 
@@ -284,13 +295,25 @@ public class MessagePeerHandler extends Thread{
 	 */
 	private synchronized void handleStore(String fileId, int chunkNo, int senderId){
 
-		//Updates the Replication Degree if the peer has the chunk
-		String chunkKey = chunkNo+fileId;
-		if(chunkProts.containsKey(chunkKey))
-			chunkProts.get(chunkKey).increaseReplicationDegree();
+	    String chunkKey = chunkNo + fileId;
 
-		if (peer.getDatabase().chunkOnDB(chunkKey))
-			peer.getDatabase().updateReplicationDegree(1, chunkKey);
+        //Updates the Replication Degree if the peer has the chunk stored
+        if(peer.getDatabase().hasChunkStored(chunkKey))
+        {
+            //count store messages from record channel
+            int actualRepDeg = peer.getChannelRecord().getStoredMessagesNum(chunkKey);
+
+            //update database
+            peer.getDatabase().updateActualRepDeg(actualRepDeg,chunkKey);
+        }
+
+        //Record the storedChunks in case the peer is the OWNER of the backup file
+        if(peer.getDatabase().hasSentChunk(chunkKey))
+        {
+            BackupInitiator initiator = peer.getBackupInitiator(fileId);
+            initiator.updateStores(chunkKey, senderId);
+        }
+
 	}
 
 	/**
@@ -302,18 +325,21 @@ public class MessagePeerHandler extends Thread{
 	 * @param fileId - File identification
 	 * @param chunkNo - Chunk identification number
 	 */
-	private synchronized void handleGetchunk(String fileId, int chunkNo) {
+	private synchronized void handleGetchunk(String fileId, int chunkNo)
+    {
 		byte[] chunk = peer.getFileManager().getChunkContent(fileId, chunkNo);
 
 		// Checks whether peer has chunk stored or not
-		if (chunk != null) {
+		if (chunk != null)
+		{
 			ProtocolMessage msg = new ProtocolMessage(Util.ProtocolMessageType.CHUNK, peer.getID(), fileId, chunkNo, chunk);
 
 			// Waits random time
 			Util.randomDelay();
 
 			//If meanwhile the chunk content wasn't sent by another peer
-			if(!peer.getMessageRecord().receivedChunkMessage(fileId, chunkNo)) {
+			if(!peer.getChannelRecord().receivedChunkMessage(fileId, chunkNo))
+			{
 				channel.sendMessageToRoot(msg,Util.ChannelType.MDR);
 			}
 		}
@@ -334,15 +360,15 @@ public class MessagePeerHandler extends Thread{
 	 * @param chunkNo - Chunk identification number
 	 * @param body - Chunks content
 	 */
-	private synchronized void handleChunk(String fileId, int chunkNo, byte[] body){
+	private synchronized void handleChunk(String fileId, int chunkNo, byte[] body)
+    {
 		RestoreInitiator restoreInitiator = peer.getRestoreInitiator(fileId);
-		
 		// stores chunk if peer has initiated the restore protocol
-		if (restoreInitiator != null) {
+		if (restoreInitiator != null)
+		{
 			restoreInitiator.addChunk(chunkNo, body);
 		}
 	}
-
 
 	/**
 	 * Peer response to other peer DELETE message.
@@ -351,19 +377,16 @@ public class MessagePeerHandler extends Thread{
 	 *
 	 * @param fileId - File identification
 	 */
-	private synchronized void handleDelete(String fileId){
-		HashMap<String, ChunkInfo> chunks = peer.getDatabase().getStoredChunks();
+	private synchronized void handleDelete(String fileId)
+    {
+        if(!peer.getDatabase().hasSentFileByFileID(fileId))
+        {
+            //deletes chunks with fileID from disk
+            peer.getFileManager().deleteChunks(fileId);
 
-		for (ChunkInfo chunk : chunks.values())
-		{
-			if(chunk.getFileId().equals(fileId))
-			{
-				//deletes chunks from disk
-				peer.getFileManager().deleteChunks(fileId);
-				//remove from database
-				peer.getDatabase().removeChunk(chunk.getChunkKey());
-			}
-		}
+            //remove chunks from database
+            peer.getDatabase().removeStoredChunksFromFileID(fileId);
+        }
 	}
 
 	/**

@@ -14,22 +14,12 @@ import java.io.Serializable;
 public class FileInfo implements Serializable
 {
 	private static final long serialVersionUID = 1L;
-	private String fileId = null;
-	private String filename = null;
-	private String path = null;
-	private int numChunks = -1;
-	private int repDegree = -1;
-	
-	/**
-	 * Constructor
-	 * @param fileId
-	 * @param repDegree
-	 */
-	public FileInfo(String fileId, int repDegree)
-	{
-		this.fileId = fileId;
-		this.repDegree = repDegree;
-	}
+
+	private String 	fileId = null;
+	private String 	filename = null;
+	private String 	path = null;
+	private int 	numChunks = -1;
+	private int 	repDegree = -1;
 	
 	/**
 	 * Constructor
@@ -64,13 +54,13 @@ public class FileInfo implements Serializable
 	public String getFilename() {
 		return filename;
 	}
-	
-	public int getRepDegree() {
-		return repDegree;
-	}
 
 	public void setFilename(String filename) {
 		this.filename = filename;
+	}
+	
+	public int getRepDegree() {
+		return repDegree;
 	}
 
 	public String getFileId() {
@@ -80,8 +70,6 @@ public class FileInfo implements Serializable
 	public void setFileId(String fileId) {
 		this.fileId = fileId;
 	}
-
-	public int getReplicationDeg() { return repDegree; }
 
 	public String getPath() {
 		return path;
