@@ -6,7 +6,12 @@ import resources.Util;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
+import java.security.spec.InvalidParameterSpecException;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 import filesystem.FileInfo;
 import message.Message;
@@ -85,6 +90,18 @@ public class RestoreInitiator extends Thread {
 			return;
 		} catch (InvalidKeyException e) {
 			System.out.println("Failed to recover (invalid cypher key): " + filePath + ".");
+			e.printStackTrace();
+		} catch (InvalidParameterSpecException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IllegalBlockSizeException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (BadPaddingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidAlgorithmParameterException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		

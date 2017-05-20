@@ -8,8 +8,12 @@ import resources.Util;
 
 import java.io.File;
 import java.io.IOException;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.util.ArrayList;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class BackupInitiator extends Thread
 {
@@ -69,11 +73,17 @@ public class BackupInitiator extends Thread
         }
         
         try {
+        	if(peer.getEncrypt() == null) {
+        		System.out.println("NULL");
+        	}
 			peer.getEncrypt().encrypt(toSend, tmp);
-		} catch (InvalidKeyException | IOException e) {
+		} catch (InvalidKeyException | IOException | IllegalBlockSizeException | BadPaddingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 			return;
+		} catch (InvalidAlgorithmParameterException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
         
         //split file in chunks
@@ -91,6 +101,9 @@ public class BackupInitiator extends Thread
         for (ChunkInfo c: chunks)
         {
             ProtocolMessage msg = new ProtocolMessage(Util.ProtocolMessageType.PUTCHUNK,peer.getID(),c.getFileId(),c.getChunkNo(),repDeg,c.getData());
+            
+            System.out.println("GET CHUNKDATA " + c.getData().length);
+            System.out.println("SEND TO BACKUP Message size: " + msg.getBody().length);
             new ChunkBackupProtocol(peer.getSubscribedGroup(),msg).start();
         }
 

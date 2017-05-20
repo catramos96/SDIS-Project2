@@ -22,10 +22,7 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
 import java.util.HashMap;
-
-import javax.crypto.NoSuchPaddingException;
 
 public class Peer implements MessageRMI {
 	/*informations*/
@@ -43,7 +40,7 @@ public class Peer implements MessageRMI {
 	private Subscriber mySubscription = null;
 	private SSLlistenerClient client = null;
 	private Encrypt encrypt = null;
-
+	
 	public Peer(int peer_id, String[] trackerInfo, String remoteObjName){
 		this.ID = peer_id;
 		this.setFileManager(new FileManager(getID()));
@@ -55,6 +52,7 @@ public class Peer implements MessageRMI {
 			this.encrypt = new Encrypt(this);
 		} catch (Exception e) {
 			System.out.println("Error: Encrypt module unnable to start");
+			e.printStackTrace();
 		}
 
 		
