@@ -1,5 +1,6 @@
 package filesystem;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
 /**
@@ -14,8 +15,10 @@ import java.util.ArrayList;
  * @attribute int replicationDeg - replication degree desired
  * @attribute ArrayList<Integer> peers - List of peers with the chunk associated (count = actual replication degree)
  */
-public class ChunkInfo
+public class ChunkInfo implements Serializable
 {
+    private static final long serialVersionUID = 1L;
+
     private int     chunkNo = -1;
     private String  fileId = null;
     private byte[]  data = null;

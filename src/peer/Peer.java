@@ -14,7 +14,7 @@ import resources.Logs;
 import security.Encrypt;
 import security.SSLlistenerClient;
 
-import java.io.IOException;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.rmi.RemoteException;
@@ -23,6 +23,9 @@ import java.rmi.server.UnicastRemoteObject;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class Peer implements MessageRMI
 {
@@ -44,20 +47,23 @@ public class Peer implements MessageRMI
 
 	private Encrypt encrypt = null;
 
-	public Peer(int peer_id, String[] trackerInfo, String remoteObjName){
+    /*Schedule*/
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
+
+    public Peer(int peer_id, String[] trackerInfo, String remoteObjName){
 		this.ID = peer_id;
 		this.setFileManager(new FileManager(getID()));
-		this.database = new Database();
 		this.channelRecord = new ChannelRecord();
 		this.restoreInitiators = new HashMap<>();
         this.backupInitiators = new HashMap<>();
+
+        loadDB();
 
 		try {
 			this.encrypt = new Encrypt(this);
 		} catch (Exception e) {
 			System.out.println("Error: Encrypt module unnable to start");
 		}
-
 		
 		try {
 			client = new SSLlistenerClient("localhost", 4499, new String[0], this); //TODO 
@@ -78,7 +84,6 @@ public class Peer implements MessageRMI
 			e.printStackTrace();
 		}
 
-
 		try {
 			mySubscription = new Subscriber(InetAddress.getLocalHost().getHostAddress(), -1);
 
@@ -96,7 +101,102 @@ public class Peer implements MessageRMI
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		}
+
+		//save metadata in 30s intervals
+		saveMetadata();
+
+		//save metadata when shouts down
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+			public void run() {
+				try {
+					Thread.sleep(200);
+					serializeDB();
+				} catch (InterruptedException e) {
+					//Logs.exception("addShutdownHook", "Peer", e.toString());
+					e.printStackTrace();
+				}
+			}
+		});
+
 	}
+
+    /**
+     * Runnable executed in 90s interval to save metadata, preventing mapping lost if the server crashes.
+     */
+    private void saveMetadata() {
+        final Runnable saveMetadata = new Runnable() {
+            public void run() {
+                serializeDB();
+            }
+        };
+        scheduler.scheduleAtFixedRate(saveMetadata, 30, 90, TimeUnit.SECONDS);
+    }
+
+    public synchronized void loadDB() {
+
+        this.database = new Database();
+
+        File metadata = new File("../peersDisk/Peer"+ID+"/metadata.ser");
+
+        //file can be loaded
+        if(metadata.exists())
+        {
+            try
+            {
+                FileInputStream fileIn = new FileInputStream("../peersDisk/Peer"+ID+"/metadata.ser");
+                ObjectInputStream in  = new ObjectInputStream(fileIn);
+                this.database = (Database) in.readObject();
+                in.close();
+                fileIn.close();
+
+                Logs.serializeWarn("loaded from",ID);
+            }
+            catch (FileNotFoundException e) {
+                Logs.exception("loadDB", "Peer", e.toString());
+                e.printStackTrace();
+            }
+            catch (IOException e) {
+                Logs.exception("loadDB", "Peer", e.toString());
+                e.printStackTrace();
+            }
+            catch (ClassNotFoundException e) {
+                Logs.exception("loadDB", "Peer", e.toString());
+                e.printStackTrace();
+            }
+
+            System.out.println("-------------------------");
+            database.display();
+            System.out.println("-------------------------");
+        }
+    }
+
+    /**
+     * database Object Serialization
+     */
+    public synchronized void serializeDB()
+    {
+        System.out.println("-------------------------");
+        database.display();
+        System.out.println("-------------------------");
+
+        try
+        {
+            FileOutputStream fileOut = new FileOutputStream("../peersDisk/Peer"+ID+"/metadata.ser");
+            ObjectOutputStream out = new ObjectOutputStream(fileOut);
+            out.writeObject(database);
+            out.close();
+            fileOut.close();
+            Logs.serializeWarn("saved in", ID);
+        }
+        catch (FileNotFoundException e) {
+            Logs.exception("serializeDB", "Peer", e.toString());
+            e.printStackTrace();
+        }
+        catch (IOException e) {
+            Logs.exception("serializeDB", "Peer", e.toString());
+            e.printStackTrace();
+        }
+    }
 
 	public GroupChannel getSubscribedGroup(){
 		return subscribedGroup;

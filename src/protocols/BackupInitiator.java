@@ -56,6 +56,7 @@ public class BackupInitiator extends Thread
             if(fileID.equals(info.getFileId()))
             {
                 System.out.println("File already backed up!");
+                return;
             }
             else
             {
@@ -117,6 +118,7 @@ public class BackupInitiator extends Thread
             //peer.getChannelRecord().removeStoredMessages(c.getChunkKey());
 
             //starts recording sentChunks
+            c.setReplicationDeg(repDeg);
             peer.getDatabase().addSentChunk(c.getChunkKey(),c);
 
             //message to send
@@ -142,6 +144,8 @@ public class BackupInitiator extends Thread
                 e.printStackTrace();
             }
         }
+
+        System.out.println(" - BACKUP SUCCESSFUL - ");
 
         peer.removeBackupInitiator(fileID);
     }

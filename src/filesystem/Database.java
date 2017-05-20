@@ -1,9 +1,12 @@
 package filesystem;
 
+import java.io.Serializable;
 import java.util.*;
 
-public class Database
+public class Database implements Serializable
 {
+    private static final long serialVersionUID = 1L;
+
     //chunks stored                             ("chunkKey", chunkInfo)
     private HashMap<String, ChunkInfo> storedChunks;
     //chunks created from backups               ("chunkKey", chunkInfo)
@@ -176,29 +179,27 @@ public class Database
     DISPLAYS
      */
 
-    // List ChunkInfo Information
-    public synchronized String ListChunks() {
+    public void display() {
 
-        String out = "";
+        System.out.println("\nINITIATOR PEER SENT FILES : ");
+        for(String key : sentFiles.keySet()) {
+            FileInfo value = sentFiles.get(key);
+            System.out.println(" * Filepath " + key + " | FileID " + value.getFileId());
+        }
 
+        System.out.println("\nINITIATOR PEER SENT CHUNKS : ");
+        for(String key : sentChunks.keySet()) {
+            ChunkInfo value = sentChunks.get(key);
+            System.out.println(" * Chunk key "+key+" | Size "+value.getData().length+" | repDeg "
+                    +value.getReplicationDeg()+" | actual repDeg "+ value.getActualRepDeg());
+        }
+
+        System.out.println("\nPEER STORED CHUNKS : ");
         for(String key : storedChunks.keySet()) {
             ChunkInfo value = storedChunks.get(key);
-            out +=key + " with size " + value.getData().length +  " bytes and replication "+ value.getActualRepDeg();
-            out +="\n";
+            System.out.println(" * Chunk key "+key+" | Size "+value.getData().length+" | repDeg "
+                    +value.getReplicationDeg()+" | actual repDeg "+ value.getActualRepDeg());
         }
-        notify();
-        return out;
-    }
 
-    // List fileInfo Information
-    public synchronized String ListFiles(){
-        String out = "";
-
-        for(String key : sentFiles.keySet()) {
-            //FileInfo value = sentFiles.get(key);
-            out +="File " +key+"\n";
-        }
-        notify();
-        return out;
     }
 }

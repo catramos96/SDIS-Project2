@@ -20,7 +20,3 @@ sleep 1
 gnome-terminal --working-directory=${PWD} -e "java -Djavax.net.ssl.trustStore=truststore -Djavax.net.ssl.trustStorePassword=123456 -Djavax.net.ssl.keyStore=client.keys -Djavax.net.ssl.keyStorePassword=123456 peer.FileSharing 8007 rmi7 127.0.0.1:8000"
 sleep 1
 java client.Main rmi7 BACKUP horario.PNG 2
-sleep 2
-java client.Main rmi7 RESTORE horario.PNG
-sleep 3
-java client.Main rmi7 DELETE horario.PNG

@@ -47,7 +47,7 @@ public class ChunkBackupProtocol extends Thread
 
             //send message
             channel.sendMessageToRoot(msg,Util.ChannelType.MC);
-            System.out.println("putchunk sent");
+            System.out.println("SENT : putchunk");
 
             //waits
 			try {
@@ -61,7 +61,7 @@ public class ChunkBackupProtocol extends Thread
 			//replication degree achieved
 			if(getActualRepDeg() >= msg.getReplicationDeg())
 			{
-				System.out.println("All chunks restored");
+				System.out.println(" - replication degree achieved - ");
 				return;
 			}
 			

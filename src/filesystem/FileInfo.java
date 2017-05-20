@@ -11,6 +11,7 @@ import java.io.Serializable;
  * @attribute int numChunks - number of chunks create for this file
  * @attribute int repDegree - desired replication degree for this file
  */
+
 public class FileInfo implements Serializable
 {
 	private static final long serialVersionUID = 1L;

@@ -128,7 +128,7 @@ public class MessagePeerHandler extends Thread{
 		//Only processes messages sent by others
 		if((peer.getID() != msg.getSenderId()) )
 		{
-			System.out.println("Received protocol message");
+		    Logs.receivedMessageLog(msg);
 
 			switch (msg.getType()) {
 
@@ -199,7 +199,9 @@ public class MessagePeerHandler extends Thread{
 		if(peer.getDatabase().hasSentFileByFileID(fileId))
 			return;
 
+		//create chunk
 		ChunkInfo c = new ChunkInfo(fileId, chunkNo, body);
+		c.setReplicationDeg(repDeg);
 
 		//create response message : STORED
 		ProtocolMessage msg = new ProtocolMessage(Util.ProtocolMessageType.STORED,peer.getID(),c.getFileId(),c.getChunkNo());
@@ -225,14 +227,18 @@ public class MessagePeerHandler extends Thread{
 			 * can be updated much faster about the actual replication of the chunk.
 			 */
 
-			//enhancement: just store the exact number of chunks
+            System.out.println("Messages : "+actualRepDeg+" vs "+repDeg);
+            //enhancement: just store the exact number of chunks
 			if(actualRepDeg >= repDeg)
-			    return;
+			{
+                System.out.println(" DONT STORE ");
+                return;
+            }
 
 			if(alreadyExists)
 			{
                 channel.sendMessageToRoot(msg,Util.ChannelType.MDB);
-				System.out.println("store sent");
+                Logs.sentMessageLog(msg);
 			}
 			else
 			{
@@ -241,7 +247,7 @@ public class MessagePeerHandler extends Thread{
 
 				//send STORED message
 				channel.sendMessageToRoot(msg,Util.ChannelType.MDB);
-				System.out.println("store sent");
+                Logs.sentMessageLog(msg);
 
 				//save chunk in memory
 				peer.getFileManager().saveChunk(c);
@@ -254,7 +260,7 @@ public class MessagePeerHandler extends Thread{
             }
 
             //update actual replication degree
-            peer.getDatabase().updateActualRepDeg(actualRepDeg,c.getChunkKey());
+            peer.getDatabase().updateActualRepDeg(actualRepDeg+1,c.getChunkKey());
 		}
 	}
 
@@ -273,7 +279,7 @@ public class MessagePeerHandler extends Thread{
 			ProtocolMessage msg = new ProtocolMessage(Util.ProtocolMessageType.REMOVED,peer.getID(),chunks.get(i).getFileId(),chunks.get(i).getChunkNo());
 
 			channel.sendMessageToRoot(msg,Util.ChannelType.MC);
-			System.out.println("removed sent");
+            Logs.sentMessageLog(msg);
 
 			//Deletes the chunk from the peers disk
 			String filename = chunks.get(i).getChunkNo() + chunks.get(i).getFileId();
@@ -301,7 +307,7 @@ public class MessagePeerHandler extends Thread{
         if(peer.getDatabase().hasChunkStored(chunkKey))
         {
             //count store messages from record channel
-            int actualRepDeg = peer.getChannelRecord().getStoredMessagesNum(chunkKey);
+            int actualRepDeg = peer.getChannelRecord().getStoredMessagesNum(chunkKey)+1;
 
             //update database
             peer.getDatabase().updateActualRepDeg(actualRepDeg,chunkKey);
@@ -341,7 +347,8 @@ public class MessagePeerHandler extends Thread{
 			if(!peer.getChannelRecord().receivedChunkMessage(fileId, chunkNo))
 			{
 				channel.sendMessageToRoot(msg,Util.ChannelType.MDR);
-			}
+                Logs.sentMessageLog(msg);
+            }
 		}
 	}
 
