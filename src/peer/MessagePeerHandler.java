@@ -133,7 +133,6 @@ public class MessagePeerHandler extends Thread{
 			switch (msg.getType()) {
 
 			case PUTCHUNK:
-				//peer.getMessageRecord().addPutchunkMessage(msg.getFileId(), msg.getChunkNo());
 				handlePutchunk(msg.getFileId(),msg.getChunkNo(),msg.getReplicationDeg(),msg.getBody());
 				break;
 
@@ -152,6 +151,8 @@ public class MessagePeerHandler extends Thread{
 				break;
 
 			case DELETE:
+			    peer.getChannelRecord().resetChunkMessages(msg.getFileId());
+                peer.getChannelRecord().resetStoreMessages(msg.getFileId());
 				handleDelete(msg.getFileId());
 				break;
 
@@ -195,6 +196,8 @@ public class MessagePeerHandler extends Thread{
 	 */
 	private synchronized void handlePutchunk(String fileId, int chunkNo, int repDeg, byte[] body)
 	{
+        int actualRepDeg = 0;
+
 		//Owner of the file with file id
 		if(peer.getDatabase().hasSentFileByFileID(fileId))
 			return;
@@ -219,21 +222,11 @@ public class MessagePeerHandler extends Thread{
 		//verifies again (after evicting chunks) if has space available
 		if(peer.getFileManager().hasSpaceAvailable(c))
 		{
-            //count store messages from record channel
-            int actualRepDeg = peer.getChannelRecord().getStoredMessagesNum(c.getChunkKey());
 			/*
 			 * If the peer already stored the chunk, it will warn immediately the group channel.
 			 * By doing this, another peer that is pondering on storing the chunk,
 			 * can be updated much faster about the actual replication of the chunk.
 			 */
-
-            System.out.println("Messages : "+actualRepDeg+" vs "+repDeg);
-            //enhancement: just store the exact number of chunks
-			if(actualRepDeg >= repDeg)
-			{
-                System.out.println(" DONT STORE ");
-                return;
-            }
 
 			if(alreadyExists)
 			{
@@ -245,22 +238,32 @@ public class MessagePeerHandler extends Thread{
 				//Waits a random time
 				Util.randomDelay();
 
+                //count store messages from record channel
+                actualRepDeg = peer.getChannelRecord().getStoredMessagesNum(c.getChunkKey());
+
+				//enhancement: just store the exact number of chunks
+				if(actualRepDeg >= repDeg)
+				{
+					System.out.println(" DONT STORE ");
+					return;
+				}
+
 				//send STORED message
 				channel.sendMessageToRoot(msg,Util.ChannelType.MDB);
                 Logs.sentMessageLog(msg);
 
+                //Save chunk info on database
+                peer.getDatabase().saveChunkInfo(chunkNo+fileId,c);
+
+                //update actual replication degree
+                peer.getDatabase().updateActualRepDeg(actualRepDeg+1,c.getChunkKey());
+
 				//save chunk in memory
 				peer.getFileManager().saveChunk(c);
-
-				//Save chunk info on database
-				peer.getDatabase().saveChunkInfo(chunkNo+fileId,c);
 
 			    //TODO confirm
                 //peer.getChannelRecord().removeStoredMessages(c.getChunkKey());
             }
-
-            //update actual replication degree
-            peer.getDatabase().updateActualRepDeg(actualRepDeg+1,c.getChunkKey());
 		}
 	}
 

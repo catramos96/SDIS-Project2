@@ -245,6 +245,14 @@ public class ChannelRecord {
 	{
 		chunkMessages.remove(fileId);
 	}
+
+
+	public void resetStoreMessages(String fileId) {
+
+        for (String chunkKey : storedMessages.keySet())
+            if(chunkKey.contains(fileId))
+                storedMessages.remove(chunkKey);
+    }
 	
 	/**
 	 * Function that resets the initiator record with the fileId entry.
