@@ -1,16 +1,20 @@
 package peer;
 
+import filesystem.ChunkInfo;
 import filesystem.Database;
 import filesystem.FileManager;
 import message.MessageRMI;
+import message.ProtocolMessage;
 import network.ChannelRecord;
 import network.DatagramListener;
 import network.GroupChannel;
 import network.Subscriber;
 import protocols.BackupInitiator;
+import protocols.ChunkBackupProtocol;
 import protocols.DeleteInitiator;
 import protocols.RestoreInitiator;
 import resources.Logs;
+import resources.Util;
 import security.Encrypt;
 import security.SSLlistenerClient;
 
@@ -22,103 +26,108 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class Peer implements MessageRMI
 {
-	/*informations*/
-	private int ID;
-	private FileManager fileManager;
-	private Database database;
-	private ChannelRecord channelRecord = null;
+    /*informations*/
+    private int ID;
+    private FileManager fileManager;
+    private Database database;
+    private ChannelRecord channelRecord = null;
 
-	/*hashmaps with temporary information about actual backups and restores*/
+    /*hashmaps with temporary information about actual backups and restores*/
     private HashMap<String, RestoreInitiator> restoreInitiators;
     private HashMap<String, BackupInitiator> backupInitiators;
 
-	/*Communication*/
-	private DatagramListener comunicationChannel = null;
-	private GroupChannel subscribedGroup = null;
-	private Subscriber mySubscription = null;
-	private SSLlistenerClient client = null;
+    /*Communication*/
+    private DatagramListener comunicationChannel = null;
+    private GroupChannel subscribedGroup = null;
+    private Subscriber mySubscription = null;
+    private SSLlistenerClient client = null;
 
-	private Encrypt encrypt = null;
+    private Encrypt encrypt = null;
 
     /*Schedule*/
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
 
     public Peer(int peer_id, String[] trackerInfo, String remoteObjName){
-		this.ID = peer_id;
-		this.setFileManager(new FileManager(getID()));
-		this.channelRecord = new ChannelRecord();
-		this.restoreInitiators = new HashMap<>();
+        this.ID = peer_id;
+        this.setFileManager(new FileManager(getID()));
+        this.channelRecord = new ChannelRecord();
+        this.restoreInitiators = new HashMap<>();
         this.backupInitiators = new HashMap<>();
 
         loadDB();
 
-		try {
-			this.encrypt = new Encrypt(this);
-		} catch (Exception e) {
-			System.out.println("Error: Encrypt module unnable to start");
-		}
-		
-		try {
-			client = new SSLlistenerClient("localhost", 4499, new String[0], this); //TODO 
-			client.start();
-		} catch (UnknownHostException e1) {
-			// TODO Auto-generated catch block
-			System.out.println("CLIENT: Can't connect to server");
-			e1.printStackTrace();
-			return;
-		} catch (InvalidKeyException e) {
-			System.out.println("CLIENT: Invalid key");
-			e.printStackTrace();
-		} catch (NoSuchAlgorithmException e) {
-			System.out.println("CLIENT: cypher algorithms unavaiable");
-			e.printStackTrace();
-		} catch (IOException e) {
-			System.out.println("CLIENT: error IO Encrypt module");
-			e.printStackTrace();
-		}
+        try {
+            this.encrypt = new Encrypt(this);
+        } catch (Exception e) {
+            System.out.println("Error: Encrypt module unnable to start");
+        }
 
-		try {
-			mySubscription = new Subscriber(InetAddress.getLocalHost().getHostAddress(), -1);
+        try {
+            client = new SSLlistenerClient("localhost", 4499, new String[0], this); //TODO
+            client.start();
+        } catch (UnknownHostException e1) {
+            // TODO Auto-generated catch block
+            System.out.println("CLIENT: Can't connect to server");
+            e1.printStackTrace();
+            return;
+        } catch (InvalidKeyException e) {
+            System.out.println("CLIENT: Invalid key");
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            System.out.println("CLIENT: cypher algorithms unavaiable");
+            e.printStackTrace();
+        } catch (IOException e) {
+            System.out.println("CLIENT: error IO Encrypt module");
+            e.printStackTrace();
+        }
 
-			//tracker
-			Subscriber tracker = new Subscriber(trackerInfo[0],Integer.parseInt(trackerInfo[1]));
+        try {
+            mySubscription = new Subscriber(InetAddress.getLocalHost().getHostAddress(), -1);
 
-			//Group1
-			subscribedGroup = new GroupChannel(this,tracker);
-			subscribedGroup.start();
+            //tracker
+            Subscriber tracker = new Subscriber(trackerInfo[0],Integer.parseInt(trackerInfo[1]));
 
-			startRMI(remoteObjName);
-			
-			Logs.MyAddress(mySubscription);
+            //Group1
+            subscribedGroup = new GroupChannel(this,tracker);
+            subscribedGroup.start();
 
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-		}
+            startRMI(remoteObjName);
 
-		//save metadata in 30s intervals
-		saveMetadata();
+            Logs.MyAddress(mySubscription);
 
-		//save metadata when shouts down
-		Runtime.getRuntime().addShutdownHook(new Thread() {
-			public void run() {
-				try {
-					Thread.sleep(200);
-					serializeDB();
-				} catch (InterruptedException e) {
-					//Logs.exception("addShutdownHook", "Peer", e.toString());
-					e.printStackTrace();
-				}
-			}
-		});
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
 
-	}
+        //save metadata in 90s intervals
+        saveMetadata();
+
+        //try to backup chunks with actual replication degree bellow desired
+        verifyChunks(this);
+
+        //save metadata when shouts down
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            public void run() {
+                try {
+                    Thread.sleep(200);
+                    serializeDB();
+                } catch (InterruptedException e) {
+                    //Logs.exception("addShutdownHook", "Peer", e.toString());
+                    e.printStackTrace();
+                }
+            }
+        });
+
+    }
 
     /**
      * Runnable executed in 90s interval to save metadata, preventing mapping lost if the server crashes.
@@ -198,106 +207,137 @@ public class Peer implements MessageRMI
         }
     }
 
-	public GroupChannel getSubscribedGroup(){
-		return subscribedGroup;
-	}
+    private void verifyChunks(Peer peer) {
+        /**
+         * Function that gets all the chunks stored by this peer with the atual replication degree
+         * bellow the desired and try to initiate the chunk backup protocol for each chunk after a random time,
+         */
+        final Runnable checkChunks = new Runnable() {
+            public void run()
+            {
+                System.out.println(" - init chunk update - ");
 
-	public DatagramListener getChannel(){
-		return comunicationChannel;
-	}
+                ArrayList<ChunkInfo> chunks = database.getSentChunksBellowRepDeg();
 
-	public Subscriber getMySubscriptionInfo(){
-		return mySubscription;
-	}
+                for(ChunkInfo c : chunks)
+                {
+                    BackupInitiator temp = new BackupInitiator(peer,"",0);
+                    addBackupInitiator(c.getFileId(),temp);
 
-	private void startRMI(String remoteObjectName)
-	{
-		try {
-			MessageRMI stub = (MessageRMI) UnicastRemoteObject.exportObject(this, 0);
-			LocateRegistry.getRegistry().rebind(remoteObjectName, stub);
-			System.out.println("Server Ready");
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+                    temp.sendChunk(c);
+                    temp.waitProtocols();
 
-	@Override
-	public String backup(final String filename, final int repDeg) throws RemoteException
-	{
-		System.out.println("Backup initiated...");
-		new BackupInitiator(this,filename, repDeg).start();
-		return null;
-	}
+                    removeBackupInitiator(c.getFileId());
+                }
 
-	@Override
-	public String restore(final String filename) throws RemoteException
-	{
-		System.out.println("Restore initiated...");
-		new RestoreInitiator(this, filename).start();
-		return null;
-	}
+                System.out.println(" - update completed - ");
+            }
 
-	@Override
-	public String delete(final String filename) throws RemoteException
-	{
-		System.out.println("Delete initiated...");
-		new DeleteInitiator(this, filename).start();
-		return null;
-	}
+        };
 
-	@Override
-	public String reclaim(final int spaceToReclaim) throws RemoteException
-	{
-		System.out.println("Reclaim initiated...");
-		return null;
-	}
+        scheduler.scheduleAtFixedRate(checkChunks, 90, 300, TimeUnit.SECONDS);
+    }
 
-	@Override
-	public String state() throws RemoteException
-	{
-		System.out.println("State initiated...");
-		return null;
-	}
+    public GroupChannel getSubscribedGroup(){
+        return subscribedGroup;
+    }
 
-	public FileManager getFileManager()
-	{
-		return fileManager;
-	}
+    public DatagramListener getChannel(){
+        return comunicationChannel;
+    }
 
-	public void setFileManager(FileManager fileManager)
-	{
-		this.fileManager = fileManager;
-	}
+    public Subscriber getMySubscriptionInfo(){
+        return mySubscription;
+    }
 
-	public int getID()
-	{
-		return ID;
-	}
+    private void startRMI(String remoteObjectName)
+    {
+        try {
+            MessageRMI stub = (MessageRMI) UnicastRemoteObject.exportObject(this, 0);
+            LocateRegistry.getRegistry().rebind(remoteObjectName, stub);
+            System.out.println("Server Ready");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-	public void setID(int ID)
-	{
-		this.ID = ID;
-	}
+    @Override
+    public String backup(final String filename, final int repDeg) throws RemoteException
+    {
+        System.out.println("Backup initiated...");
+        new BackupInitiator(this,filename, repDeg).start();
+        return null;
+    }
+
+    @Override
+    public String restore(final String filename) throws RemoteException
+    {
+        System.out.println("Restore initiated...");
+        new RestoreInitiator(this, filename).start();
+        return null;
+    }
+
+    @Override
+    public String delete(final String filename) throws RemoteException
+    {
+        System.out.println("Delete initiated...");
+        new DeleteInitiator(this, filename).start();
+        return null;
+    }
+
+    @Override
+    public String reclaim(final int spaceToReclaim) throws RemoteException
+    {
+        System.out.println("Reclaim initiated...");
+        return null;
+    }
+
+    @Override
+    public String state() throws RemoteException
+    {
+        System.out.println("State initiated...");
+        return null;
+    }
+
+    public FileManager getFileManager()
+    {
+        return fileManager;
+    }
+
+    public void setFileManager(FileManager fileManager)
+    {
+        this.fileManager = fileManager;
+    }
+
+    public int getID()
+    {
+        return ID;
+    }
+
+    public void setID(int ID)
+    {
+        this.ID = ID;
+    }
 
 
-	public Database getDatabase() {return database;}
+    public Database getDatabase() {return database;}
 
-	public void setDatabase(final Database database) {this.database = database;}
+    public void setDatabase(final Database database) {this.database = database;}
 
-	public ChannelRecord getChannelRecord() {
-		return channelRecord;
-	}
-	
+    public ChannelRecord getChannelRecord() {
+        return channelRecord;
+    }
+
     public void addRestoreInitiator(String fileId, RestoreInitiator restore) {
-    	restoreInitiators.put(fileId, restore);
+        restoreInitiators.put(fileId, restore);
     }
-    
+
     public RestoreInitiator getRestoreInitiator(String fileId) {
-    	return restoreInitiators.get(fileId);
+        return restoreInitiators.get(fileId);
     }
-    
+
     public void removeRestoreInitiator(String fileId) {
-    	restoreInitiators.remove(fileId);
+        restoreInitiators.remove(fileId);
     }
 
     public void addBackupInitiator(String fileId, BackupInitiator backup) { backupInitiators.put(fileId, backup); }
@@ -307,6 +347,6 @@ public class Peer implements MessageRMI
     public void removeBackupInitiator(String fileId) {
         backupInitiators.remove(fileId);
     }
-    
+
     public Encrypt getEncrypt() { return encrypt;}
 }

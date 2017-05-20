@@ -63,7 +63,7 @@ public class Database implements Serializable
             storedChunks.remove(chunkKey);
     }
 
-    // Returns a list of chunkId for chunks with perceived replication degree higher than desired
+    //Returns a list of chunks with perceived replication degree higher than desired
     public synchronized ArrayList<ChunkInfo> getChunksHigherReplication() {
         ArrayList<ChunkInfo> chunkList = new ArrayList<ChunkInfo>();
 
@@ -133,6 +133,20 @@ public class Database implements Serializable
             if (c.getValue().getFileId().equals(fileId))
                 sentChunks.remove(c.getKey());
         }
+    }
+
+    //Returns a list of chunks with perceived replication degree is bellow than desired
+    public synchronized ArrayList<ChunkInfo> getSentChunksBellowRepDeg() {
+        ArrayList<ChunkInfo> chunkList = new ArrayList<ChunkInfo>();
+
+        for (ChunkInfo chunk : sentChunks.values()) {
+            if (chunk.getActualRepDeg() < chunk.getReplicationDeg()) {
+                chunkList.add(chunk);
+            }
+        }
+
+        notify();
+        return chunkList;
     }
 
     /*

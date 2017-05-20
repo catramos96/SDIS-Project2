@@ -2,6 +2,7 @@ package protocols;
 
 import message.ProtocolMessage;
 import network.GroupChannel;
+import resources.Logs;
 import resources.Util;
 
 import java.util.ArrayList;
@@ -43,11 +44,11 @@ public class ChunkBackupProtocol extends Thread
 		//try 5 times 
 		while(rep < Util.MAX_TRIES)	
 		{
-			System.out.println("Try number : "+rep);
+			System.out.println("Try number : "+rep+" to backup chunk "+msg.getChunkNo());
 
             //send message
             channel.sendMessageToRoot(msg,Util.ChannelType.MC);
-            System.out.println("SENT : putchunk");
+			Logs.sentMessageLog(msg);
 
             //waits
 			try {

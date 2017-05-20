@@ -113,41 +113,52 @@ public class BackupInitiator extends Thread
 
         for (ChunkInfo c: chunks)
         {
-            //TODO confirm
-            //resets stored messages of the record
-            //peer.getChannelRecord().removeStoredMessages(c.getChunkKey());
-
             //starts recording sentChunks
             c.setReplicationDeg(repDeg);
             peer.getDatabase().addSentChunk(c.getChunkKey(),c);
 
-            //message to send
-            ProtocolMessage msg = new ProtocolMessage(Util.ProtocolMessageType.PUTCHUNK,peer.getID(),c.getFileId(),c.getChunkNo(),repDeg,c.getData());
-
-            //start chunk backup protocol
-            ChunkBackupProtocol cbp = new ChunkBackupProtocol(peer.getSubscribedGroup(),msg);
-            protocols.put(c.getChunkKey(),cbp);
-            cbp.start();
+            sendChunk(c);
         }
 
         //all protocols ended -> chunks (whose backup was initiated) actual replication degree must be updated
         //wait for all threads to finish
-        for (Map.Entry<String, ChunkBackupProtocol> entry : protocols.entrySet())
-        {
-            try
-            {
-                entry.getValue().join();
-                peer.getDatabase().updateSentChunkRepDeg(entry.getKey(),entry.getValue().getActualRepDeg());
-            }
-            catch (InterruptedException e) {
-                //Logs.exception("run", "BackupTrigger", e.toString());
-                e.printStackTrace();
-            }
-        }
+        waitProtocols();
 
         System.out.println(" - BACKUP SUCCESSFUL - ");
 
         peer.removeBackupInitiator(fileID);
+    }
+
+    public void sendChunk(ChunkInfo c)
+    {
+        //message to send
+        ProtocolMessage msg = new ProtocolMessage(Util.ProtocolMessageType.PUTCHUNK,peer.getID(),c.getFileId(),c.getChunkNo(),c.getReplicationDeg(),c.getData());
+
+        //start chunk backup protocol
+        ChunkBackupProtocol cbp = new ChunkBackupProtocol(peer.getSubscribedGroup(),msg);
+        protocols.put(c.getChunkKey(),cbp);
+        cbp.start();
+    }
+
+    public void waitProtocols()
+    {
+        for (Map.Entry<String, ChunkBackupProtocol> entry : protocols.entrySet())
+        {
+            waitProtocol(entry.getKey(),entry.getValue());
+        }
+    }
+
+    public void waitProtocol(String chunkKey, ChunkBackupProtocol prot)
+    {
+        try
+        {
+            prot.join();
+            peer.getDatabase().updateSentChunkRepDeg(chunkKey,prot.getActualRepDeg());
+        }
+        catch (InterruptedException e) {
+            //Logs.exception("run", "BackupTrigger", e.toString());
+            e.printStackTrace();
+        }
     }
 
     public void updateStores(String chunkKey, int senderId)
