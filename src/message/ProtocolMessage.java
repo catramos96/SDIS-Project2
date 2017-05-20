@@ -204,7 +204,6 @@ public class ProtocolMessage extends Message
 			}
 			
 			byte[] a = baos.toByteArray();
-			System.out.println("BUILD MESSAGE: ID:"+ this.chunkNo+" size: " + a.length);
 			return a;
 		}
 		
@@ -342,7 +341,6 @@ public class ProtocolMessage extends Message
 			else if(type_rcv.compareTo(Util.ProtocolMessageType.GETCHUNK) == 0 || type_rcv.compareTo(Util.ProtocolMessageType.STORED) == 0 || type_rcv.compareTo(Util.ProtocolMessageType.REMOVED) == 0 || type_rcv.compareTo(Util.ProtocolMessageType.GOTCHUNKENH) == 0)
 				parsed = new ProtocolMessage(type_rcv,senderId_rcv,fileId_rcv,chunkNo_rcv) ;
 			else if(type_rcv.compareTo(Util.ProtocolMessageType.PUTCHUNK) == 0){
-				System.out.println("PARSE MESSAGE : " + body.length + " " + offset);
 				parsed = new ProtocolMessage(type_rcv,senderId_rcv,fileId_rcv,chunkNo_rcv,replicationDeg_rcv,body);
 			}
 			else if(type_rcv.compareTo(Util.ProtocolMessageType.CHUNK) == 0)

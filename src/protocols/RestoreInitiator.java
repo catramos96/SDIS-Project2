@@ -72,7 +72,7 @@ public class RestoreInitiator extends Thread {
             
             // Checks if chunk has been recovered.
 			if (data[i] == null) {
-				System.out.println("Zone1 :Failed to recover " + filePath + ".");
+				System.out.println("Failed to recover " + filePath + ".");
 				return;
 			}
         }

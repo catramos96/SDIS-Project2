@@ -61,7 +61,6 @@ public class FileManager {
                 String fileID = hashFileId(file);
                 int numChunks = (int) (cypher.length() / Util.CHUNK_MAX_SIZE) + 1;
                 byte[] bytes = Files.readAllBytes(cypher.toPath());
-                System.out.println("SPLIT SIZE TOTAL SIZE:" + bytes.length);
                 int byteCount = 0;
 
                 for (int i = 0; i < numChunks; i++)
@@ -80,7 +79,6 @@ public class FileManager {
                         data[byteCount] = bytes[j];
                         byteCount++;
                     }
-                    System.out.println("SLIPT SIZE:" + length);
                     ChunkInfo c = new ChunkInfo(fileID, i, data);
                     chunkList.add(c);
                 }
@@ -137,8 +135,7 @@ public class FileManager {
     {
         byte data[] = c.getData();
         FileOutputStream out;
-        
-        System.out.println("SAVE SIZE:" + data + " ID: " + c.getChunkNo());
+
         try
         {
             out = new FileOutputStream(createChunkName(c.getFileId(),c.getChunkNo()));
@@ -179,7 +176,6 @@ public class FileManager {
         for (int i = 0; i < data.length; i++)
         {
         	byte chunkData[] = data[i];
-        	System.out.println(i + " -->  " + data[i].length);
             out.write(chunkData);
         }
         
@@ -187,9 +183,7 @@ public class FileManager {
         
         File crip = new File(tmpDir);
         File decrip = new File(finalDir);
-        
-        System.out.println(crip);
-        System.out.println(decrip);
+
         decypher.decrypt(crip, decrip);
 		
     }
@@ -385,7 +379,6 @@ public class FileManager {
         if(file.exists() && file.isFile()){
             FileInputStream in;
             data = new byte[(int) file.length()];
-            System.out.println("LOAD CHUNK: " + file.length() + " ID:" + chunkNo);
             try {
                 in = new FileInputStream(chunkName);
                 in.read(data);

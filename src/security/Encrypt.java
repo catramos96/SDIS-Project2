@@ -30,7 +30,8 @@ public class Encrypt{
 	private static final String ALGORITHM = "AES/CBC/PKCS5Padding";
 	private static final int AES_KEY_SIZE = 256;
 
-	private static final String AES_KEY_FILE = "/aes";
+	private static final String AES_KEY_FILE = "/aes.txt";
+	private static final String IV = "/iv.txt";
 	
 	
 	private Cipher aesCipher;
@@ -57,13 +58,13 @@ public class Encrypt{
 	
 	private  void iniciateCipher() throws NoSuchAlgorithmException, NoSuchPaddingException {
 		aesCipher = Cipher.getInstance(ALGORITHM);
-		SecureRandom random = new SecureRandom();
-	    byte tmp[] = new byte[16];//generate random 16 byte long
-	    random.nextBytes(tmp);
-	    iv = new IvParameterSpec(tmp);
 	}
 		
 	private  void generateAESKey() throws NoSuchAlgorithmException  {
+		SecureRandom random = new SecureRandom();
+		byte tmp[] = new byte[16];//generate random 16 byte long
+		random.nextBytes(tmp);
+		iv = new IvParameterSpec(tmp);
 		KeyGenerator kgen = KeyGenerator.getInstance("AES");
 		kgen.init(AES_KEY_SIZE);
 		key = kgen.generateKey();
@@ -74,18 +75,24 @@ public class Encrypt{
 	private void saveAESKey() throws Exception {
 		 	// write AES key
 			File aesK = peer.getFileManager().getFile(AES_KEY_FILE);
-			if(!aesK.exists()){
+			if(!aesK.exists()) {
 				aesK.createNewFile();
 			}
-			
 		    FileOutputStream out = new FileOutputStream(aesK);
-		    ObjectOutputStream oout = new ObjectOutputStream(out);
-		    try {
-		      oout.writeObject(key);
-		      oout.flush();
-		    } finally {
-		      oout.close();
-		    }
+			out.write(key.getEncoded());
+			out.flush();
+			out.close();
+
+			File ivFile = peer.getFileManager().getFile(IV);
+			if(!ivFile.exists()) {
+			ivFile.createNewFile();
+			}
+			out = new FileOutputStream(ivFile);
+			out.write(iv.getIV());
+			out.flush();
+			out.close();
+
+
 		  }
 	 
 	private void loadAESKey() throws Exception {   
@@ -93,27 +100,26 @@ public class Encrypt{
 			File aesK = peer.getFileManager().getFile(AES_KEY_FILE);
 		    AESkey = new byte[AES_KEY_SIZE/8];
 		    FileInputStream in = new FileInputStream(aesK);
-			ObjectInputStream oin = new ObjectInputStream(in);
-		    try {
-		      key = (SecretKey) oin.readObject();
-		    } finally {
-		      oin.close();
-		    }
+		 	in.read(AESkey);
+			key = new SecretKeySpec(AESkey,0,16,"AES");
+			in.close();
+
+			// read AES key
+			File ivFile = peer.getFileManager().getFile(IV);
+			in = new FileInputStream(ivFile);
+			byte tmp[] = new byte[16];
+			in.read(tmp);
+			iv = new IvParameterSpec(tmp);
+			in.close();
 		  } 
 	
 	public void encrypt(File in, File out) throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, IOException, InvalidAlgorithmParameterException {
-		System.out.println(AESkey.length);
-		System.out.println(AESkeySpec.getEncoded().length);
-		System.out.println(aesCipher);
 		aesCipher.init(Cipher.ENCRYPT_MODE, key,iv);
-		
 		FileOutputStream  dataOUT = new FileOutputStream(out);
 		
 	    byte[] data = new byte[(int) in.length()];
 	    data = Files.readAllBytes(in.toPath());
 	    dataOUT.write(aesCipher.doFinal(data));
-	    
-	    System.out.println("encryptedSize"+ out.length() );
 	    dataOUT.flush();
 		dataOUT.close();
 	}
@@ -122,7 +128,6 @@ public class Encrypt{
 		aesCipher.init(Cipher.DECRYPT_MODE, key,iv);
 	    FileOutputStream  dataOUT = new FileOutputStream(out);
 		byte[] data = Files.readAllBytes(in.toPath());
-		System.out.println("decrypt file SIZE:" + data.length);
 		dataOUT.write(aesCipher.doFinal(data));
 		dataOUT.flush();
 		dataOUT.close();		

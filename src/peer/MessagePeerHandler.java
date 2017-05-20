@@ -139,7 +139,6 @@ public class MessagePeerHandler extends Thread{
 
 			case PUTCHUNK:
 				peer.getMessageRecord().addPutchunkMessage(msg.getFileId(), msg.getChunkNo());
-				System.out.println("CHUNK PUTCHUNK:" + msg.getFileId()+ " "+msg.getChunkNo()+" "+msg.getBody().length);
 				handlePutchunk(msg.getFileId(),msg.getChunkNo(),msg.getReplicationDeg(),msg.getBody());
 				break;
 
@@ -154,7 +153,6 @@ public class MessagePeerHandler extends Thread{
 
 			case CHUNK:
 				peer.getMessageRecord().addChunkMessage(msg.getFileId(), msg.getChunkNo());
-				System.out.println("CHUNK RECEIVE:" + msg.getFileId()+ " "+msg.getChunkNo()+" "+msg.getBody().length);
 				handleChunk(msg.getFileId(), msg.getChunkNo(), msg.getBody());
 				break;
 
@@ -200,8 +198,8 @@ public class MessagePeerHandler extends Thread{
 	 * @param repDeg - Chunk desirable chunk replication degree
 	 * @param body - Chunk content
 	 */
-	private synchronized void handlePutchunk(String fileId, int chunkNo, int repDeg, byte[] body)
-	{	System.out.println("BEFORE START handlePunck:" + body.length + " " + chunkNo);
+	private synchronized void handlePutchunk(String fileId, int chunkNo, int repDeg, byte[] body) {
+
 		//Owner of the file with file id
 		if(peer.getDatabase().sentFileId(fileId))
 			return;
@@ -244,7 +242,6 @@ public class MessagePeerHandler extends Thread{
 				System.out.println("store sent");
 
 				//save chunk in memory
-				System.out.println("BEFORE SAVE ON DISK:" + c.getData().length + " " + c.getChunkNo());
 				peer.getFileManager().saveChunk(c);
 
 				//Save chunk info on database
@@ -252,7 +249,6 @@ public class MessagePeerHandler extends Thread{
 				
 				//TODO
 				byte[] teste = peer.getFileManager().getChunkContent(fileId, chunkNo);
-				System.out.println("store SIZE" + teste.length);
 			}
 		}
 	}

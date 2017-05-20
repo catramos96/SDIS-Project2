@@ -73,9 +73,6 @@ public class BackupInitiator extends Thread
         }
         
         try {
-        	if(peer.getEncrypt() == null) {
-        		System.out.println("NULL");
-        	}
 			peer.getEncrypt().encrypt(toSend, tmp);
 		} catch (InvalidKeyException | IOException | IllegalBlockSizeException | BadPaddingException e) {
 			// TODO Auto-generated catch block
@@ -87,11 +84,7 @@ public class BackupInitiator extends Thread
 		}
         
         //split file in chunks
-        System.out.println("cyperSize: " + tmp.length());
         ArrayList<ChunkInfo> chunks = peer.getFileManager().splitFileInChunks(filepath,tmp);
-        
-        System.out.println("cyperSize: " + tmp.length());
-
         String fileID = peer.getFileManager().getFileIdFromFilename(filepath);
         FileInfo fileinfo = new FileInfo(fileID,filepath,chunks.size(),repDeg);
         
@@ -101,9 +94,6 @@ public class BackupInitiator extends Thread
         for (ChunkInfo c: chunks)
         {
             ProtocolMessage msg = new ProtocolMessage(Util.ProtocolMessageType.PUTCHUNK,peer.getID(),c.getFileId(),c.getChunkNo(),repDeg,c.getData());
-            
-            System.out.println("GET CHUNKDATA " + c.getData().length);
-            System.out.println("SEND TO BACKUP Message size: " + msg.getBody().length);
             new ChunkBackupProtocol(peer.getSubscribedGroup(),msg).start();
         }
 
