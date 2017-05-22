@@ -3,12 +3,16 @@ package filesystem;
 import resources.Util;
 import security.Encrypt;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 import javax.xml.bind.DatatypeConverter;
 import java.io.*;
 import java.nio.file.Files;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidParameterSpecException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -131,6 +135,7 @@ public class FileManager {
     {
         byte data[] = c.getData();
         FileOutputStream out;
+
         try
         {
             out = new FileOutputStream(createChunkName(c.getFileId(),c.getChunkNo()));
@@ -157,8 +162,12 @@ public class FileManager {
      * @param data
      * @throws IOException
      * @throws InvalidKeyException 
+     * @throws InvalidParameterSpecException 
+     * @throws BadPaddingException 
+     * @throws IllegalBlockSizeException 
+     * @throws InvalidAlgorithmParameterException 
      */
-    public void restoreFile(String filename, byte[][] data, Encrypt decypher) throws IOException, InvalidKeyException
+    public void restoreFile(String filename, byte[][] data, Encrypt decypher) throws IOException, InvalidKeyException, InvalidParameterSpecException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException
     {	
     	String tmpDir = diskDIR + "/tmp/" +filename;
     	String finalDir = diskDIR + Util.RESTORES_DIR +filename;
@@ -174,7 +183,7 @@ public class FileManager {
         
         File crip = new File(tmpDir);
         File decrip = new File(finalDir);
-       
+
         decypher.decrypt(crip, decrip);
 		
     }

@@ -5,64 +5,47 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.nio.file.Files;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
-import java.security.KeyFactory;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.X509EncodedKeySpec;
+import java.security.SecureRandom;
+import java.security.spec.InvalidParameterSpecException;
+
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.CipherInputStream;
-import javax.crypto.CipherOutputStream;
+import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import peer.Peer;
 
 public class Encrypt{
 	
 	
-	private static final String ALGORITHM = "AES";
+	private static final String ALGORITHM = "AES/CBC/PKCS5Padding";
 	private static final int AES_KEY_SIZE = 256;
-	private static final int RSA_KEY_SIZE = 1024;
-	
-	private static final String PUBLIC_KEY_FILE = "/public";
-	private static final String PRIVATE_KEY_FILE = "/private";
-	private static final String AES_KEY_FILE = "/aes";
+
+	private static final String AES_KEY_FILE = "/aes.txt";
+	private static final String IV = "/iv.txt";
 	
 	
 	private Cipher aesCipher;
-	private Cipher pkCipher;
-	
+
 	private  byte [] AESkey;
 	private SecretKeySpec AESkeySpec;
-	
+	private SecretKey key;
 	private Peer peer;
 	
-	private PrivateKey privateKey;
-	private PublicKey publicKey;
+	private IvParameterSpec iv;
 	
 	public Encrypt(Peer peer) throws Exception{
 		 iniciateCipher();
 		 this.peer = peer;
-		 
-		 try {
-			getPublicKey();
-			getPrivateKey();
-		} catch (Exception e) {
-			System.out.println("Client: No keys found generating new keys");
-			generateRSAKeys();
-			try {
-				savePairKeys();
-			} catch (Exception e1) {
-				System.out.println("Client Warning: Can't save keys after terminal");
-			}
-		}
 		 
 		try {
 			loadAESKey();
@@ -71,120 +54,82 @@ public class Encrypt{
 			generateAESKey();
 			saveAESKey();
 		}
-		
-		 
 	}
 	
 	private  void iniciateCipher() throws NoSuchAlgorithmException, NoSuchPaddingException {
 		aesCipher = Cipher.getInstance(ALGORITHM);
-		pkCipher = Cipher.getInstance("RSA");
 	}
-	
-	
-	private  void generateRSAKeys() throws NoSuchAlgorithmException {
-		KeyPairGenerator kgen = KeyPairGenerator.getInstance("RSA");
-		kgen.initialize(RSA_KEY_SIZE);
-		KeyPair pair = kgen.generateKeyPair();
 		
-		this.publicKey = pair.getPublic();
-		this.privateKey = pair.getPrivate();
-	}
-	
-	private void getPublicKey() throws Exception {
-		File pKey = peer.getFileManager().getFile(PRIVATE_KEY_FILE);
-		byte[] keyBytes = Files.readAllBytes(pKey.toPath());
-		X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
-		KeyFactory kf = KeyFactory.getInstance("RSA");
-		publicKey = kf.generatePublic(spec);
-	}
-	
-	private void getPrivateKey() throws Exception {
-		File pKey = peer.getFileManager().getFile(PUBLIC_KEY_FILE);
-		byte[] keyBytes = Files.readAllBytes(pKey.toPath());
-		PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(keyBytes);
-		KeyFactory kf = KeyFactory.getInstance("RSA");
-		privateKey = kf.generatePrivate(spec);
-	}
-	
-	public void  savePairKeys () throws Exception {
-		File publicK = peer.getFileManager().getFile(PUBLIC_KEY_FILE);
-		File privateK = peer.getFileManager().getFile(PRIVATE_KEY_FILE);
-		
-		FileOutputStream fos = new  FileOutputStream(publicK);
-		fos.write(publicKey.getEncoded());
-		fos.flush();
-		fos.close();
-		
-		fos = new FileOutputStream(privateK);
-		fos.write(privateKey.getEncoded());
-		fos.flush();
-		fos.close();
-		
-	}
-	
 	private  void generateAESKey() throws NoSuchAlgorithmException  {
-		KeyGenerator kgen = KeyGenerator.getInstance(ALGORITHM);
+		SecureRandom random = new SecureRandom();
+		byte tmp[] = new byte[16];//generate random 16 byte long
+		random.nextBytes(tmp);
+		iv = new IvParameterSpec(tmp);
+		KeyGenerator kgen = KeyGenerator.getInstance("AES");
 		kgen.init(AES_KEY_SIZE);
-		SecretKey key = kgen.generateKey();
+		key = kgen.generateKey();
 		AESkey = key.getEncoded();
-		AESkeySpec = new SecretKeySpec(AESkey,"AES");
+		AESkeySpec = new SecretKeySpec(AESkey, ALGORITHM);
 	}
 		
 	private void saveAESKey() throws Exception {
 		 	// write AES key
 			File aesK = peer.getFileManager().getFile(AES_KEY_FILE);
-		    pkCipher.init(Cipher.ENCRYPT_MODE, publicKey);
-		    CipherOutputStream os = new CipherOutputStream(new FileOutputStream(aesK), pkCipher);
-		    os.write(AESkey);
-		    os.flush();
-		    os.close();
+			if(!aesK.exists()) {
+				aesK.createNewFile();
+			}
+		    FileOutputStream out = new FileOutputStream(aesK);
+			out.write(key.getEncoded());
+			out.flush();
+			out.close();
+
+			File ivFile = peer.getFileManager().getFile(IV);
+			if(!ivFile.exists()) {
+			ivFile.createNewFile();
+			}
+			out = new FileOutputStream(ivFile);
+			out.write(iv.getIV());
+			out.flush();
+			out.close();
+
+
 		  }
 	 
 	private void loadAESKey() throws Exception {   
 		 	// read AES key
 			File aesK = peer.getFileManager().getFile(AES_KEY_FILE);
-		    pkCipher.init(Cipher.DECRYPT_MODE, privateKey);
 		    AESkey = new byte[AES_KEY_SIZE/8];
-		    CipherInputStream is = new CipherInputStream(new FileInputStream(aesK), pkCipher);
-		    is.read(AESkey);
-		    AESkeySpec = new SecretKeySpec(AESkey, "AES");
+		    FileInputStream in = new FileInputStream(aesK);
+		 	in.read(AESkey);
+			key = new SecretKeySpec(AESkey,0,16,"AES");
+			in.close();
+
+			// read AES key
+			File ivFile = peer.getFileManager().getFile(IV);
+			in = new FileInputStream(ivFile);
+			byte tmp[] = new byte[16];
+			in.read(tmp);
+			iv = new IvParameterSpec(tmp);
+			in.close();
 		  } 
 	
-	public void encrypt(File in, File out) throws IOException, InvalidKeyException{
-		System.out.println(AESkey.length);
-		System.out.println(AESkeySpec.getEncoded().length);
-		aesCipher.init(Cipher.ENCRYPT_MODE, AESkeySpec);
+	public void encrypt(File in, File out) throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, IOException, InvalidAlgorithmParameterException {
+		aesCipher.init(Cipher.ENCRYPT_MODE, key,iv);
+		FileOutputStream  dataOUT = new FileOutputStream(out);
 		
-		CipherInputStream  dataIN = new CipherInputStream( new FileInputStream(in), aesCipher);
-	    FileOutputStream  dataOUT = new FileOutputStream(out);
-		
-		int i;
-		byte[] data = new byte[1024];
-		
-		
-		while ((i = dataIN.read(data)) != -1){
-			dataOUT.write(data, 0, i);		
-		}
-		
-		dataIN.close();
+	    byte[] data = new byte[(int) in.length()];
+	    data = Files.readAllBytes(in.toPath());
+	    dataOUT.write(aesCipher.doFinal(data));
+	    dataOUT.flush();
 		dataOUT.close();
 	}
 	
-	public void decrypt(File in, File out) throws InvalidKeyException, IOException {
-		aesCipher.init(Cipher.DECRYPT_MODE, AESkeySpec);
-		
-		CipherInputStream  dataIN = new CipherInputStream( new FileInputStream(in), aesCipher);
+	public void decrypt(File in, File out) throws InvalidKeyException, IOException, InvalidParameterSpecException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException {
+		aesCipher.init(Cipher.DECRYPT_MODE, key,iv);
 	    FileOutputStream  dataOUT = new FileOutputStream(out);
-	    
-		int i;
-		byte[] data = new byte[1024];
-		
-		
-		while ((i = dataIN.read(data)) != -1){
-			dataOUT.write(data, 0, i);		
-		}
-		
-		dataIN.close();
+		byte[] data = Files.readAllBytes(in.toPath());
+		dataOUT.write(aesCipher.doFinal(data));
+		dataOUT.flush();
 		dataOUT.close();		
 	}
 	

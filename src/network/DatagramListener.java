@@ -12,6 +12,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.util.Arrays;
 import java.util.HashMap;
 
 public class DatagramListener extends Thread{
@@ -83,10 +84,13 @@ public class DatagramListener extends Thread{
 		while(running)
 		{
 		    DatagramPacket packet = receive();
+		    
+		    byte[] msg = Arrays.copyOf(packet.getData(), packet.getLength());
+		    
 			if(peer != null)
-				new MessagePeerHandler(channelType,packet.getData(),new Subscriber(packet.getAddress(),packet.getPort()),peer,subscribers).start();
+				new MessagePeerHandler(channelType,msg,new Subscriber(packet.getAddress(),packet.getPort()),peer,subscribers).start();
 			else if(tracker != null)
-				new MessageTrackerHandler(packet.getData(),new Subscriber(packet.getAddress(),packet.getPort()),tracker).start();
+				new MessageTrackerHandler(msg,new Subscriber(packet.getAddress(),packet.getPort()),tracker).start();
 		}
 		
 		//close connection

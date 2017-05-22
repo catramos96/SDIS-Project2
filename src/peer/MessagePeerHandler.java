@@ -263,7 +263,14 @@ public class MessagePeerHandler extends Thread{
 
 			    //TODO confirm
                 //peer.getChannelRecord().removeStoredMessages(c.getChunkKey());
-            }
+
+				//Save chunk info on database
+				peer.getDatabase().saveChunkInfo(chunkNo+fileId,c);
+				
+				//TODO
+				byte[] teste = peer.getFileManager().getChunkContent(fileId, chunkNo);
+			}
+
 		}
 	}
 

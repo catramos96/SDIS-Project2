@@ -8,10 +8,14 @@ import resources.Util;
 
 import java.io.File;
 import java.io.IOException;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class BackupInitiator extends Thread
 {
@@ -93,19 +97,18 @@ public class BackupInitiator extends Thread
         
         try {
 			peer.getEncrypt().encrypt(toSend, tmp);
-		} catch (InvalidKeyException | IOException e) {
+		} catch (InvalidKeyException | IOException | IllegalBlockSizeException | BadPaddingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 			return;
+		} catch (InvalidAlgorithmParameterException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
         
         //split file in chunks
-        System.out.println("cyperSize: " + tmp.length());
         ArrayList<ChunkInfo> chunks = peer.getFileManager().splitFileInChunks(filepath,tmp);
-        System.out.println("cyperSize: " + tmp.length());
-
         FileInfo fileinfo = new FileInfo(fileID,filepath,chunks.size(),repDeg);
-
         peer.addBackupInitiator(fileID,this);
         
         //add sentFile

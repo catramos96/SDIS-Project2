@@ -27,6 +27,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -69,7 +70,9 @@ public class Peer implements MessageRMI
             this.encrypt = new Encrypt(this);
         } catch (Exception e) {
             System.out.println("Error: Encrypt module unnable to start");
+            e.printStackTrace();
         }
+
 
         try {
             client = new SSLlistenerClient("localhost", 4499, new String[0], this); //TODO
@@ -87,8 +90,10 @@ public class Peer implements MessageRMI
             e.printStackTrace();
         } catch (IOException e) {
             System.out.println("CLIENT: error IO Encrypt module");
+            // TODO Auto-generated catch block
             e.printStackTrace();
         }
+
 
         try {
             mySubscription = new Subscriber(InetAddress.getLocalHost().getHostAddress(), -1);
