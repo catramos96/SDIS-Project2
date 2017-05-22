@@ -1,15 +1,13 @@
 package network;
 import message.ActivityMessage;
 import message.Message;
+import message.ProtocolMessage;
 import message.TopologyMessage;
 import peer.Peer;
 import protocols.ChunkBackupProtocol;
 import resources.Logs;
 import resources.Util;
-
 import java.util.ArrayList;
-
-import javax.annotation.Resource;
 
 public class GroupChannel extends Thread{
 
@@ -104,8 +102,9 @@ public class GroupChannel extends Thread{
 		DatagramListener channel = getChannel(type);
 		int port = root.getPort(type);
 		
-		if(port != -1 && channel != null)
+		if(port != -1 && channel != null) {
 			channel.send(message.buildMessage(), root.getAddress(), port);
+		}
 		else
 			Logs.errorMsg("Could not send message because port or channel not found!");
 	}

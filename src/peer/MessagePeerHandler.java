@@ -198,12 +198,12 @@ public class MessagePeerHandler extends Thread{
 	 * @param repDeg - Chunk desirable chunk replication degree
 	 * @param body - Chunk content
 	 */
-	private synchronized void handlePutchunk(String fileId, int chunkNo, int repDeg, byte[] body)
-	{
+	private synchronized void handlePutchunk(String fileId, int chunkNo, int repDeg, byte[] body) {
+
 		//Owner of the file with file id
 		if(peer.getDatabase().sentFileId(fileId))
 			return;
-
+		
 		ChunkInfo c = new ChunkInfo(fileId, chunkNo, body);
 
 		//create response message : STORED
@@ -246,6 +246,9 @@ public class MessagePeerHandler extends Thread{
 
 				//Save chunk info on database
 				peer.getDatabase().saveChunkInfo(chunkNo+fileId,c);
+				
+				//TODO
+				byte[] teste = peer.getFileManager().getChunkContent(fileId, chunkNo);
 			}
 		}
 	}

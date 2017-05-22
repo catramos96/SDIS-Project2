@@ -3,12 +3,16 @@ package filesystem;
 import resources.Util;
 import security.Encrypt;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 import javax.xml.bind.DatatypeConverter;
 import java.io.*;
 import java.nio.file.Files;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidParameterSpecException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -45,19 +49,18 @@ public class FileManager {
      * @param filename
      * @return
      */
-    public ArrayList<ChunkInfo> splitFileInChunks(String filename)
+    public ArrayList<ChunkInfo> splitFileInChunks(String filename, File cypher)
     {
         ArrayList<ChunkInfo> chunkList = new ArrayList<>();	//list of chunks created for this file
         File file = new File(filename);	//open file
-
         //verifies file existence
         if (file.exists())
         {
             try
             {
                 String fileID = hashFileId(file);
-                int numChunks = (int) (file.length() / Util.CHUNK_MAX_SIZE) + 1;
-                byte[] bytes = Files.readAllBytes(file.toPath());
+                int numChunks = (int) (cypher.length() / Util.CHUNK_MAX_SIZE) + 1;
+                byte[] bytes = Files.readAllBytes(cypher.toPath());
                 int byteCount = 0;
 
                 for (int i = 0; i < numChunks; i++)
@@ -132,6 +135,7 @@ public class FileManager {
     {
         byte data[] = c.getData();
         FileOutputStream out;
+
         try
         {
             out = new FileOutputStream(createChunkName(c.getFileId(),c.getChunkNo()));
@@ -158,12 +162,16 @@ public class FileManager {
      * @param restores
      * @throws IOException
      * @throws InvalidKeyException 
+     * @throws InvalidParameterSpecException 
+     * @throws BadPaddingException 
+     * @throws IllegalBlockSizeException 
+     * @throws InvalidAlgorithmParameterException 
      */
-    public void restoreFile(String filename, byte[][] data, Encrypt decypher) throws IOException, InvalidKeyException
+    public void restoreFile(String filename, byte[][] data, Encrypt decypher) throws IOException, InvalidKeyException, InvalidParameterSpecException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException
     {	
-    	String tmpDir = diskDIR + "tmp/" +filename;
+    	String tmpDir = diskDIR + "/tmp/" +filename;
     	String finalDir = diskDIR + Util.RESTORES_DIR +filename;
-        FileOutputStream out = new FileOutputStream(diskDIR + "tmp/" +filename);
+        FileOutputStream out = new FileOutputStream(diskDIR + "/tmp/" +filename);
 
         for (int i = 0; i < data.length; i++)
         {
@@ -175,7 +183,7 @@ public class FileManager {
         
         File crip = new File(tmpDir);
         File decrip = new File(finalDir);
-       
+
         decypher.decrypt(crip, decrip);
 		
     }

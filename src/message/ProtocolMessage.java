@@ -204,7 +204,6 @@ public class ProtocolMessage extends Message
 			}
 			
 			byte[] a = baos.toByteArray();
-			
 			return a;
 		}
 		
@@ -330,16 +329,20 @@ public class ProtocolMessage extends Message
 			//Removes the last sequences of white spaces (\s) and null characters (\0)
 			//String msg_received = (new String(packet.getData()).replaceAll("[\0 \\s]*$", ""));
 			int offset = header.length() + ProtocolMessage.LINE_SEPARATOR.length()*2;
-			byte[] body = new byte[64000];
-			System.arraycopy(message, offset, body, 0, 64000);
+			int bodySize = message.length - offset;
+			byte[] body = new byte[bodySize];
+			System.arraycopy(message, offset, body, 0, bodySize);
+			
+			
 
 			//Creates the message with the respective attributes
 			if(type_rcv.compareTo(Util.ProtocolMessageType.DELETE) == 0 || type_rcv.compareTo(Util.ProtocolMessageType.GETINITIATOR) == 0 || type_rcv.compareTo(Util.ProtocolMessageType.INITIATOR) == 0)
 				parsed = new ProtocolMessage(type_rcv,senderId_rcv,fileId_rcv);
 			else if(type_rcv.compareTo(Util.ProtocolMessageType.GETCHUNK) == 0 || type_rcv.compareTo(Util.ProtocolMessageType.STORED) == 0 || type_rcv.compareTo(Util.ProtocolMessageType.REMOVED) == 0 || type_rcv.compareTo(Util.ProtocolMessageType.GOTCHUNKENH) == 0)
 				parsed = new ProtocolMessage(type_rcv,senderId_rcv,fileId_rcv,chunkNo_rcv) ;
-			else if(type_rcv.compareTo(Util.ProtocolMessageType.PUTCHUNK) == 0)
+			else if(type_rcv.compareTo(Util.ProtocolMessageType.PUTCHUNK) == 0){
 				parsed = new ProtocolMessage(type_rcv,senderId_rcv,fileId_rcv,chunkNo_rcv,replicationDeg_rcv,body);
+			}
 			else if(type_rcv.compareTo(Util.ProtocolMessageType.CHUNK) == 0)
 				parsed = new ProtocolMessage(type_rcv,senderId_rcv,fileId_rcv,chunkNo_rcv,body);
             /*else if(type_rcv.compareTo(Util.ProtocolMessageType.GETCHUNKENH) == 0)

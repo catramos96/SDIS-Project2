@@ -8,8 +8,12 @@ import resources.Util;
 
 import java.io.File;
 import java.io.IOException;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.util.ArrayList;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 
 public class BackupInitiator extends Thread
 {
@@ -58,7 +62,7 @@ public class BackupInitiator extends Thread
         }
         
         File toSend = new File(filepath);
-        String tmpFileDir = peer.getFileManager().diskDIR+"tmp/"+toSend.getName();
+        String tmpFileDir = peer.getFileManager().diskDIR+"/tmp/"+toSend.getName();
         File tmp = new File(tmpFileDir);
         
         try {
@@ -70,15 +74,17 @@ public class BackupInitiator extends Thread
         
         try {
 			peer.getEncrypt().encrypt(toSend, tmp);
-		} catch (InvalidKeyException | IOException e) {
+		} catch (InvalidKeyException | IOException | IllegalBlockSizeException | BadPaddingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 			return;
+		} catch (InvalidAlgorithmParameterException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
         
         //split file in chunks
-        ArrayList<ChunkInfo> chunks = peer.getFileManager().splitFileInChunks(tmpFileDir);
-
+        ArrayList<ChunkInfo> chunks = peer.getFileManager().splitFileInChunks(filepath,tmp);
         String fileID = peer.getFileManager().getFileIdFromFilename(filepath);
         FileInfo fileinfo = new FileInfo(fileID,filepath,chunks.size(),repDeg);
         
@@ -93,5 +99,8 @@ public class BackupInitiator extends Thread
 
         System.out.println("Backup info :");
         System.out.println(peer.getDatabase().ListFiles());
+       if( tmp.delete()) {
+    	   System.out.println("Backup: temporary files deleted");
+       };
     }
 }
