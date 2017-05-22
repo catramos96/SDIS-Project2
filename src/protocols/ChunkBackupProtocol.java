@@ -1,5 +1,6 @@
 package protocols;
 
+import filesystem.Database;
 import message.ProtocolMessage;
 import network.GroupChannel;
 import resources.Logs;
@@ -15,7 +16,8 @@ public class ChunkBackupProtocol extends Thread
 {
     private final ProtocolMessage   msg;
     private final GroupChannel      channel;
-    private ArrayList<Integer>      filesystems;
+    private final Database		    db;
+    //private ArrayList<Integer>      filesystems;
 
 
 	/*			MSG="PUTCHUNK"		  --> Peer		MSG="STORED"		sleep(1sec)
@@ -26,11 +28,12 @@ public class ChunkBackupProtocol extends Thread
 	/**
 	 * Constructor of ChunkBackupProtocol
 	 */
-	public ChunkBackupProtocol(GroupChannel channel, ProtocolMessage msg)
+	public ChunkBackupProtocol(Database database, GroupChannel channel, ProtocolMessage msg)
     {
         this.channel = channel;
 		this.msg = msg;
-        filesystems = new ArrayList<>();
+		this.db = database;
+        //filesystems = new ArrayList<>();
 	}
 
 	@Override
@@ -60,7 +63,7 @@ public class ChunkBackupProtocol extends Thread
 			}
 			
 			//replication degree achieved
-			if(getActualRepDeg() >= msg.getReplicationDeg())
+			if(db.getActualRepDeg(msg.getChunkNo()+msg.getFileId()) >= msg.getReplicationDeg())
 			{
 				System.out.println(" - replication degree achieved - ");
 				return;
@@ -75,7 +78,7 @@ public class ChunkBackupProtocol extends Thread
         //msgRecord.removeStoredMessages(fileNo, chunkNo);
 	}
 
-    public void updateStores(int senderId)
+    /*public void updateStores(int senderId)
     {
         if(!filesystems.contains(senderId))
             filesystems.add(senderId);
@@ -83,5 +86,5 @@ public class ChunkBackupProtocol extends Thread
 
     public int getActualRepDeg() {
         return filesystems.size();
-    }
+    }*/
 }

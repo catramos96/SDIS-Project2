@@ -109,7 +109,8 @@ public class BackupInitiator extends Thread
         //split file in chunks
         ArrayList<ChunkInfo> chunks = peer.getFileManager().splitFileInChunks(filepath,tmp);
         FileInfo fileinfo = new FileInfo(fileID,filepath,chunks.size(),repDeg);
-        peer.addBackupInitiator(fileID,this);
+
+        //peer.addBackupInitiator(fileID,this);
         
         //add sentFile
         peer.getDatabase().addSentFile(filepath, fileinfo);
@@ -129,16 +130,21 @@ public class BackupInitiator extends Thread
 
         System.out.println(" - BACKUP SUCCESSFUL - ");
 
-        peer.removeBackupInitiator(fileID);
+        if( tmp.delete()) {
+            System.out.println("Backup: temporary files deleted");
+        };
+
     }
 
     public void sendChunk(ChunkInfo c)
     {
+        peer.getDatabase().startChunkMapping(c.getChunkKey());
+
         //message to send
         ProtocolMessage msg = new ProtocolMessage(Util.ProtocolMessageType.PUTCHUNK,peer.getID(),c.getFileId(),c.getChunkNo(),c.getReplicationDeg(),c.getData());
 
         //start chunk backup protocol
-        ChunkBackupProtocol cbp = new ChunkBackupProtocol(peer.getSubscribedGroup(),msg);
+        ChunkBackupProtocol cbp = new ChunkBackupProtocol(peer.getDatabase(),peer.getSubscribedGroup(),msg);
         protocols.put(c.getChunkKey(),cbp);
         cbp.start();
     }
@@ -156,20 +162,11 @@ public class BackupInitiator extends Thread
         try
         {
             prot.join();
-            peer.getDatabase().updateSentChunkRepDeg(chunkKey,prot.getActualRepDeg());
+            peer.getDatabase().updateSentChunkRepDeg(chunkKey,peer.getDatabase().getActualRepDeg(chunkKey));
         }
         catch (InterruptedException e) {
             //Logs.exception("run", "BackupTrigger", e.toString());
             e.printStackTrace();
         }
-    }
-
-    public void updateStores(String chunkKey, int senderId)
-    {
-       ChunkBackupProtocol cbp = protocols.get(chunkKey);
-       if(cbp != null)
-       {
-           cbp.updateStores(senderId);
-       }
     }
 }

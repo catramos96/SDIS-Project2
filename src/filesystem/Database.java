@@ -1,5 +1,7 @@
 package filesystem;
 
+import javax.swing.*;
+import java.io.File;
 import java.io.Serializable;
 import java.util.*;
 
@@ -11,14 +13,20 @@ public class Database implements Serializable
     private HashMap<String, ChunkInfo> storedChunks;
     //chunks created from backups               ("chunkKey", chunkInfo)
     private HashMap<String, ChunkInfo> sentChunks;
+    //chunks created from backups filesystems    ("chunkKey", <filesystems>)
+    private HashMap<String, ArrayList<Integer>> sentChunksMapping;
     //list of files whose backup was initiated  ("filepath", fileInfo)
     private HashMap<String, FileInfo> sentFiles;
+    //list of restored files                    ("filepath", fileInfo)
+    private HashMap<String, FileInfo> restoredFiles;
 
     public Database()
     {
         storedChunks = new HashMap<>();
         sentChunks = new HashMap<>();
+        sentChunksMapping = new HashMap<>();
         sentFiles = new HashMap<>();
+        restoredFiles = new HashMap<>();
     }
 
     /*
@@ -150,6 +158,30 @@ public class Database implements Serializable
     }
 
     /*
+    SENT CHUNKS FILESYSTEM
+     */
+    public int getActualRepDeg(String chunkey) {
+        return sentChunksMapping.get(chunkey).size();
+    }
+
+    public void startChunkMapping(String chunkKey) {
+        sentChunksMapping.put(chunkKey,new ArrayList<>());
+    }
+
+    public void addFilesystem(String chunkKey, int senderId) {
+        if(!sentChunksMapping.get(chunkKey).contains(senderId))
+            sentChunksMapping.get(chunkKey).add(senderId);
+    }
+
+    public void removeChunkMapping(String fileId) {
+
+        for (Map.Entry<String,ArrayList<Integer> > c : sentChunksMapping.entrySet()) {
+            if (c.getKey().contains(fileId))
+                sentChunksMapping.remove(c.getKey());
+        }
+    }
+
+    /*
     SENT FILES
      */
     public synchronized HashMap<String,FileInfo> getSentFiles() {
@@ -190,6 +222,28 @@ public class Database implements Serializable
     }
 
     /*
+    RESTORED FILES
+     */
+    public synchronized void addRestoredFile(String filepath, FileInfo fileinfo)
+    {
+        restoredFiles.put(filepath, fileinfo);
+        notify();
+    }
+
+    public synchronized void removeRestoredFile(String path) {
+        if(path != null)
+        {
+            restoredFiles.remove(path);
+        }
+        notify();
+    }
+
+    public synchronized boolean hasRestoredFile(String filepath) {
+        return restoredFiles.containsKey(filepath);
+    }
+
+
+    /*
     DISPLAYS
      */
 
@@ -206,6 +260,12 @@ public class Database implements Serializable
             ChunkInfo value = sentChunks.get(key);
             System.out.println(" * Chunk key "+key+" | Size "+value.getData().length+" | repDeg "
                     +value.getReplicationDeg()+" | actual repDeg "+ value.getActualRepDeg());
+        }
+
+        System.out.println("\nINITIATOR PEER RESTORES : ");
+        for(String key : restoredFiles.keySet()) {
+            FileInfo value = restoredFiles.get(key);
+            System.out.println(" * Filepath " + key + " | FileID " + value.getFileId());
         }
 
         System.out.println("\nPEER STORED CHUNKS : ");

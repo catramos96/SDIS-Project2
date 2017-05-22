@@ -109,6 +109,8 @@ public class RestoreInitiator extends Thread
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+
+		peer.getDatabase().addRestoredFile(filePath,fileInfo);
 		
 		peer.removeRestoreInitiator(fileID);
 		System.out.println(file + " has been restored successfully.");

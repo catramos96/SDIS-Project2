@@ -4,17 +4,14 @@ import filesystem.ChunkInfo;
 import filesystem.Database;
 import filesystem.FileManager;
 import message.MessageRMI;
-import message.ProtocolMessage;
 import network.ChannelRecord;
 import network.DatagramListener;
 import network.GroupChannel;
 import network.Subscriber;
 import protocols.BackupInitiator;
-import protocols.ChunkBackupProtocol;
 import protocols.DeleteInitiator;
 import protocols.RestoreInitiator;
 import resources.Logs;
-import resources.Util;
 import security.Encrypt;
 import security.SSLlistenerClient;
 
@@ -29,7 +26,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 
 import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -227,12 +223,12 @@ public class Peer implements MessageRMI
                 for(ChunkInfo c : chunks)
                 {
                     BackupInitiator temp = new BackupInitiator(peer,"",0);
-                    addBackupInitiator(c.getFileId(),temp);
+                    //addBackupInitiator(c.getFileId(),temp);
 
                     temp.sendChunk(c);
                     temp.waitProtocols();
 
-                    removeBackupInitiator(c.getFileId());
+                    //removeBackupInitiator(c.getFileId());
                 }
 
                 System.out.println(" - update completed - ");
@@ -343,14 +339,6 @@ public class Peer implements MessageRMI
 
     public void removeRestoreInitiator(String fileId) {
         restoreInitiators.remove(fileId);
-    }
-
-    public void addBackupInitiator(String fileId, BackupInitiator backup) { backupInitiators.put(fileId, backup); }
-
-    public BackupInitiator getBackupInitiator(String fileId) { return backupInitiators.get(fileId); }
-
-    public void removeBackupInitiator(String fileId) {
-        backupInitiators.remove(fileId);
     }
 
     public Encrypt getEncrypt() { return encrypt;}

@@ -326,8 +326,7 @@ public class MessagePeerHandler extends Thread{
         //Record the storedChunks in case the peer is the OWNER of the backup file
         if(peer.getDatabase().hasSentChunk(chunkKey))
         {
-            BackupInitiator initiator = peer.getBackupInitiator(fileId);
-            initiator.updateStores(chunkKey, senderId);
+            peer.getDatabase().addFilesystem(chunkKey,senderId);
         }
 
 	}
