@@ -11,6 +11,8 @@ import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -20,12 +22,14 @@ public class BackupInitiator extends Thread
     private String filepath;
     private int    repDeg;
     private Peer   peer;
+    private HashMap<String,ChunkBackupProtocol> protocols;
 
     public BackupInitiator(Peer peer, String filepath, int repDeg)
     {
         this.peer = peer;
         this.filepath = filepath;
         this.repDeg = repDeg;
+        protocols = new HashMap<>();
     }
 
     private boolean fileExist()
@@ -46,27 +50,46 @@ public class BackupInitiator extends Thread
         if(!fileExist())
             return;
 
-        if(peer.getDatabase().hasStoredFileWithFilename(filepath))
+        String fileID = peer.getFileManager().getFileIdFromFilename(filepath);
+
+        //peer already backed up file, but it's a different version
+        if(peer.getDatabase().hasSentFile(filepath))
         {
-            //delete old chunks
-            DeleteInitiator dt = new DeleteInitiator(peer, filepath);
-            dt.start();
-            try
+            FileInfo info = peer.getDatabase().getFileInfo(filepath);
+
+            if(fileID.equals(info.getFileId()))
             {
-                dt.join();	 //waits for chunks delete
+                System.out.println("File already backed up!");
+                return;
             }
-            catch (InterruptedException e) {
-                //Logs.exception("run", "BackupTrigger", e.toString());
-                e.printStackTrace();
+            else
+            {
+                System.out.println("New version of file");
+                //delete old chunks
+                DeleteInitiator dt = new DeleteInitiator(peer, filepath);
+                dt.start();
+                try
+                {
+                    dt.join();	 //waits for chunks delete
+                }
+                catch (InterruptedException e) {
+                    //Logs.exception("run", "BackupTrigger", e.toString());
+                    e.printStackTrace();
+                }
+
+                //delete chunks and files from database
+                peer.getDatabase().removeSentChunks(info.getFileId());
+                peer.getDatabase().removeSentFile(filepath);
             }
         }
-        
+
+        //encrypt
         File toSend = new File(filepath);
         String tmpFileDir = peer.getFileManager().diskDIR+"/tmp/"+toSend.getName();
         File tmp = new File(tmpFileDir);
         
         try {
-        		tmp.createNewFile();
+            tmp.createNewFile();
         }catch(IOException e1) {
         	e1.printStackTrace();
         	return;
@@ -85,22 +108,65 @@ public class BackupInitiator extends Thread
         
         //split file in chunks
         ArrayList<ChunkInfo> chunks = peer.getFileManager().splitFileInChunks(filepath,tmp);
-        String fileID = peer.getFileManager().getFileIdFromFilename(filepath);
         FileInfo fileinfo = new FileInfo(fileID,filepath,chunks.size(),repDeg);
+
+        //peer.addBackupInitiator(fileID,this);
         
-        //starts recording file
-        peer.getDatabase().saveStoredFile(filepath, fileinfo);
+        //add sentFile
+        peer.getDatabase().addSentFile(filepath, fileinfo);
 
         for (ChunkInfo c: chunks)
         {
-            ProtocolMessage msg = new ProtocolMessage(Util.ProtocolMessageType.PUTCHUNK,peer.getID(),c.getFileId(),c.getChunkNo(),repDeg,c.getData());
-            new ChunkBackupProtocol(peer.getSubscribedGroup(),msg).start();
+            //starts recording sentChunks
+            c.setReplicationDeg(repDeg);
+            peer.getDatabase().addSentChunk(c.getChunkKey(),c);
+
+            sendChunk(c);
         }
 
-        System.out.println("Backup info :");
-        System.out.println(peer.getDatabase().ListFiles());
-       if( tmp.delete()) {
-    	   System.out.println("Backup: temporary files deleted");
-       };
+        //all protocols ended -> chunks (whose backup was initiated) actual replication degree must be updated
+        //wait for all threads to finish
+        waitProtocols();
+
+        System.out.println(" - BACKUP SUCCESSFUL - ");
+
+        if( tmp.delete()) {
+            System.out.println("Backup: temporary files deleted");
+        };
+
+    }
+
+    public void sendChunk(ChunkInfo c)
+    {
+        peer.getDatabase().startChunkMapping(c.getChunkKey());
+
+        //message to send
+        ProtocolMessage msg = new ProtocolMessage(Util.ProtocolMessageType.PUTCHUNK,peer.getID(),c.getFileId(),c.getChunkNo(),c.getReplicationDeg(),c.getData());
+
+        //start chunk backup protocol
+        ChunkBackupProtocol cbp = new ChunkBackupProtocol(peer.getDatabase(),peer.getSubscribedGroup(),msg);
+        protocols.put(c.getChunkKey(),cbp);
+        cbp.start();
+    }
+
+    public void waitProtocols()
+    {
+        for (Map.Entry<String, ChunkBackupProtocol> entry : protocols.entrySet())
+        {
+            waitProtocol(entry.getKey(),entry.getValue());
+        }
+    }
+
+    public void waitProtocol(String chunkKey, ChunkBackupProtocol prot)
+    {
+        try
+        {
+            prot.join();
+            peer.getDatabase().updateSentChunkRepDeg(chunkKey,peer.getDatabase().getActualRepDeg(chunkKey));
+        }
+        catch (InterruptedException e) {
+            //Logs.exception("run", "BackupTrigger", e.toString());
+            e.printStackTrace();
+        }
     }
 }

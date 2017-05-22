@@ -32,17 +32,15 @@ public class DeleteInitiator extends Thread{
     @Override
     public void run()
     {
-        System.out.println("Delete info :");
-
         //verifies if this file was backed up at this peer
-        if(!peer.getDatabase().hasStoredFileWithFilename(filepath))
+        if(!peer.getDatabase().hasSentFile(filepath))
         {
             //message = filename + " not backed up by this peer!"
             System.out.println("File not backed up");
             return;
         }
 
-        FileInfo info = peer.getDatabase().getFileData(filepath);
+        FileInfo info = peer.getDatabase().getFileInfo(filepath);
 
         //create message
         String fileId = info.getFileId();
@@ -53,12 +51,8 @@ public class DeleteInitiator extends Thread{
         System.out.println("Delete");
         //Logs.sentMessageLog(msg);
 
-        try {
-            Thread.sleep(Util.WAITING_TIME);
-        } catch (InterruptedException e) {
-            //Logs.exception("run", "DeleteTrigger", e.toString());
-            e.printStackTrace();
-        }
+        Util.randomDelay();
+
         peer.getSubscribedGroup().sendMessageToRoot(msg,Util.ChannelType.MC);
         System.out.println("Delete");
         //Logs.sentMessageLog(msg);
@@ -67,12 +61,15 @@ public class DeleteInitiator extends Thread{
         String dir = peer.getFileManager().diskDIR + Util.RESTORES_DIR + info.getFilename();
         peer.getFileManager().deleteFile(dir);
 
-        //TODO delete history from multicast data restore (mdr) ?
-        //peer.getMessageRecord().resetChunkMessages(fileId);
+        //delete entries from database (sent chunks, sent chunks mappings, files, restores)
+        peer.getDatabase().removeSentChunks(fileId);
+        peer.getDatabase().removeSentFile(filepath);
+        peer.getDatabase().removeChunkMapping(fileId);
+        peer.getDatabase().removeRestoredFile(filepath);
 
-        //delete entries from database (backups and restores)
-        peer.getDatabase().removeFile(fileId);
-        //TODO: delete entries from database RESTORES
+        //TODO confirm
+        //reset mdr ?
+        peer.getChannelRecord().resetChunkMessages(fileId);
 
         /*message = "Delete successful!";
         Logs.log(message);*/

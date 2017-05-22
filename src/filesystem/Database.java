@@ -1,30 +1,37 @@
 package filesystem;
 
+import javax.swing.*;
+import java.io.File;
+import java.io.Serializable;
 import java.util.*;
 
-public class Database {
+public class Database implements Serializable
+{
+    private static final long serialVersionUID = 1L;
 
+    //chunks stored                             ("chunkKey", chunkInfo)
     private HashMap<String, ChunkInfo> storedChunks;
-
+    //chunks created from backups               ("chunkKey", chunkInfo)
+    private HashMap<String, ChunkInfo> sentChunks;
+    //chunks created from backups filesystems    ("chunkKey", <filesystems>)
+    private HashMap<String, ArrayList<Integer>> sentChunksMapping;
+    //list of files whose backup was initiated  ("filepath", fileInfo)
     private HashMap<String, FileInfo> sentFiles;
-    private HashSet<String>           sentFileId;
+    //list of restored files                    ("filepath", fileInfo)
+    private HashMap<String, FileInfo> restoredFiles;
 
-    private HashMap<String, Boolean> chunkSent;
-    private HashMap<String, Boolean> putChunkSent;
-
-    //private LinkedList<Message> deleteMessages;
-
-    public Database() {
-        storedChunks = new HashMap<String, ChunkInfo>();
-
-        sentFiles = new HashMap<String, FileInfo>();
-        sentFileId = new HashSet<String>();
-
-        chunkSent = new HashMap<String, Boolean>();
-        putChunkSent = new HashMap<String, Boolean>();
-
-        //deleteMessages = new LinkedList<Message>();
+    public Database()
+    {
+        storedChunks = new HashMap<>();
+        sentChunks = new HashMap<>();
+        sentChunksMapping = new HashMap<>();
+        sentFiles = new HashMap<>();
+        restoredFiles = new HashMap<>();
     }
+
+    /*
+    STOREDCHUNKS
+     */
 
     // Methods related to chunks stored by peer
     public synchronized HashMap<String, ChunkInfo> getStoredChunks() {
@@ -43,26 +50,55 @@ public class Database {
         notify();
     }
 
-    public synchronized boolean chunkOnDB(String key) {
+    public synchronized boolean hasChunkStored(String key) {
         boolean  out = storedChunks.containsKey(key);
         notify();
         return out;
     }
 
+    public synchronized void removeStoredChunksFromFileID(String fileId)
+    {
+        for (ChunkInfo chunk : storedChunks.values()) {
+            if (chunk.getFileId().equals(fileId)) {
+                storedChunks.remove(chunk.getChunkKey());
+            }
+        }
+    }
+
+    public synchronized void removeStoredChunk(String chunkKey)
+    {
+        if(storedChunks.containsKey(chunkKey))
+            storedChunks.remove(chunkKey);
+    }
+
+    //Returns a list of chunks with perceived replication degree higher than desired
+    public synchronized ArrayList<ChunkInfo> getChunksHigherReplication() {
+        ArrayList<ChunkInfo> chunkList = new ArrayList<ChunkInfo>();
+
+        for (ChunkInfo chunk : storedChunks.values()) {
+            if (chunk.getActualRepDeg() > chunk.getReplicationDeg()) {
+                chunkList.add(chunk);
+            }
+        }
+
+        notify();
+        return chunkList;
+    }
+
+    public synchronized void updateActualRepDeg(int deg, String key) {
+        storedChunks.get(key).setActualRepDeg(deg);
+        notify();
+    }
+
     public synchronized boolean desiredReplication(String key) {
-        if (!chunkOnDB(key)) {
+        if (!hasChunkStored(key)) {
             notify();
             return false;
         }
 
         ChunkInfo chunk = getChunkInfo(key);
         notify();
-        return chunk.getAtualRepDeg() >= chunk.getChunkNo();
-    }
-
-    public synchronized void updateReplicationDegree(int change, String key) {
-        storedChunks.get(key).setReplicationDeg(change);
-        notify();
+        return chunk.getActualRepDeg() >= chunk.getChunkNo();
     }
 
     public synchronized ArrayList<ChunkInfo> getChunksOrderedByReplication() {
@@ -74,12 +110,45 @@ public class Database {
         return chunkList;
     }
 
-    // Returns a list of chunkId for chunks with perceived replication degree higher than desired
-    public synchronized ArrayList<ChunkInfo> getChunksHigherReplication() {
+    /*
+    SENTCHUNKS
+     */
+
+    public synchronized void addSentChunk(String chunkKey,ChunkInfo chunk)
+    {
+       sentChunks.put(chunkKey,chunk);
+    }
+
+    public synchronized boolean hasSentChunk(String chunkKey)
+    {
+        return sentChunks.containsKey(chunkKey);
+    }
+
+    public synchronized boolean updateSentChunkRepDeg(String chunkKey,int actualRepDeg)
+    {
+        ChunkInfo ci = sentChunks.get(chunkKey);
+
+        if(ci == null)
+            return false;
+
+        ci.setActualRepDeg(actualRepDeg);
+        return true;
+    }
+
+    public synchronized void removeSentChunks(String fileId)
+    {
+        for (Map.Entry<String, ChunkInfo> c : sentChunks.entrySet()) {
+            if (c.getValue().getFileId().equals(fileId))
+                sentChunks.remove(c.getKey());
+        }
+    }
+
+    //Returns a list of chunks with perceived replication degree is bellow than desired
+    public synchronized ArrayList<ChunkInfo> getSentChunksBellowRepDeg() {
         ArrayList<ChunkInfo> chunkList = new ArrayList<ChunkInfo>();
 
-        for (ChunkInfo chunk : storedChunks.values()) {
-            if (chunk.getAtualRepDeg() > chunk.getReplicationDeg()) {
+        for (ChunkInfo chunk : sentChunks.values()) {
+            if (chunk.getActualRepDeg() < chunk.getReplicationDeg()) {
                 chunkList.add(chunk);
             }
         }
@@ -88,138 +157,123 @@ public class Database {
         return chunkList;
     }
 
-    // Methods related to files sent by peer
-    public synchronized HashMap<String, FileInfo> getSentFiles() {
-        HashMap<String, FileInfo> out = sentFiles;
+    /*
+    SENT CHUNKS FILESYSTEM
+     */
+    public int getActualRepDeg(String chunkey) {
+        return sentChunksMapping.get(chunkey).size();
+    }
+
+    public void startChunkMapping(String chunkKey) {
+        sentChunksMapping.put(chunkKey,new ArrayList<>());
+    }
+
+    public void addFilesystem(String chunkKey, int senderId) {
+        if(!sentChunksMapping.get(chunkKey).contains(senderId))
+            sentChunksMapping.get(chunkKey).add(senderId);
+    }
+
+    public void removeChunkMapping(String fileId) {
+
+        for (Map.Entry<String,ArrayList<Integer> > c : sentChunksMapping.entrySet()) {
+            if (c.getKey().contains(fileId))
+                sentChunksMapping.remove(c.getKey());
+        }
+    }
+
+    /*
+    SENT FILES
+     */
+    public synchronized HashMap<String,FileInfo> getSentFiles() {
+        HashMap<String,FileInfo> out = sentFiles;
         notify();
         return out;
     }
 
-    public synchronized FileInfo getFileData(String filepath) {
+    public synchronized void addSentFile(String filepath, FileInfo fileinfo)
+    {
+        sentFiles.put(filepath, fileinfo);
+        notify();
+    }
+
+    public synchronized void removeSentFile(String path) {
+        if(path != null)
+        {
+            sentFiles.remove(path);
+        }
+        notify();
+    }
+
+    public synchronized boolean hasSentFile(String filepath) {
+        return sentFiles.containsKey(filepath);
+    }
+
+    public synchronized boolean hasSentFileByFileID(String fileID) {
+        for(Map.Entry<String, FileInfo> entry : sentFiles.entrySet())
+            if(entry.getValue().getFileId().equals(fileID))
+                return true;
+        return false;
+    }
+
+    public synchronized FileInfo getFileInfo(String filepath) {
         FileInfo out = sentFiles.get(filepath);
         notify();
         return out;
     }
 
-    public synchronized void saveStoredFile(String filepath, FileInfo fileinfo) {
-        sentFileId.add(fileinfo.getFileId());
-        sentFiles.put(filepath, fileinfo);
+    /*
+    RESTORED FILES
+     */
+    public synchronized void addRestoredFile(String filepath, FileInfo fileinfo)
+    {
+        restoredFiles.put(filepath, fileinfo);
         notify();
     }
 
-    public synchronized boolean hasStoredFileWithFilename(String filepath) {
-        for(Map.Entry<String, FileInfo> entry : sentFiles.entrySet())
-           if(entry.getValue().getFilename().equals(filepath))
-               return true;
-        return false;
-    }
-
-    public synchronized boolean sentFileId(String fileid) {
-        boolean out  = sentFileId.contains(fileid);
-        notify();
-        return out;
-    }
-
-    public synchronized void registerChunkSent(String chunkId) {
-        chunkSent.put(chunkId, true);
-        notify();
-    }
-
-    public synchronized void clearChunkSent(String chunkId) {
-        chunkSent.put(chunkId, false);
-        notify();
-    }
-
-    public synchronized boolean chunkAlreadySent(String chunkId) {
-        if (chunkSent.get(chunkId) != null){
-            boolean out = chunkSent.containsKey(chunkId);
-            notify();
-            return out;
-        }
-
-        notify();
-        return false;
-    }
-
-    public synchronized void removeChunk(String chunkId) {
-        chunkSent.remove(chunkId);
-        storedChunks.remove(chunkId);
-        notify();
-    }
-
-
-    public synchronized void removeFile(String path) {
+    public synchronized void removeRestoredFile(String path) {
         if(path != null)
         {
-            sentFiles.remove(path);
-            sentFileId.remove(path);
+            restoredFiles.remove(path);
         }
         notify();
     }
 
-    public synchronized void listenPutChunkFlag(String key) {
-        putChunkSent.put(key, false);
-        notify();
+    public synchronized boolean hasRestoredFile(String filepath) {
+        return restoredFiles.containsKey(filepath);
     }
 
-    public synchronized void removePutChunkFlag(String key) {
-        putChunkSent.remove(key);
-        notify();
-    }
 
-    public synchronized void markPutChunkSent(String key) {
-        if (putChunkSent.get(key) != null) {
-            putChunkSent.put(key, true);
-        }
-        notify();
-    }
+    /*
+    DISPLAYS
+     */
 
-    public synchronized boolean getPutChunkSent(String key) {
-        Boolean response = putChunkSent.get(key);
+    public void display() {
 
-        if (response != null) {
-            notify();
-            return response;
+        System.out.println("\nINITIATOR PEER SENT FILES : ");
+        for(String key : sentFiles.keySet()) {
+            FileInfo value = sentFiles.get(key);
+            System.out.println(" * Filepath " + key + " | FileID " + value.getFileId());
         }
 
-        return false;
-    }
-/*
-    public synchronized void addDeleteMessage(Message msg) {
-        // store only the last 10 messages
-        if (deleteMessages.size() >= 30) {
-            deleteMessages.removeFirst();
+        System.out.println("\nINITIATOR PEER SENT CHUNKS : ");
+        for(String key : sentChunks.keySet()) {
+            ChunkInfo value = sentChunks.get(key);
+            System.out.println(" * Chunk key "+key+" | Size "+value.getData().length+" | repDeg "
+                    +value.getReplicationDeg()+" | actual repDeg "+ value.getActualRepDeg());
         }
 
-        deleteMessages.add(msg);
-    }
+        System.out.println("\nINITIATOR PEER RESTORES : ");
+        for(String key : restoredFiles.keySet()) {
+            FileInfo value = restoredFiles.get(key);
+            System.out.println(" * Filepath " + key + " | FileID " + value.getFileId());
+        }
 
-    public LinkedList<Message> getDeleteMessages() {
-        return deleteMessages;
-    }
-*/
-    // List ChunkInfo Information
-    public synchronized String ListChunks() {
-
-        String out = "";
-
+        System.out.println("\nPEER STORED CHUNKS : ");
         for(String key : storedChunks.keySet()) {
             ChunkInfo value = storedChunks.get(key);
-            out +=key + " with size " + value.getData().length +  " bytes and replication "+ value.getAtualRepDeg();
-            out +="\n";
+            System.out.println(" * Chunk key "+key+" | Size "+value.getData().length+" | repDeg "
+                    +value.getReplicationDeg()+" | actual repDeg "+ value.getActualRepDeg());
         }
-        notify();
-        return out;
-    }
 
-    public synchronized String ListFiles(){
-        String out = "";
-
-        for(String key : sentFiles.keySet()) {
-            //FileInfo value = sentFiles.get(key);
-            out +="File " +key+"\n";
-        }
-        notify();
-        return out;
     }
 }

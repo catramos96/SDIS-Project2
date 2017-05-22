@@ -159,7 +159,7 @@ public class FileManager {
     /**
      * Restore file from disk
      * @param filename
-     * @param restores
+     * @param data
      * @throws IOException
      * @throws InvalidKeyException 
      * @throws InvalidParameterSpecException 

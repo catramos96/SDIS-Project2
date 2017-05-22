@@ -23,13 +23,10 @@ public class DatagramListener extends Thread{
 	private Tracker tracker = null;
 	private GroupChannel subscribers = null;
 	private Util.ChannelType channelType;		//identification
-
-    private HashMap<String, ChunkBackupProtocol> backupInitiators;
 	
 	public DatagramListener(Peer peer,GroupChannel channel, Util.ChannelType type){
 		this.peer = peer;
-        this.backupInitiators = new HashMap<String, ChunkBackupProtocol>();
-		this.subscribers = channel;
+        this.subscribers = channel;
 		this.channelType = type;
 		
 		int port = peer.getMySubscriptionInfo().getDefPort();
@@ -46,7 +43,6 @@ public class DatagramListener extends Thread{
 	
 	public DatagramListener(Tracker tracker, int port){
 		this.tracker = tracker;
-        this.backupInitiators = new HashMap<String, ChunkBackupProtocol>();
 		try {
 			socket = new DatagramSocket(port);
 		} catch (SocketException e) {
@@ -92,7 +88,7 @@ public class DatagramListener extends Thread{
 		    byte[] msg = Arrays.copyOf(packet.getData(), packet.getLength());
 		    
 			if(peer != null)
-				new MessagePeerHandler(channelType,msg,new Subscriber(packet.getAddress(),packet.getPort()),peer,subscribers,backupInitiators).start();
+				new MessagePeerHandler(channelType,msg,new Subscriber(packet.getAddress(),packet.getPort()),peer,subscribers).start();
 			else if(tracker != null)
 				new MessageTrackerHandler(msg,new Subscriber(packet.getAddress(),packet.getPort()),tracker).start();
 		}
@@ -100,14 +96,6 @@ public class DatagramListener extends Thread{
 		//close connection
 		socket.close();
 	}
-
-    public void addBackupInitiator(String chunkKey, ChunkBackupProtocol backup) {
-        backupInitiators.put(chunkKey, backup);
-    }
-
-    public void removeBackupInitiator(String chunkKey){
-        backupInitiators.remove(chunkKey);
-    }
     
     public int getSocketPort(){
     	return socket.getLocalPort();
