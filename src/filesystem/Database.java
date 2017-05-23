@@ -1,7 +1,5 @@
 package filesystem;
 
-import javax.swing.*;
-import java.io.File;
 import java.io.Serializable;
 import java.util.*;
 
@@ -116,7 +114,7 @@ public class Database implements Serializable
 
     public synchronized void addSentChunk(String chunkKey,ChunkInfo chunk)
     {
-       sentChunks.put(chunkKey,chunk);
+        sentChunks.put(chunkKey,chunk);
     }
 
     public synchronized boolean hasSentChunk(String chunkKey)
@@ -157,6 +155,10 @@ public class Database implements Serializable
         return chunkList;
     }
 
+    public ChunkInfo getSentChunkInfo(String chunkey) {
+        return sentChunks.get(chunkey);
+    }
+
     /*
     SENT CHUNKS FILESYSTEM
      */
@@ -173,12 +175,25 @@ public class Database implements Serializable
             sentChunksMapping.get(chunkKey).add(senderId);
     }
 
-    public void removeChunkMapping(String fileId) {
-
+    public void removeChunkMapping(String fileId)
+    {
         for (Map.Entry<String,ArrayList<Integer> > c : sentChunksMapping.entrySet()) {
             if (c.getKey().contains(fileId))
                 sentChunksMapping.remove(c.getKey());
         }
+    }
+
+
+    public boolean removeFilesystem(String chunkey, int senderId)
+    {
+        sentChunksMapping.get(chunkey).remove(senderId);
+        //update chunks sent
+        int actualRepDeg = sentChunksMapping.get(chunkey).size();
+
+        ChunkInfo c = sentChunks.get(chunkey);
+        c.setActualRepDeg(actualRepDeg);
+
+        return c.getReplicationDeg() > c.getActualRepDeg();
     }
 
     /*
