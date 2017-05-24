@@ -1,7 +1,5 @@
 package network;
-import message.ActivityMessage;
 import message.Message;
-import message.ProtocolMessage;
 import message.TopologyMessage;
 import peer.Peer;
 import protocols.ChunkBackupProtocol;
@@ -46,17 +44,9 @@ public class GroupChannel extends Thread{
 		Logs.errorMsg(mySubscription.getSubscriberInfo());
 		
 		//Ask tracker to be added
-		TopologyMessage msg = new TopologyMessage(Util.TopologyMessageType.NEWSUBSCRIBER,mySubscription);
+		TopologyMessage msg = new TopologyMessage(Util.TopologyMessageType.ONLINE,mySubscription);
 		
 		sendMessageToTracker(msg);
-		
-		//Action before logout
-		Runtime.getRuntime().addShutdownHook(new Thread() {
-			public void run() {
-				ActivityMessage activity = new ActivityMessage(Util.ActivityMessageType.OFFLINE,mySubscription);
-				sendMessageToTracker(activity);
-			}
-		});
 	}
 	
 	/*

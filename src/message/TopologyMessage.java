@@ -8,12 +8,10 @@ public class TopologyMessage extends Message{
 	Subscriber subscriber = null;
 	
 	/**
-	 * WHOISROOT		
-	 * ROOT				<address> <defPort> <mcPort> <mdrPort> <mdbPort>	<CRLF><CRLF>
-	 * PARENT 			<address> <defPort> <mcPort> <mdrPort> <mdbPort>	<CRLF><CRLF>
-	 * SUBSCRIBER 		<address> <defPort> <mcPort> <mdrPort> <mdbPort>	<CRLF><CRLF>
-	 * NEWSUBSCRIBER	<address> <defPort> <mcPort> <mdrPort> <mdbPort>	<CRLF><CRLF>
-	 * REMSUBSCRIBER    <address> <defPort> <mcPort> <mdrPort> <mdbPort>	<CRLF><CRLF>
+	 * ONLINE			<address> <defPort> <mcPort> <mdrPort> <mdbPort>		<CRLF><CRLF>
+	 * GET 				<key>													<CRLF><CRLF>
+	 * PUT				<address> <defPort> <mcPort> <mdrPort> <mdbPort> <key>	<CRLF><CRLF>
+	 * SUBSCRIBER 		<address> <defPort> <mcPort> <mdrPort> <mdbPort> <key>	<CRLF><CRLF>
 	 */
 	
 	public TopologyMessage(Util.TopologyMessageType type){

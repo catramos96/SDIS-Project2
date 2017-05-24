@@ -42,27 +42,13 @@ public class Util {
 	
 	public static enum TopologyMessageType
 	{
-		WHOISROOT,ROOT,PARENT,SUBSCRIBER,NEWSUBSCRIBER,REMSUBSCRIBER
+		ONLINE, PUT, GET
 	}
 	
 	public static boolean isTopologyMessageType(String test){
 		TopologyMessageType[] types = TopologyMessageType.values();
 		
 		for(TopologyMessageType t : types){
-			if(test.compareTo(t.name()) == 0)
-				return true;
-		}
-		return false;
-	}
-	
-	public static enum ActivityMessageType{
-		ACTIVITY,ONLINE,OFFLINE
-	}
-	
-	public static boolean isActivityMessageType(String test){
-		ActivityMessageType[] types = ActivityMessageType.values();
-		
-		for(ActivityMessageType t : types){
 			if(test.compareTo(t.name()) == 0)
 				return true;
 		}
