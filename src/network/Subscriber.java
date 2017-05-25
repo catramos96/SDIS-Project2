@@ -111,8 +111,9 @@ public class Subscriber {
 		if(mdrPort != null) 	this.mdrPort = mdrPort;
 		if(mdbPort != null) 	this.mdbPort = mdbPort;
 	}
-	
-	public String getSubscriberInfo(){
+
+	@Override
+	public String toString(){
 		String s = new String("");
 		s += "<" + address.getHostAddress() + ":" + defPort;
 		

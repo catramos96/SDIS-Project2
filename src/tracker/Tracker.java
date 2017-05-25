@@ -52,6 +52,9 @@ public class Tracker{
 		
 		DLNode<Subscriber> newAccessNode = lastAccess.addFirst(newS);
 		subscribers.put(newS, newAccessNode);									//updates position in access
+
+		//tmp
+		lastAccess.displayList();
 	}
 	
 	public synchronized void putDTH(String key, Subscriber new_s){

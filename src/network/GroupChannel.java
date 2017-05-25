@@ -10,10 +10,8 @@ import java.util.ArrayList;
 public class GroupChannel extends Thread{
 
 	private Subscriber tracker = null;
-	private Subscriber root = null;
-	private Subscriber parent = null;
 	private Subscriber mySubscription = null;
-	private ArrayList<Subscriber> nextSubscribers = new ArrayList<Subscriber>();	//max size = 5
+	private ArrayList<Subscriber> subscribers = new ArrayList<Subscriber>();
 	
 	private DatagramListener topChannel = null;			//For Topology/Activity
 	private DatagramListener mcChannel = null;			//For Protocol
@@ -39,9 +37,8 @@ public class GroupChannel extends Thread{
 		
 		peer.getMySubscriptionInfo().setPorts(topChannel.getSocketPort(),mcChannel.getSocketPort(),mdrChannel.getSocketPort(),mdbChannel.getSocketPort());
 		this.mySubscription = peer.getMySubscriptionInfo();
-		this.root = peer.getMySubscriptionInfo();		
 		
-		Logs.errorMsg(mySubscription.getSubscriberInfo());
+		Logs.errorMsg(mySubscription.toString());
 		
 		//Warn Tracker of access
 		TopologyMessage msg = new TopologyMessage(Util.TopologyMessageType.ONLINE,mySubscription);
@@ -75,7 +72,7 @@ public class GroupChannel extends Thread{
 		DatagramListener channel = getChannel(type);
 		int port;
 		
-		for(Subscriber subscriber : nextSubscribers){
+		for(Subscriber subscriber : subscribers){
 			port = subscriber.getPort(type);
 			
 			if(port != -1 && channel != null)
@@ -87,35 +84,13 @@ public class GroupChannel extends Thread{
 		}
 	}
 	
-	public void sendMessageToRoot(Message message, Util.ChannelType type){
-		DatagramListener channel = getChannel(type);
-		int port = root.getPort(type);
-		
-		if(port != -1 && channel != null) {
-			channel.send(message.buildMessage(), root.getAddress(), port);
-		}
-		else
-			Logs.errorMsg("Could not send message because port or channel not found!");
-	}
-	
-	public void sendMessageToParent(Message message, Util.ChannelType type){
-		DatagramListener channel = getChannel(type);
-		int port = parent.getPort(type);
-		
-		if(port != -1 && channel != null)
-			channel.send(message.buildMessage(), parent.getAddress(), port);
-		else
-			Logs.errorMsg("Could not send message because port or channel not found!");
-		
-	}
-	
 	/*
 	 * Topology Functions
 	 */
 	
 	public boolean addSubscriber(Subscriber newSubscriber){
 		if(hasSubscriber(newSubscriber) == null){
-			nextSubscribers.add(newSubscriber);
+			subscribers.add(newSubscriber);
 			return true;
 		}
 		return false;
@@ -124,11 +99,11 @@ public class GroupChannel extends Thread{
 	public void removeSubscriber(Subscriber subscriber){
 		Subscriber p;
 		if((p = hasSubscriber(subscriber)) != null)
-			nextSubscribers.remove(p);
+			subscribers.remove(p);
 	}
 	
 	public Subscriber hasSubscriber(Subscriber subscriber){
-		for(Subscriber s : nextSubscribers){
+		for(Subscriber s : subscribers){
 			if(s.equals(subscriber))
 				return s;
 		}
@@ -153,33 +128,13 @@ public class GroupChannel extends Thread{
 	/*
 	 * GETS & SETS
 	 */
-	
-	public void setParent(Subscriber subscriber){
-		parent = subscriber;
+
+	public void resetSubscribers(){
+		subscribers.clear();
 	}
-	
-	public void setRoot(Subscriber subscriber){
-		root = subscriber;
-	}
-	
-	public Subscriber getRoot(){
-		return root;
-	}
-	
-	public boolean hasParent(){
-		return (parent != null);
-	}
-	
-	public boolean iAmRoot(){
-		return (mySubscription.equals(root));
-	}
-	
+
 	public Subscriber getMySubscription(){
 		return mySubscription;
-	}
-	
-	public Subscriber getParent(){
-		return parent;
 	}
 	
 	public DatagramListener getChannel(Util.ChannelType type){

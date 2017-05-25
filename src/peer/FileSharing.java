@@ -18,7 +18,7 @@ public class FileSharing
         String remoteObjName = args[1];
 		String[] root = addressVerification(args[2]);
 
-		new Peer(peer_id,root,remoteObjName);	
+		new Peer(peer_id,root,remoteObjName);
 	}
 
 	private static String[] addressVerification(String arg) 

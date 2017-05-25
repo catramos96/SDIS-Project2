@@ -7,7 +7,7 @@ import network.Subscriber;
 public class Logs {
 
 	public static void MyAddress(Subscriber s){
-		System.out.println("ME:      " + s.getSubscriberInfo());
+		System.out.println("ME:      " + s.toString());
 	}
 	
 	//Handling Topology Messages
@@ -35,11 +35,11 @@ public class Logs {
 		errorMsg("TOPOLOGY: Message is not of type Topology!");
 	}
 	public static void newTopology(String newT, Subscriber s){
-		System.out.println("NEW      - " + newT + ":" + s.getSubscriberInfo());
+		System.out.println("NEW      - " + newT + ":" + s.toString());
 	}
 	
 	public static void remTopology(String remT,Subscriber s){
-		System.out.println("REMOVED  - " + remT + ":" + s.getSubscriberInfo());
+		System.out.println("REMOVED  - " + remT + ":" + s.toString());
 	}
 	
 	

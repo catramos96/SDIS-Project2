@@ -23,7 +23,7 @@ public class ChunkRestoreProtocol extends Thread {
 
     @Override
     public void run() {
-        channel.sendMessageToRoot(msg,Util.ChannelType.MC);
+        channel.sendMessageToSubscribers(msg,Util.ChannelType.MC);
         System.out.println("Sent getChunk");
     }
 }

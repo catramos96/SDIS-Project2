@@ -69,7 +69,7 @@ public class RestoreInitiator extends Thread
             	// Sends message again if peer still hasn't received chunk
 				if(data[i] == null)
 				{
-		            peer.getSubscribedGroup().sendMessageToRoot(msg,Util.ChannelType.MC);
+		            peer.getSubscribedGroup().sendMessageToSubscribers(msg,Util.ChannelType.MC);
 					Util.randomDelay();
 				} else {
 					break;

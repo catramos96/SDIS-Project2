@@ -50,11 +50,9 @@ public class MessagePeerHandler extends Thread{
 		Logs.receivedTopologyMessage(msg);
 
 		switch (msg.getType()) {
-		//I'm the root
+
 		case SUBSCRIBER:{
-			/*
-			Guardar peer para transmissão ou pedido de informação
-			 */
+			channel.addSubscriber(msg.getSubscriber());
 			break;
 		}
 		default:{
@@ -165,7 +163,7 @@ public class MessagePeerHandler extends Thread{
 
 			if(alreadyExists)
 			{
-                channel.sendMessageToRoot(msg,Util.ChannelType.MDB);
+                channel.sendMessageToSubscribers(msg,Util.ChannelType.MDB);
                 Logs.sentMessageLog(msg);
 			}
 			else
@@ -183,8 +181,12 @@ public class MessagePeerHandler extends Thread{
 					return;
 				}
 
+				//TRACKER WARNING of new storage
+                TopologyMessage trackerMsg = new TopologyMessage(Util.TopologyMessageType.PUT,channel.getMySubscription(),c.getChunkKey());
+                channel.sendMessageToTracker(trackerMsg);
+
 				//send STORED message
-				channel.sendMessageToRoot(msg,Util.ChannelType.MDB);
+				channel.sendMessageToSubscribers(msg,Util.ChannelType.MDB);
                 Logs.sentMessageLog(msg);
 
                 //Save chunk info on database
@@ -223,7 +225,7 @@ public class MessagePeerHandler extends Thread{
 			//Send message to the multicast to warn the other peers so they can update their replication degree of the chunk
 			ProtocolMessage msg = new ProtocolMessage(Util.ProtocolMessageType.REMOVED,peer.getID(),chunks.get(i).getFileId(),chunks.get(i).getChunkNo());
 
-			channel.sendMessageToRoot(msg,Util.ChannelType.MC);
+			channel.sendMessageToSubscribers(msg,Util.ChannelType.MC);
             Logs.sentMessageLog(msg);
 
 			//Deletes the chunk from the peers disk
@@ -290,7 +292,7 @@ public class MessagePeerHandler extends Thread{
 			//If meanwhile the chunk content wasn't sent by another peer
 			if(!peer.getChannelRecord().receivedChunkMessage(fileId, chunkNo))
 			{
-				channel.sendMessageToRoot(msg,Util.ChannelType.MDR);
+				channel.sendMessageToSubscribers(msg,Util.ChannelType.MDR);
                 Logs.sentMessageLog(msg);
             }
 		}

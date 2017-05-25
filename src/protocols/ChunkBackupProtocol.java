@@ -50,7 +50,7 @@ public class ChunkBackupProtocol extends Thread
 			System.out.println("Try number : "+rep+" to backup chunk "+msg.getChunkNo());
 
             //send message
-            channel.sendMessageToRoot(msg,Util.ChannelType.MC);
+            channel.sendMessageToSubscribers(msg,Util.ChannelType.MC);
 			Logs.sentMessageLog(msg);
 
             //waits
