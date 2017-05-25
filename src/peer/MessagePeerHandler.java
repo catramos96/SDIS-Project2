@@ -1,7 +1,6 @@
 package peer;
 
 import filesystem.ChunkInfo;
-import message.ActivityMessage;
 import message.ProtocolMessage;
 import message.TopologyMessage;
 import network.GroupChannel;
@@ -40,10 +39,6 @@ public class MessagePeerHandler extends Thread{
 			ProtocolMessage msg = ProtocolMessage.parseMessage(message);
 			handleProtocolMessage(msg);
 		}
-		else if(Util.isActivityMessageType(type)){
-			ActivityMessage msg = ActivityMessage.parseMessage(message);
-			handleActivityMessage(msg);
-		}
 		else{
 			System.out.println(content);
 		}
@@ -56,60 +51,10 @@ public class MessagePeerHandler extends Thread{
 
 		switch (msg.getType()) {
 		//I'm the root
-		case ROOT:{
-			boolean sameRoot = channel.getMySubscription().equals(msg.getSubscriber());
-
-			if(!sameRoot){
-				channel.setRoot(msg.getSubscriber());
-				channel.setParent(msg.getSubscriber());
-				Logs.newTopology("ROOT", msg.getSubscriber());
-				channel.sendMessageToSubscribers(msg,Util.ChannelType.TOP);
-				Logs.sentTopologyMessage(msg);
-			}
-
-			break;
-		}
-		//Your parent
-		case PARENT:{
-			TopologyMessage warnMessage;
-
-			//If the root  has a parent -> parent is the new root
-			if(channel.iAmRoot()){
-				warnMessage = new TopologyMessage(Util.TopologyMessageType.ROOT,msg.getSubscriber());
-				channel.sendMessageToRoot(warnMessage,Util.ChannelType.TOP);
-				Logs.sentTopologyMessage(warnMessage);
-
-				channel.setRoot(msg.getSubscriber());
-				Logs.newTopology("ROOT", msg.getSubscriber());
-			}
-			//If it already had a parent -> update new parent and warn the old parent to remove me from his childs
-			else if(channel.hasParent() && !channel.getParent().equals(msg.getSubscriber())){
-				warnMessage = new TopologyMessage(Util.TopologyMessageType.REMSUBSCRIBER,peer.getMySubscriptionInfo());
-				channel.sendMessageToParent(warnMessage,Util.ChannelType.TOP);
-				Logs.sentTopologyMessage(warnMessage);
-			}
-
-			//update parent
-			channel.setParent(msg.getSubscriber());
-			Logs.newTopology("PARENT",msg.getSubscriber());
-
-			//warn that i'm his subscriber
-			warnMessage = new TopologyMessage(Util.TopologyMessageType.SUBSCRIBER,peer.getMySubscriptionInfo());
-			channel.sendMessageToParent(warnMessage,Util.ChannelType.TOP);
-			Logs.sentTopologyMessage(warnMessage);
-
-			break;
-		}
-		//I'm your subscriber
 		case SUBSCRIBER:{
-			if(channel.addSubscriber(msg.getSubscriber()))
-				Logs.newTopology("SUBSCRIBER", msg.getSubscriber());
-			break;
-		}
-		//Remove me
-		case REMSUBSCRIBER:{
-			channel.removeSubscriber(msg.getSubscriber());
-			Logs.remTopology("SUBSCRIBER", msg.getSubscriber());
+			/*
+			Guardar peer para transmissão ou pedido de informação
+			 */
 			break;
 		}
 		default:{
@@ -168,16 +113,6 @@ public class MessagePeerHandler extends Thread{
 
 	}
 
-	public void handleActivityMessage(ActivityMessage msg){
-
-		Logs.activityMessage(msg, sender);
-
-		if(msg.getType().compareTo(Util.ActivityMessageType.ACTIVITY) == 0){
-			ActivityMessage message = new ActivityMessage(Util.ActivityMessageType.ONLINE,channel.getMySubscription());
-			channel.sendMessageToTracker(message);
-		}
-
-	}
 
 	/**
 	 * Peer response to other peer PUTCHUNK message.

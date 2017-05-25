@@ -12,13 +12,10 @@ public class DLNode<M>{
 	public DLNode<M> getNext(){return next;};
 	public DLNode<M> getPrevious(){return previous;};
 	public M getObject(){return object;};
-	
-	@SuppressWarnings("unchecked")
-	@Override
-	public boolean equals(Object other){
-		
-		return (this.next.equals(((DLNode<M>) other).getNext()) && 
-				this.previous.equals(((DLNode<M>) other).getObject()) &&
-				this.object.equals((M) other));
+
+	public void displayNode() {
+		System.out.println((previous != null) + "# " + object.toString() + " #" + (next != null));
+		if(next != null)
+		    next.displayNode();
 	}
 }

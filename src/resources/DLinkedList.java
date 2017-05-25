@@ -1,5 +1,6 @@
 package resources;
 
+import com.siyeh.ig.security.SystemSetSecurityManagerInspection;
 import network.Subscriber;
 
 public class DLinkedList<N> {
@@ -14,14 +15,17 @@ public class DLinkedList<N> {
 	
 	public DLNode<N> addFirst(N newObject){
 		DLNode<N> n = new DLNode<N>(newObject);
+
 		if(first != null){
 			n.setNext(first);
 			first.setPrevious(n);
-			if(first.getPrevious() == null){
-				last = first;
-			}
+			if(last == null)
+			    last = first;
 			first = n;
 		}
+
+		first = n;
+
 		return n;
 	}
 	
@@ -33,16 +37,23 @@ public class DLinkedList<N> {
 				first = n;
 			else{
 				first.setNext(n);
+				n.setPrevious(first);
 				last = n;
 			}
 		}
+        else{
+		    n.setPrevious(last);
+		    last.setNext(n);
+		    last = n;
+        }
+
 		return n;
 	}
 	
 	public DLNode<N> addAfter(DLNode<N> node, N newObject){
 		DLNode<N> n = new DLNode<N>(newObject);
 		
-		if(node.equals(last)){
+		if(node == last){
 			return addLast(newObject);
 		}
 		else{
@@ -58,14 +69,14 @@ public class DLinkedList<N> {
 	public DLNode<N> addBefore(DLNode<N> node, N newObject){
 		DLNode<N> n = new DLNode<N>(newObject);
 
-		if(node.equals(first)){
+		if(node == first){
 			return addFirst(newObject);
 		}
 		else{
 			n.setNext(node);
-			n.setPrevious(node.getPrevious());
 			node.getPrevious().setNext(n);
-			node.setPrevious(n);
+            n.setPrevious(node.getPrevious());
+            node.setPrevious(n);
 		}
 		return n;
 	}
@@ -84,16 +95,18 @@ public class DLinkedList<N> {
 			last = last.getPrevious();
 			last.setNext(null);
 			
-			if(last.equals(first))
-				last = null;	
+			if(last == first)
+				last = null;
 		}
+		else
+			removeFirst();
 	}
 	
 	public void removeNode(DLNode<N> node){
-		if(node.equals(last)){
+		if(node == last){
 			removeLast();
 		}
-		else if(node.equals(first)){
+		else if(node == first){
 			removeFirst();
 		}
 		else{
@@ -101,4 +114,34 @@ public class DLinkedList<N> {
 			node.getNext().setPrevious(node.getPrevious());
 		}
 	}
+	
+	public void displayList(){
+		System.out.println("TOP");
+		if(first != null)
+			first.displayNode();
+		System.out.println("BOTTOM");
+		if(last != null)
+			last.displayNode();
+		else if(first != null)
+		    first.displayNode();
+	}
+
+	public DLNode<N> getNode(N object){
+		DLNode<N> current = first;
+        System.out.println("  Search: " +  object.toString());
+
+		while(current != null){
+            System.out.println("     " + current.getObject().toString());
+			if(current.getObject().equals(object))
+				return current;
+			else
+				current = current.getNext();
+		}
+
+		return null;
+	}
+
+	public DLNode<N> getFirst(){return first;}
+
+	public DLNode<N> getLast(){return last;}
 }

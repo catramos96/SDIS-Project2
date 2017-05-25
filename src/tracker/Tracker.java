@@ -86,6 +86,19 @@ public class Tracker{
 				subs.remove(s);
 		}
 	}
+
+	public synchronized ArrayList<Subscriber> getLastAccess(int nSubscribers){
+		ArrayList<Subscriber> subs = new ArrayList<Subscriber>();
+		int size = 0;
+		DLNode<Subscriber> node = lastAccess.getFirst();
+
+		while(size < nSubscribers && node != null){
+			subs.add(node.getObject());
+			node = node.getNext();
+		}
+
+		return subs;
+	}
 	
 	/*
 	 * GETS & SETS

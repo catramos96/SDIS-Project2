@@ -43,9 +43,8 @@ public class GroupChannel extends Thread{
 		
 		Logs.errorMsg(mySubscription.getSubscriberInfo());
 		
-		//Ask tracker to be added
+		//Warn Tracker of access
 		TopologyMessage msg = new TopologyMessage(Util.TopologyMessageType.ONLINE,mySubscription);
-		
 		sendMessageToTracker(msg);
 	}
 	
