@@ -50,14 +50,20 @@ public class MessageTrackerHandler extends Thread {
                 ArrayList<Subscriber> lastOnline = tracker.getLastAccess(msg.getSubscriberN());
                 TopologyMessage m;
 
-               /*
-               	MUDAR
-               	SÓ PODE MANDAR 10 POR MENSAGEM
-				}*/
+               int size = lastOnline.size();
+               int i = 0,j = 0;
 
-				m = new TopologyMessage(Util.TopologyMessageType.SUBSCRIBERS,lastOnline);
-				tracker.getChannel().send(m.buildMessage(),sender.getAddress(),sender.getDefPort());
-				Logs.sentTopologyMessage(m);
+               //because it has a limit of MAX_N_SUBSCRIBERS that can be sent per message
+               while(i < size){
+                   if((j = i+Util.MAX_N_SUBSCRIBERS) >= size)
+                       j = size;
+
+                   m = new TopologyMessage(Util.TopologyMessageType.SUBSCRIBERS,new ArrayList<Subscriber>(lastOnline.subList(i,j)));
+                   tracker.getChannel().send(m.buildMessage(),sender.getAddress(),sender.getDefPort());
+                   Logs.sentTopologyMessage(m);
+
+                   i = j;
+               }
 
                 break;
             }

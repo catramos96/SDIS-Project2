@@ -111,13 +111,17 @@ public class Peer implements MessageRMI
             e.printStackTrace();
         }
 
-        //updateStateOnTracker();
-
+        /*
+         * Routine Tasks
+         */
         //save metadata in 90s intervals
         saveMetadata();
 
         //try to backup chunks with actual replication degree bellow desired
         verifyChunks(this);
+
+        //Warns peers about its activity only if this peer can also store new chunks
+        updateStateOnTracker();
 
         //save metadata when shouts down
         Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -149,11 +153,15 @@ public class Peer implements MessageRMI
     private void updateStateOnTracker(){
         final Runnable saveMetadata = new Runnable() {
             public void run() {
-                TopologyMessage msg = new TopologyMessage(Util.TopologyMessageType.ONLINE,mySubscription);
-                subscribedGroup.sendMessageToTracker(msg);
+                //Only warns peer of its activity if it can also store more chunks
+                if(fileManager.getRemainingSpace() > 0) {
+                    TopologyMessage msg = new TopologyMessage(Util.TopologyMessageType.ONLINE, mySubscription);
+                    subscribedGroup.sendMessageToTracker(msg);
+                    Logs.sentTopologyMessage(msg);
+                }
             }
         };
-        scheduler.scheduleAtFixedRate(saveMetadata, 10, 10, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(saveMetadata, 0, 30, TimeUnit.SECONDS);
     }
 
     public synchronized void loadDB() {

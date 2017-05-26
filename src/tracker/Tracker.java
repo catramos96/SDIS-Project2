@@ -36,7 +36,6 @@ public class Tracker{
 			System.out.println("TRACKER: <" + InetAddress.getLocalHost().getHostAddress() + ":" + port + ">");
 		
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -52,7 +51,7 @@ public class Tracker{
 		subscribers.put(newS, newAccessNode);									//updates position in access
 
 		//tmp
-		lastAccess.displayList();
+		System.out.println(lastAccess.toString());
 	}
 
 	public synchronized ArrayList<Subscriber> getLastAccess(int nSubscribers){
@@ -80,6 +79,7 @@ public class Tracker{
 	public void addIP(InetAddress ip) {
 		validIPs.add(ip.getHostAddress());
 	}
+
 	public void removeIP(String ip) {
 		validIPs.remove(ip);
 	}

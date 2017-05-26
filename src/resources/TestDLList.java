@@ -68,7 +68,7 @@ public class TestDLList {
                 }
             }
 
-            dlist.displayList();
+            System.out.println(dlist.toString());
         }
     }
 }

@@ -13,9 +13,13 @@ public class DLNode<M>{
 	public DLNode<M> getPrevious(){return previous;};
 	public M getObject(){return object;};
 
-	public void displayNode() {
-		System.out.println((previous != null) + "# " + object.toString() + " #" + (next != null));
+	@Override
+	public String toString() {
+		String s = new String("");
+		s += "        " + (previous != null) + "# " + object.toString() + " #" + (next != null) + "\n";
 		if(next != null)
-		    next.displayNode();
+			s += next.toString();
+
+		return s;
 	}
 }

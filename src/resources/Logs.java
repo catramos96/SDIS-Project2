@@ -11,56 +11,39 @@ public class Logs {
 	}
 	
 	//Handling Topology Messages
-	
+
+	/**
+	 * Function that displays the information about a topology message received
+	 * @param message
+	 */
 	public static void receivedTopologyMessage(TopologyMessage message){
 		String print = new String("RECEIVED - TOPOLOGY:" + message.getType().toString() + ": ");
-
-		if(message.getType().equals(Util.TopologyMessageType.ONLINE))
-			print += message.getSubscriber().toString();
-		else if(message.getType().equals(Util.TopologyMessageType.GETONLINE))
-			print += message.getSubscriberN();
-		else{
-			print+="\n";
-			for(Subscriber s : message.getSubscribersGroup())
-				print += "           " + s.toString() + "\n";
-		}
-
+		print += message.toString();
 		System.out.println(print);
 	}
-	
+
+	/**
+	 * Function that displays the information about a topology message sent
+	 * @param message
+	 */
 	public static void sentTopologyMessage(TopologyMessage message){
 		String print = new String("SENT     - TOPOLOGY:" + message.getType().toString() + ": ");
-
-		if(message.getType().equals(Util.TopologyMessageType.ONLINE))
-			print += message.getSubscriber().toString();
-		else if(message.getType().equals(Util.TopologyMessageType.GETONLINE))
-			print += message.getSubscriberN();
-		else{
-			print+="\n";
-			for(Subscriber s : message.getSubscribersGroup())
-				print += "           " + s.toString() + "\n";
-		}
-
+		print += message.toString();
 		System.out.println(print);
 	}
 	//Topology Messages
-	
+
+	/**
+	 * Function that displays the information about a message that is not of the type topology
+	 */
 	public static void notTopologyMessage(){
 		errorMsg("TOPOLOGY: Message is not of type Topology!");
 	}
-	public static void newTopology(String newT, Subscriber s){
-		System.out.println("NEW      - " + newT + ":" + s.toString());
-	}
-	
-	public static void remTopology(String remT,Subscriber s){
-		System.out.println("REMOVED  - " + remT + ":" + s.toString());
-	}
-	
-	
-	/*public static void message(String msg) {
-		System.out.println(msg);
-	}*/
-	
+
+	/**
+	 * Function that display an error with a message
+	 * @param msg
+	 */
 	public static void errorMsg(String msg){
 		System.out.println("ERROR    - " + msg);
 	}

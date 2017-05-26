@@ -114,16 +114,24 @@ public class DLinkedList<N> {
 			node.getNext().setPrevious(node.getPrevious());
 		}
 	}
-	
-	public void displayList(){
-		System.out.println("TOP");
-		if(first != null)
-			first.displayNode();
-		System.out.println("BOTTOM");
+
+	@Override
+	public String toString(){
+		String print = new String("");
+
+		print += "\nTOP:    ";
+		if(first != null){
+			print +=first.getObject().toString() + "\n\n";
+			print +=first.toString() + "\n";
+		}
+		print += "BOTTOM: ";
 		if(last != null)
-			last.displayNode();
+			print += last.getObject().toString();
 		else if(first != null)
-		    first.displayNode();
+		    print += first.getObject().toString();
+
+		print += "\n";
+		return print;
 	}
 
 	public DLNode<N> getNode(N object){

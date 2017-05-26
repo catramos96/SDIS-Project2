@@ -146,4 +146,21 @@ public class TopologyMessage extends Message{
     public ArrayList<Subscriber> getSubscribersGroup(){
 	    return subscribersGroup;
     }
+
+    @Override
+    public String toString(){
+        String s = new String("");
+
+        if(type.equals(Util.TopologyMessageType.ONLINE))
+            s += subscriber.toString();
+        else if(type.equals(Util.TopologyMessageType.GETONLINE))
+            s += subscriberN;
+        else{
+            s+="\n";
+            for(Subscriber sub :subscribersGroup)
+                s += "           " + sub.toString() + "\n";
+        }
+
+        return s;
+    }
 }

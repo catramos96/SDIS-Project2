@@ -28,12 +28,8 @@ public class MessagePeerHandler extends Thread{
 
 		String content = new String(message);
 
-		System.out.println("NEW MESSAGE");
-
 		int firstSpace = content.indexOf(new String(" "));
 		String type = content.substring(0,firstSpace);
-
-		System.out.println(content);
 
 		if(Util.isTopologyMessageType(type)){
 			TopologyMessage msg = TopologyMessage.parseMessage(message);
@@ -57,11 +53,6 @@ public class MessagePeerHandler extends Thread{
 
 		case SUBSCRIBERS:{
 			channel.addSubscribers(msg.getSubscribersGroup());
-
-			System.out.println("NEW PEERS");
-			for(Subscriber s : msg.getSubscribersGroup())
-			    System.out.println(s.toString());
-
 			break;
 		}
 		default:{
@@ -90,7 +81,7 @@ public class MessagePeerHandler extends Thread{
 
 			case STORED:
 				peer.getChannelRecord().addStoredMessage(msg.getChunkNo()+msg.getFileId(), msg.getSenderId());
-				handleStore(msg.getFileId(), msg.getChunkNo(),msg.getSenderId());
+				handleStore(msg);
 				break;
 
 			case GETCHUNK:
@@ -245,13 +236,10 @@ public class MessagePeerHandler extends Thread{
 	 * The peer will record the peers that stored the chunks of the files that it backup.
 	 * The peer will update the peers that stored the chunks that he also stored.
 	 *
-	 * @param fileId - File identification
-	 * @param chunkNo - Chunk identification number
-	 * @param senderId - Sender peer identification number
 	 */
-	private synchronized void handleStore(String fileId, int chunkNo, int senderId){
+	private synchronized void handleStore(ProtocolMessage msg){
 
-	    String chunkKey = chunkNo + fileId;
+	    String chunkKey = msg.getChunkNo() + msg.getFileId();
 
         //Updates the Replication Degree if the peer has the chunk stored
         if(peer.getDatabase().hasChunkStored(chunkKey))
@@ -266,7 +254,7 @@ public class MessagePeerHandler extends Thread{
         //Record the storedChunks in case the peer is the OWNER of the backup file
         if(peer.getDatabase().hasSentChunk(chunkKey))
         {
-            peer.getDatabase().addFilesystem(chunkKey,senderId);
+            peer.getDatabase().addFilesystem(chunkKey,msg.getSenderId());
         }
 
 	}

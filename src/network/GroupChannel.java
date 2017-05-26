@@ -5,22 +5,25 @@ import peer.Peer;
 import protocols.ChunkBackupProtocol;
 import resources.Logs;
 import resources.Util;
-import java.util.ArrayList;
+
+import java.util.*;
 
 public class GroupChannel extends Thread{
 
-	private Subscriber tracker = null;
-	private Subscriber mySubscription = null;
-	private ArrayList<Subscriber> subscribers = new ArrayList<Subscriber>();
+	private Subscriber tracker = null;                  //Tracker info
+	private Subscriber mySubscription = null;           //My info
+	private Set<Subscriber> subscribers = null;         //My group of subscribers
 	
-	private DatagramListener topChannel = null;			//For Topology/Activity
-	private DatagramListener mcChannel = null;			//For Protocol
-	private DatagramListener mdrChannel = null;
-	private DatagramListener mdbChannel = null;
+	private DatagramListener topChannel = null;			//For Topology Messages
+	private DatagramListener mcChannel = null;			//For Protocol Messages
+	private DatagramListener mdrChannel = null;         //For Protocol Messages: CHUNK
+	private DatagramListener mdbChannel = null;         //For Protocol Messages: STORE
 
 
 	public GroupChannel(Peer peer, Subscriber tracker){
-		
+
+	    subscribers = Collections.synchronizedSet(new HashSet<Subscriber>());
+
 		this.topChannel = new DatagramListener(peer,this,Util.ChannelType.TOP);
 		this.topChannel.start();
 
@@ -37,21 +40,14 @@ public class GroupChannel extends Thread{
 		
 		peer.getMySubscriptionInfo().setPorts(topChannel.getSocketPort(),mcChannel.getSocketPort(),mdrChannel.getSocketPort(),mdbChannel.getSocketPort());
 		this.mySubscription = peer.getMySubscriptionInfo();
-		
-		Logs.errorMsg(mySubscription.toString());
-		
-		//Warn Tracker of access
-		TopologyMessage msg = new TopologyMessage(Util.TopologyMessageType.ONLINE,mySubscription);
-		sendMessageToTracker(msg);
 
+		//=================  PARA REMOVER
 		try {
 			Thread.sleep(2000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-
-		msg = new TopologyMessage(Util.TopologyMessageType.GETONLINE,10);
-		sendMessageToTracker(msg);
+        //=================
 	}
 	
 	/*
@@ -98,25 +94,15 @@ public class GroupChannel extends Thread{
 	 */
 	
 	public boolean addSubscriber(Subscriber newSubscriber){
-		if(hasSubscriber(newSubscriber) == null){
-			subscribers.add(newSubscriber);
-			return true;
-		}
-		return false;
+		return subscribers.add(newSubscriber);
 	}
 	
-	public void removeSubscriber(Subscriber subscriber){
-		Subscriber p;
-		if((p = hasSubscriber(subscriber)) != null)
-			subscribers.remove(p);
+	public boolean removeSubscriber(Subscriber subscriber){
+		return subscribers.remove(subscriber);
 	}
 	
-	public Subscriber hasSubscriber(Subscriber subscriber){
-		for(Subscriber s : subscribers){
-			if(s.equals(subscriber))
-				return s;
-		}
-		return null;
+	public boolean hasSubscriber(Subscriber subscriber){
+		return subscribers.contains(subscriber);
 	}
 
     /*
@@ -164,6 +150,7 @@ public class GroupChannel extends Thread{
 
 	public void addSubscribers(ArrayList<Subscriber> subs){
 		for(Subscriber s : subs){
+		    if(!s.equals(mySubscription))
 			subscribers.add(s);
 		}
 	}

@@ -2,6 +2,7 @@ package protocols;
 
 import filesystem.Database;
 import message.ProtocolMessage;
+import message.TopologyMessage;
 import network.GroupChannel;
 import resources.Logs;
 import resources.Util;
@@ -71,7 +72,11 @@ public class ChunkBackupProtocol extends Thread
 			
 			waitingTime *= Util.TIME_REINFORCEMENT;	//doubles time for each rep
 			rep++;
-			
+
+
+			//request peers to tracker
+			TopologyMessage msgToTracker = new TopologyMessage(Util.TopologyMessageType.GETONLINE,msg.getReplicationDeg()*2);
+			channel.sendMessageToTracker(msgToTracker);
 		}
 
 		//TODO confirm
