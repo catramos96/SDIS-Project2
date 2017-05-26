@@ -45,9 +45,21 @@ public class Logs {
 	 * @param msg
 	 */
 	public static void errorMsg(String msg){
+
 		System.out.println("ERROR    - " + msg);
 	}
 
+	public static void newMsg(String msg){
+		System.out.println("NEW      - " + msg);
+	}
+
+	public static void remMsg(String msg){
+		System.out.println("REMOVED  - " + msg);
+	}
+
+	public static void delMsg(String msg){
+		System.out.println("DELETED  - " + msg);
+	}
 
 	/*
 	 * Messages

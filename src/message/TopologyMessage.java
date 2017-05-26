@@ -262,7 +262,7 @@ public class TopologyMessage extends Message{
 	    return subscriberN;
     }
 
-    public String getKet(){return key;}
+    public String getKey(){return key;}
 
 	public ArrayList<String> getKeys(){return keys;}
 

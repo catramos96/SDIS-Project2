@@ -67,6 +67,35 @@ public class MessageTrackerHandler extends Thread {
 
                 break;
             }
+			case PUT: {
+				tracker.putDHT(msg.getKey(),msg.getSubscriber());
+				break;
+			}
+			case GET: {
+				ArrayList<Subscriber> subs = tracker.getDHT(msg.getKey(),msg.getSubscriberN(),msg.getPagination());
+				TopologyMessage m = new TopologyMessage(Util.TopologyMessageType.SUBSCRIBERS,subs);
+				tracker.getChannel().send(m.buildMessage(),sender.getAddress(),sender.getDefPort());
+				Logs.sentTopologyMessage(m);
+				break;
+			}
+			case CHECK:{
+				int repDeg = tracker.checkDHT(msg.getKey());
+				TopologyMessage m = new TopologyMessage(Util.TopologyMessageType.INFO,msg.getKey(),repDeg);
+				tracker.getChannel().send(m.buildMessage(),sender.getAddress(),sender.getDefPort());
+				Logs.sentTopologyMessage(m);
+				break;
+			}
+			case REMOVE:{
+				int repDeg = tracker.remSubscriberDHT(msg.getKey(),msg.getSubscriber());
+				TopologyMessage m = new TopologyMessage(Util.TopologyMessageType.INFO,msg.getKey(),repDeg);
+				tracker.getChannel().send(m.buildMessage(),sender.getAddress(),sender.getDefPort());
+				Logs.sentTopologyMessage(m);
+				break;
+			}
+			case DELETE:{
+				tracker.deleteDHT(msg.getKey());
+				break;
+			}
             default:{
                 System.out.println("RECEIVED UNKNOWN MSG");
                 break;
