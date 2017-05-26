@@ -3,6 +3,8 @@ import message.TopologyMessage;
 import network.Subscriber;
 import resources.Logs;
 import resources.Util;
+
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 public class MessageTrackerHandler extends Thread {
@@ -43,30 +45,22 @@ public class MessageTrackerHandler extends Thread {
                 tracker.registerSubscriber(msg.getSubscriber());
                 break;
             }
-            //I'm new Try to add me
+            //I need the last n subscribers that were online
             case GETONLINE:{
                 ArrayList<Subscriber> lastOnline = tracker.getLastAccess(msg.getSubscriberN());
                 TopologyMessage m;
 
-                for(Subscriber s : lastOnline) {
-                    m = new TopologyMessage(Util.TopologyMessageType.SUBSCRIBER,s,"0");
-                    tracker.getChannel().send(m.buildMessage(),sender.getAddress(),sender.getDefPort());
-                }
+               /*
+               	MUDAR
+               	SÓ PODE MANDAR 10 POR MENSAGEM
+				}*/
+
+				m = new TopologyMessage(Util.TopologyMessageType.SUBSCRIBERS,lastOnline);
+				tracker.getChannel().send(m.buildMessage(),sender.getAddress(),sender.getDefPort());
+				Logs.sentTopologyMessage(m);
+
                 break;
             }
-			case GET:{
-                ArrayList<Subscriber> subs = tracker.getDTH(msg.getKey(),msg.getSubscriberN(),msg.getPagination());
-                TopologyMessage m;
-
-                for(Subscriber s : subs) {
-                    m = new TopologyMessage(Util.TopologyMessageType.SUBSCRIBER,s,msg.getKey());
-                    tracker.getChannel().send(m.buildMessage(),sender.getAddress(),sender.getDefPort());
-                }
-				break;
-			}
-			case PUT:{
-                tracker.putDTH(msg.getKey(),msg.getSubscriber());
-			}
             default:{
                 System.out.println("RECEIVED UNKNOWN MSG");
                 break;

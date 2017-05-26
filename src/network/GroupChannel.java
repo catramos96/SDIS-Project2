@@ -43,6 +43,15 @@ public class GroupChannel extends Thread{
 		//Warn Tracker of access
 		TopologyMessage msg = new TopologyMessage(Util.TopologyMessageType.ONLINE,mySubscription);
 		sendMessageToTracker(msg);
+
+		try {
+			Thread.sleep(2000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
+		msg = new TopologyMessage(Util.TopologyMessageType.GETONLINE,10);
+		sendMessageToTracker(msg);
 	}
 	
 	/*
@@ -151,5 +160,11 @@ public class GroupChannel extends Thread{
 			break;
 		}
 		return null;
+	}
+
+	public void addSubscribers(ArrayList<Subscriber> subs){
+		for(Subscriber s : subs){
+			subscribers.add(s);
+		}
 	}
 }

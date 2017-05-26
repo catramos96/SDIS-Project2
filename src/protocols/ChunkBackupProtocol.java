@@ -71,6 +71,7 @@ public class ChunkBackupProtocol extends Thread
 			
 			waitingTime *= Util.TIME_REINFORCEMENT;	//doubles time for each rep
 			rep++;
+			
 		}
 
 		//TODO confirm

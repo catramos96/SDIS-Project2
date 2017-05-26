@@ -3,6 +3,7 @@ package protocols;
 import filesystem.ChunkInfo;
 import filesystem.FileInfo;
 import message.ProtocolMessage;
+import message.TopologyMessage;
 import peer.Peer;
 import resources.Util;
 
@@ -82,6 +83,9 @@ public class BackupInitiator extends Thread
                 peer.getDatabase().removeSentFile(filepath);
             }
         }
+        //request peers to tracker
+        TopologyMessage msg = new TopologyMessage(Util.TopologyMessageType.GETONLINE,repDeg*2);
+        peer.getSubscribedGroup().sendMessageToTracker(msg);
 
         //encrypt
         File toSend = new File(filepath);

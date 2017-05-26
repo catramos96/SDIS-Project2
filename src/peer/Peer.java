@@ -4,6 +4,7 @@ import filesystem.ChunkInfo;
 import filesystem.Database;
 import filesystem.FileManager;
 import message.MessageRMI;
+import message.TopologyMessage;
 import network.ChannelRecord;
 import network.DatagramListener;
 import network.GroupChannel;
@@ -12,6 +13,7 @@ import protocols.BackupInitiator;
 import protocols.DeleteInitiator;
 import protocols.RestoreInitiator;
 import resources.Logs;
+import resources.Util;
 import security.Encrypt;
 import security.SSLlistenerClient;
 
@@ -51,7 +53,7 @@ public class Peer implements MessageRMI
     private Encrypt encrypt = null;
 
     /*Schedule*/
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(3);
 
     public Peer(int peer_id, String[] trackerInfo, String remoteObjName){
         this.ID = peer_id;
@@ -109,6 +111,8 @@ public class Peer implements MessageRMI
             e.printStackTrace();
         }
 
+        //updateStateOnTracker();
+
         //save metadata in 90s intervals
         saveMetadata();
 
@@ -140,6 +144,16 @@ public class Peer implements MessageRMI
             }
         };
         scheduler.scheduleAtFixedRate(saveMetadata, 30, 90, TimeUnit.SECONDS);
+    }
+
+    private void updateStateOnTracker(){
+        final Runnable saveMetadata = new Runnable() {
+            public void run() {
+                TopologyMessage msg = new TopologyMessage(Util.TopologyMessageType.ONLINE,mySubscription);
+                subscribedGroup.sendMessageToTracker(msg);
+            }
+        };
+        scheduler.scheduleAtFixedRate(saveMetadata, 10, 10, TimeUnit.SECONDS);
     }
 
     public synchronized void loadDB() {

@@ -13,21 +13,35 @@ public class Logs {
 	//Handling Topology Messages
 	
 	public static void receivedTopologyMessage(TopologyMessage message){
-		/*String print = new String("RECEIVED - TOPOLOGY:" + message.getType().toString() + ":" + 
-						message.getSubscriber1().getSubscriberInfo());
-		if(message.getSubscriber2() != null)
-			print += message.getSubscriber2().getSubscriberInfo();
-		
-		System.out.println(print);*/
+		String print = new String("RECEIVED - TOPOLOGY:" + message.getType().toString() + ": ");
+
+		if(message.getType().equals(Util.TopologyMessageType.ONLINE))
+			print += message.getSubscriber().toString();
+		else if(message.getType().equals(Util.TopologyMessageType.GETONLINE))
+			print += message.getSubscriberN();
+		else{
+			print+="\n";
+			for(Subscriber s : message.getSubscribersGroup())
+				print += "           " + s.toString() + "\n";
+		}
+
+		System.out.println(print);
 	}
 	
 	public static void sentTopologyMessage(TopologyMessage message){
-		/*String print = new String("SENT     - TOPOLOGY:" + message.getType().toString() + ": <" + 
-						message.getSubscriber1().getAddress().getHostAddress() + ":" + message.getSubscriber1().getPort() + ">");
-		if(message.getSubscriber2() != null)
-			print += " <" + message.getSubscriber2().getAddress().getHostAddress() + ":" + message.getSubscriber2().getPort() + ">";
-		
-		System.out.println(print);*/
+		String print = new String("SENT     - TOPOLOGY:" + message.getType().toString() + ": ");
+
+		if(message.getType().equals(Util.TopologyMessageType.ONLINE))
+			print += message.getSubscriber().toString();
+		else if(message.getType().equals(Util.TopologyMessageType.GETONLINE))
+			print += message.getSubscriberN();
+		else{
+			print+="\n";
+			for(Subscriber s : message.getSubscribersGroup())
+				print += "           " + s.toString() + "\n";
+		}
+
+		System.out.println(print);
 	}
 	//Topology Messages
 	

@@ -28,8 +28,12 @@ public class MessagePeerHandler extends Thread{
 
 		String content = new String(message);
 
+		System.out.println("NEW MESSAGE");
+
 		int firstSpace = content.indexOf(new String(" "));
 		String type = content.substring(0,firstSpace);
+
+		System.out.println(content);
 
 		if(Util.isTopologyMessageType(type)){
 			TopologyMessage msg = TopologyMessage.parseMessage(message);
@@ -51,8 +55,13 @@ public class MessagePeerHandler extends Thread{
 
 		switch (msg.getType()) {
 
-		case SUBSCRIBER:{
-			channel.addSubscriber(msg.getSubscriber());
+		case SUBSCRIBERS:{
+			channel.addSubscribers(msg.getSubscribersGroup());
+
+			System.out.println("NEW PEERS");
+			for(Subscriber s : msg.getSubscribersGroup())
+			    System.out.println(s.toString());
+
 			break;
 		}
 		default:{
@@ -181,10 +190,6 @@ public class MessagePeerHandler extends Thread{
 					return;
 				}
 
-				//TRACKER WARNING of new storage
-                TopologyMessage trackerMsg = new TopologyMessage(Util.TopologyMessageType.PUT,channel.getMySubscription(),c.getChunkKey());
-                channel.sendMessageToTracker(trackerMsg);
-
 				//send STORED message
 				channel.sendMessageToSubscribers(msg,Util.ChannelType.MDB);
                 Logs.sentMessageLog(msg);
@@ -198,13 +203,11 @@ public class MessagePeerHandler extends Thread{
 				//save chunk in memory
 				peer.getFileManager().saveChunk(c);
 
-			    //TODO confirm
                 //peer.getChannelRecord().removeStoredMessages(c.getChunkKey());
 
 				//Save chunk info on database
 				peer.getDatabase().saveChunkInfo(chunkNo+fileId,c);
 				
-				//TODO
 				byte[] teste = peer.getFileManager().getChunkContent(fileId, chunkNo);
 			}
 

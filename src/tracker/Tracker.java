@@ -15,8 +15,7 @@ import resources.DLNode;
 import security.SSLlistenerServer;
 
 public class Tracker{
-	
-	private HashMap<String,ArrayList<Subscriber>> DTH = null;	//Files 
+
 	private DLinkedList<Subscriber> lastAccess = null;			//LastAccess Subscribers
 	private HashMap<Subscriber,DLNode<Subscriber>> subscribers = null;		//Subscribers and lastAccessPosition
 	private HashSet<String>  validIPs = null;
@@ -25,7 +24,6 @@ public class Tracker{
 	public Tracker(int port) throws ExecutionException, InterruptedException
 	{
 		try {
-			DTH = new HashMap<String,ArrayList<Subscriber>>();
 			lastAccess = new DLinkedList<Subscriber>();
 			subscribers = new HashMap<Subscriber,DLNode<Subscriber>>();
 			
@@ -55,39 +53,6 @@ public class Tracker{
 
 		//tmp
 		lastAccess.displayList();
-	}
-	
-	public synchronized void putDTH(String key, Subscriber new_s){
-		if(DTH.containsKey(key)){
-			ArrayList<Subscriber> subs = DTH.get(key);
-			if(!subs.contains(new_s))
-				subs.add(new_s);
-		}
-	}
-	
-	public synchronized ArrayList<Subscriber> getDTH(String key, int nSubscribers, int pagination){
-		ArrayList<Subscriber> subs = new ArrayList<Subscriber>();
-		
-		if(DTH.containsKey(key)){
-			ArrayList<Subscriber> tmp = DTH.get(key);
-			int size = tmp.size();
-			int i = nSubscribers * pagination, n = 0;
-			while(n < nSubscribers && i < size){
-				subs.add(tmp.get(i));
-				i++;
-				n++;
-			}
-		}
-		
-		return subs;
-	}
-	
-	public synchronized void removeDTH(String key, Subscriber s){
-		if(DTH.containsKey(key)){
-			ArrayList<Subscriber> subs = DTH.get(key);
-			if(subs.contains(s))
-				subs.remove(s);
-		}
 	}
 
 	public synchronized ArrayList<Subscriber> getLastAccess(int nSubscribers){

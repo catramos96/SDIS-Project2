@@ -42,7 +42,7 @@ public class Util {
 	
 	public static enum TopologyMessageType
 	{
-		ONLINE, PUT, GET, GETONLINE, SUBSCRIBER
+		ONLINE, GETONLINE, SUBSCRIBERS
 	}
 	
 	public static boolean isTopologyMessageType(String test){
