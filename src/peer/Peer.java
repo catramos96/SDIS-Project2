@@ -42,7 +42,6 @@ public class Peer implements MessageRMI
 
     /*hashmaps with temporary information about actual backups and restores*/
     private HashMap<String, RestoreInitiator> restoreInitiators;
-    private HashMap<String, BackupInitiator> backupInitiators;
 
     /*Communication*/
     private DatagramListener comunicationChannel = null;
@@ -60,7 +59,6 @@ public class Peer implements MessageRMI
         this.setFileManager(new FileManager(getID()));
         this.channelRecord = new ChannelRecord();
         this.restoreInitiators = new HashMap<>();
-        this.backupInitiators = new HashMap<>();
 
         loadDB();
 
@@ -242,15 +240,8 @@ public class Peer implements MessageRMI
 
                 ArrayList<ChunkInfo> chunks = database.getSentChunksBellowRepDeg();
 
-                for(ChunkInfo c : chunks)
-                {
-                    BackupInitiator temp = new BackupInitiator(peer,"",0);
-                    //addBackupInitiator(c.getFileId(),temp);
-
-                    temp.sendChunk(c);
-                    temp.waitProtocols();
-
-                    //removeBackupInitiator(c.getFileId());
+                for(ChunkInfo c : chunks) {
+                    chunkBackup(c);
                 }
 
                 System.out.println(" - update completed - ");
@@ -259,6 +250,12 @@ public class Peer implements MessageRMI
         };
 
         scheduler.scheduleAtFixedRate(checkChunks, 90, 300, TimeUnit.SECONDS);
+    }
+
+    public void chunkBackup(ChunkInfo c) {
+        BackupInitiator temp = new BackupInitiator(this,"",0);
+        temp.sendChunk(c);
+        temp.waitProtocols();
     }
 
     public GroupChannel getSubscribedGroup(){
