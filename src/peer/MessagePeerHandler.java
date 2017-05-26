@@ -20,7 +20,7 @@ public class MessagePeerHandler extends Thread{
     private GroupChannel channel = null;
     private Util.ChannelType fromChannelType;
 
-    public MessagePeerHandler(Util.ChannelType channelType, byte[] message, Subscriber sender, Peer peer, GroupChannel channel){
+    public MessagePeerHandler(Util.ChannelType channelType, byte[] message, Subscriber sender, Peer peer, GroupChannel channel) {
 
         this.sender = sender;
         this.peer = peer;
@@ -30,19 +30,18 @@ public class MessagePeerHandler extends Thread{
         String content = new String(message);
 
         int firstSpace = content.indexOf(new String(" "));
-        String type = content.substring(0,firstSpace);
+        String type = content.substring(0, firstSpace);
 
-		if(Util.isTopologyMessageType(type)){
-			TopologyMessage msg = TopologyMessage.parseMessage(message);
-			handleTopologyMessage(msg);
-		}
-		else if(Util.isProtocolMessageType(type)){
-			ProtocolMessage msg = ProtocolMessage.parseMessage(message);
-			handleProtocolMessage(msg);
-		}
-		else{
-			System.out.println(content);
-		}
+        if (Util.isTopologyMessageType(type)) {
+            TopologyMessage msg = TopologyMessage.parseMessage(message);
+            handleTopologyMessage(msg);
+        } else if (Util.isProtocolMessageType(type)) {
+            ProtocolMessage msg = ProtocolMessage.parseMessage(message);
+            handleProtocolMessage(msg);
+        } else {
+            System.out.println(content);
+        }
+    }
 
    public void handleTopologyMessage(TopologyMessage msg){
 
@@ -80,7 +79,7 @@ public class MessagePeerHandler extends Thread{
 
                 case STORED:
                     peer.getChannelRecord().addStoredMessage(msg.getChunkNo()+msg.getFileId(), msg.getSenderId());
-                    handleStore(msg.getFileId(), msg.getChunkNo(),msg.getSenderId());
+                    handleStore(msg);
                     break;
 
                 case GETCHUNK:
