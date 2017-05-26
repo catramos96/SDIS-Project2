@@ -41,13 +41,6 @@ public class GroupChannel extends Thread{
 		peer.getMySubscriptionInfo().setPorts(topChannel.getSocketPort(),mcChannel.getSocketPort(),mdrChannel.getSocketPort(),mdbChannel.getSocketPort());
 		this.mySubscription = peer.getMySubscriptionInfo();
 
-		//=================  PARA REMOVER
-		try {
-			Thread.sleep(2000);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-        //=================
 	}
 	
 	/*

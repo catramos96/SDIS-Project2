@@ -86,7 +86,7 @@ public class DatagramListener extends Thread{
 		    DatagramPacket packet = receive();
 		    
 		    byte[] msg = Arrays.copyOf(packet.getData(), packet.getLength());
-		    
+
 			if(peer != null)
 				new MessagePeerHandler(channelType,msg,new Subscriber(packet.getAddress(),packet.getPort()),peer,subscribers).start();
 			else if(tracker != null)
