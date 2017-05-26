@@ -1,53 +1,45 @@
 # SDIS-Project2 
 
-### Tracker
+### Implementação da DHT
 
-* root - Subscriber
-* HashMap - key: Subscriber, value: lista de subscribers "filhos" <- Não é demasiada informação em grande escala ? Outra solução ?
-* HashMap - key: Subscriber, value: true/false /(ativo/inativo)
+#### Mensagens
+PUT     <key> <address> <port1> <port2> <port3> <port4> <CRLF><CRLF>
+GET     <key> <numberPeers> <pagination>                <CRLF><CRLF>
+CHECK   <key>                                           <CRLF><CRLF>
+REMOVE  <key> <address> <port1> <port2> <port3> <port4> <CRLF><CRLF>
+DELETE  <key> <CRLF> <key> <CRLF> ...                   <CRLF><CRLF>
+INFO    <key> <repDegree>                               <CRLF><CRLF>
+        
+#### Tracker
+Métodos DTH:
+* PUT       peer with chunk
+* GET       peers with chunk
+* CHECK     if peer has chunk + n_peers
+* INFO      has or not peer, + rep degree
+* REMOVE    peer that no longer has chunk
+* DELETE    delete chunk info
 
-Lidar com a inatividade de peers:
-* Função calendarizada de x em x tempos que envia uma mensagem para os peers;
-* Quando os peers recebem esta mensagem, enviam para o traker uma mensagem de confirmação (ativos) e o valor da entrada do hashmap para aquele peer fica a true. A mensagem de confirmação contém o pai do Subscriber (+/- informação ?);
-* A cada chamada da função, se tiver entradas no hashmap a false então o peer está inativo e é eliminado das tabelas, avisando os peers filhos e pai de forma a ajustarem a topologia do canal com "REMSUBSCRIBER" (remover filho) ou "PARENT" (novo pai);
-* A cada chamada da função, inicia todos os valores da entrada no hashmap a false após o passo anterior;
+Métodos gerais:
+* Obter os x primeiros peers com um chunk com paginação y
 
-### Peer (Subscriber -> informação do peer na rede)
+#### Peer
+Protocolos:
 
-* Informação como subscriber - Subscriber (InetAddress,port)
-* Lista de subscribers filhos
-* Pai - Subscriber
-* root - Subscriber -> será o tracker ??
-* tracker - Subscriber
+Sempre que um peer iniciar sessão (ativo), ele faz check de todos os chunks que ele tem de outros e dos que fez backup, confirma se ainda existem (se não elimina-os) e faz backup se o número de peers for inferior ao replication degree.
 
-Adesão ao grupo:
-* Envio de mensagem para o tracker "WHOISROOT"
-* Tracker envia uma mensagem a avisar que é o root
-* Peer pede adesão ao tracker "ADDSUBSCRIBER"
-* Tracker analisa quem tem menos de 5 filhos e está ativo e envia-lhe diretamente quem vai ser o pai com "PARENT"
-* Peer manda mensagem "SUBSCRIBER" para o pai avisando-o que é seu filho (atualiza as variáveis necessárias)
+##### Backup
+* Ir buscar mais peers no caso de o protocolo começar a repetir muitas vezes por falta de stores.
+* Por cada peer que faça store de mensagens, retirá-lo dos subscribers no groupChannel, assim não envia mais mensagens para ele.
+* Guardar apenas temporariamente os peers que guardaram os stores, só para saber se o replication degree foi atingido, depois não. interessa
 
-### Comunicação
+##### Restore
+* Ir buscar x peers com aquele chunk com paginação = 1 e enviar para esses.
+* Por cada try no restore protocol, ir buscar mais x peers ao tracker com paginação = n+1.
 
-Mensagens de Protocolo
-* Envio de mensagens de protocolo para o root
-* Ao receber uma mensagem, o nó envia para os seus filhos, e interpreta a mensagem;
+##### Delete
+* Remover no tracker os chunks dos ficheiros.
+* De x em x dias, é enviada uma mensagem por chunk, para o tracker para saber se ainda existe o chunk, em caso negativo elimina-se todos os chunks daquele ficheiro. O tracker envia a mensagem INFO com o repDegree, e se for inferior ao desejado, então faz se backup.
 
-Mensagens de Topologia
-* Envio de mensagens para um target específico
-* Ao receber uma mensagem, processa-a e só a envia para os seus filhos em caso de ser uma mensagem "ROOT" (informativa)
-
-### Mensagens
-
-Mensagens de Protocolo: "PUTCHUNK" "CHUNK" "GETCHUNK" "STORED" "DELETE" "RECLAIM" "STATE"
-Mensagens de Topologia: "WHOISROOT" "ROOT" "SUBSCRIBER" "PARENT" "REMSUBSCRIBER" "MOVSUBSCRIBER" "INLINE" "ONLINE" "OFFLINE" ...
-
-* WHOISROOT: pedido para devolver a root atual
-* ROOT: informação sobre quem é o root atual
-* SUBSCRIBER: informação sobre quem é o filho atual
-* PARENT: informação sobre quem é o pai atual
-* REMSUBSCRIBER: pedido para remover um subscriber (filho)
-* MOVSUBSCRIBER: ?
-* INLINE: pedido para devolver o estado atual na rede (ONLINE/OFFLINE - default)
-* ONLINE: informação de que se encontra ativo (rotina)
-* OFFLINE: informação de que vai deixar de estar ativo
+##### Remove
+* Remover no tracker a entrada no peer para aquele chunk.
+* Receber a mensagem do tracker com o repDegree. Se o repDegree for mais baixo então efetuar o backup (mudar o backup para não enviar stored se já tem o chunk? assim não estamos a receber stored de peers que já tinham o chunk e confundir com o backup bem feito). Outra abordagem: assumir que se um peer remove um chunk então tem que fazer o backup com rep = 1
