@@ -1,30 +1,29 @@
 package network;
-import message.ActivityMessage;
 import message.Message;
-import message.ProtocolMessage;
 import message.TopologyMessage;
 import peer.Peer;
 import protocols.ChunkBackupProtocol;
 import resources.Logs;
 import resources.Util;
-import java.util.ArrayList;
+
+import java.util.*;
 
 public class GroupChannel extends Thread{
 
-	private Subscriber tracker = null;
-	private Subscriber root = null;
-	private Subscriber parent = null;
-	private Subscriber mySubscription = null;
-	private ArrayList<Subscriber> nextSubscribers = new ArrayList<Subscriber>();	//max size = 5
+	private Subscriber tracker = null;                  //Tracker info
+	private Subscriber mySubscription = null;           //My info
+	private Set<Subscriber> subscribers = null;         //My group of subscribers
 	
-	private DatagramListener topChannel = null;			//For Topology/Activity
-	private DatagramListener mcChannel = null;			//For Protocol
-	private DatagramListener mdrChannel = null;
-	private DatagramListener mdbChannel = null;
+	private DatagramListener topChannel = null;			//For Topology Messages
+	private DatagramListener mcChannel = null;			//For Protocol Messages
+	private DatagramListener mdrChannel = null;         //For Protocol Messages: CHUNK
+	private DatagramListener mdbChannel = null;         //For Protocol Messages: STORE
 
 
 	public GroupChannel(Peer peer, Subscriber tracker){
-		
+
+	    subscribers = Collections.synchronizedSet(new HashSet<Subscriber>());
+
 		this.topChannel = new DatagramListener(peer,this,Util.ChannelType.TOP);
 		this.topChannel.start();
 
@@ -41,22 +40,14 @@ public class GroupChannel extends Thread{
 		
 		peer.getMySubscriptionInfo().setPorts(topChannel.getSocketPort(),mcChannel.getSocketPort(),mdrChannel.getSocketPort(),mdbChannel.getSocketPort());
 		this.mySubscription = peer.getMySubscriptionInfo();
-		this.root = peer.getMySubscriptionInfo();		
-		
-		Logs.errorMsg(mySubscription.getSubscriberInfo());
-		
-		//Ask tracker to be added
-		TopologyMessage msg = new TopologyMessage(Util.TopologyMessageType.NEWSUBSCRIBER,mySubscription);
-		
-		sendMessageToTracker(msg);
-		
-		//Action before logout
-		Runtime.getRuntime().addShutdownHook(new Thread() {
-			public void run() {
-				ActivityMessage activity = new ActivityMessage(Util.ActivityMessageType.OFFLINE,mySubscription);
-				sendMessageToTracker(activity);
-			}
-		});
+
+		//=================  PARA REMOVER
+		try {
+			Thread.sleep(2000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+        //=================
 	}
 	
 	/*
@@ -86,7 +77,7 @@ public class GroupChannel extends Thread{
 		DatagramListener channel = getChannel(type);
 		int port;
 		
-		for(Subscriber subscriber : nextSubscribers){
+		for(Subscriber subscriber : subscribers){
 			port = subscriber.getPort(type);
 			
 			if(port != -1 && channel != null)
@@ -98,52 +89,20 @@ public class GroupChannel extends Thread{
 		}
 	}
 	
-	public void sendMessageToRoot(Message message, Util.ChannelType type){
-		DatagramListener channel = getChannel(type);
-		int port = root.getPort(type);
-		
-		if(port != -1 && channel != null) {
-			channel.send(message.buildMessage(), root.getAddress(), port);
-		}
-		else
-			Logs.errorMsg("Could not send message because port or channel not found!");
-	}
-	
-	public void sendMessageToParent(Message message, Util.ChannelType type){
-		DatagramListener channel = getChannel(type);
-		int port = parent.getPort(type);
-		
-		if(port != -1 && channel != null)
-			channel.send(message.buildMessage(), parent.getAddress(), port);
-		else
-			Logs.errorMsg("Could not send message because port or channel not found!");
-		
-	}
-	
 	/*
 	 * Topology Functions
 	 */
 	
 	public boolean addSubscriber(Subscriber newSubscriber){
-		if(hasSubscriber(newSubscriber) == null){
-			nextSubscribers.add(newSubscriber);
-			return true;
-		}
-		return false;
+		return subscribers.add(newSubscriber);
 	}
 	
-	public void removeSubscriber(Subscriber subscriber){
-		Subscriber p;
-		if((p = hasSubscriber(subscriber)) != null)
-			nextSubscribers.remove(p);
+	public boolean removeSubscriber(Subscriber subscriber){
+		return subscribers.remove(subscriber);
 	}
 	
-	public Subscriber hasSubscriber(Subscriber subscriber){
-		for(Subscriber s : nextSubscribers){
-			if(s.equals(subscriber))
-				return s;
-		}
-		return null;
+	public boolean hasSubscriber(Subscriber subscriber){
+		return subscribers.contains(subscriber);
 	}
 
     /*
@@ -164,33 +123,13 @@ public class GroupChannel extends Thread{
 	/*
 	 * GETS & SETS
 	 */
-	
-	public void setParent(Subscriber subscriber){
-		parent = subscriber;
+
+	public void resetSubscribers(){
+		subscribers.clear();
 	}
-	
-	public void setRoot(Subscriber subscriber){
-		root = subscriber;
-	}
-	
-	public Subscriber getRoot(){
-		return root;
-	}
-	
-	public boolean hasParent(){
-		return (parent != null);
-	}
-	
-	public boolean iAmRoot(){
-		return (mySubscription.equals(root));
-	}
-	
+
 	public Subscriber getMySubscription(){
 		return mySubscription;
-	}
-	
-	public Subscriber getParent(){
-		return parent;
 	}
 	
 	public DatagramListener getChannel(Util.ChannelType type){
@@ -207,5 +146,12 @@ public class GroupChannel extends Thread{
 			break;
 		}
 		return null;
+	}
+
+	public void addSubscribers(ArrayList<Subscriber> subs){
+		for(Subscriber s : subs){
+		    if(!s.equals(mySubscription))
+			subscribers.add(s);
+		}
 	}
 }

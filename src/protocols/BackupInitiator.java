@@ -3,6 +3,7 @@ package protocols;
 import filesystem.ChunkInfo;
 import filesystem.FileInfo;
 import message.ProtocolMessage;
+import message.TopologyMessage;
 import peer.Peer;
 import resources.Util;
 
@@ -50,29 +51,29 @@ public class BackupInitiator extends Thread
         if(!fileExist())
             return;
 
+        //request peers to tracker
+        peer.getSubscribedGroup().resetSubscribers();
+        TopologyMessage msg = new TopologyMessage(Util.TopologyMessageType.GETONLINE,repDeg*2);
+        peer.getSubscribedGroup().sendMessageToTracker(msg);
+
         String fileID = peer.getFileManager().getFileIdFromFilename(filepath);
 
         //peer already backed up file, but it's a different version
-        if(peer.getDatabase().hasSentFile(filepath))
-        {
+        if(peer.getDatabase().hasSentFile(filepath)) {
             FileInfo info = peer.getDatabase().getFileInfo(filepath);
 
-            if(fileID.equals(info.getFileId()))
-            {
+            if (fileID.equals(info.getFileId())) {
                 System.out.println("File already backed up!");
+                peer.getSubscribedGroup().resetSubscribers();
                 return;
-            }
-            else
-            {
+            } else {
                 System.out.println("New version of file");
                 //delete old chunks
                 DeleteInitiator dt = new DeleteInitiator(peer, filepath);
                 dt.start();
-                try
-                {
-                    dt.join();	 //waits for chunks delete
-                }
-                catch (InterruptedException e) {
+                try {
+                    dt.join();     //waits for chunks delete
+                } catch (InterruptedException e) {
                     //Logs.exception("run", "BackupTrigger", e.toString());
                     e.printStackTrace();
                 }

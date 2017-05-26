@@ -1,9 +1,11 @@
 package tracker;
-import message.ActivityMessage;
 import message.TopologyMessage;
 import network.Subscriber;
 import resources.Logs;
 import resources.Util;
+
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 
 public class MessageTrackerHandler extends Thread {
 	private Tracker tracker = null;
@@ -27,10 +29,6 @@ public class MessageTrackerHandler extends Thread {
 			TopologyMessage msg = TopologyMessage.parseMessage(message);
 			handleTopologyMessage(msg);
 		}
-		else if(Util.isActivityMessageType(type)){
-			ActivityMessage msg = ActivityMessage.parseMessage(message);
-			handleActivityMessage(msg);
-		}
 		else{
 			System.out.println(content);
 		}
@@ -41,84 +39,38 @@ public class MessageTrackerHandler extends Thread {
 		Logs.receivedTopologyMessage(msg);
 		
 		switch (msg.getType()) {
-		//Who is the root ?
-		case WHOISROOT:{			
-			TopologyMessage message = new TopologyMessage(Util.TopologyMessageType.ROOT,tracker.getRoot());
-			tracker.getChannel().send(message.buildMessage(), sender.getAddress(), sender.getDefPort());
-			Logs.sentTopologyMessage(message);
-			break;
-		}
-		//I'm new Try to add me
-		case NEWSUBSCRIBER:{	
-			Subscriber parent = null;
-			
-			//Send root
-			if(tracker.getRoot() == null){
-				tracker.setRoot(msg.getSubscriber());
-				Logs.newTopology("ROOT", tracker.getRoot());
-			}
-			
-			TopologyMessage message = new TopologyMessage(Util.TopologyMessageType.ROOT,tracker.getRoot());
-			tracker.getChannel().send(message.buildMessage(), sender.getAddress(), sender.getDefPort());
-			Logs.sentTopologyMessage(message);
-			
-			if(tracker.hasSubscriber(msg.getSubscriber())){
-				if(tracker.getRoot().equals(msg.getSubscriber()))
-					break;
-				
-				parent = tracker.getInfo(msg.getSubscriber()).parent;
-				
-				if(parent != null){
-					message = new TopologyMessage(Util.TopologyMessageType.PARENT,parent);
-					tracker.getChannel().send(message.buildMessage(), sender.getAddress(), sender.getDefPort());
-					Logs.sentTopologyMessage(message);
-				}
-				break;
-			}
-			
-			//Add to topology
-			parent = tracker.addToTopology(msg.getSubscriber());
-			Logs.newTopology("SUBSCRIBER", msg.getSubscriber());
-			tracker.setSubscriberActivity(msg.getSubscriber(), true);
-			
-			if(parent == null) break;
-			else if(tracker.getRoot().equals(msg.getSubscriber())){	//parent of the root -> parent is the new root
-				tracker.setRoot(parent);
-				Logs.newTopology("ROOT", parent);
-			}
-			else{
-				//send parent
-				message = new TopologyMessage(Util.TopologyMessageType.PARENT,parent);
-				tracker.getChannel().send(message.buildMessage(), sender.getAddress(), sender.getDefPort());
-				Logs.sentTopologyMessage(message);
-			}
-			break;
-		}
-		default:{
-			System.out.println("RECEIVED UNKNOWN MSG");
-			break;
-		}
-	 }
-	}
-	
-	public void handleActivityMessage(ActivityMessage msg){
-		
-		Logs.activityMessage(msg,msg.getSubscriber());
-		
-		switch (msg.getType()) {
-		case ONLINE:{
-			tracker.setSubscriberActivity(msg.getSubscriber(), true);
-			break;
-		}
-		case OFFLINE:{
-			tracker.subscriberOffline(msg.getSubscriber());
-			break;
-		}
-		default:{
-			System.out.println("ERROR: Wrong type of activity messaeg received");
-			break;
-		}
-		}
-		
+
+		    //Update last access of subscriber
+            case ONLINE:{
+                tracker.registerSubscriber(msg.getSubscriber());
+                break;
+            }
+            //I need the last n subscribers that were online
+            case GETONLINE:{
+                ArrayList<Subscriber> lastOnline = tracker.getLastAccess(msg.getSubscriberN());
+                TopologyMessage m;
+
+               int size = lastOnline.size();
+               int i = 0,j = 0;
+
+               //because it has a limit of MAX_N_SUBSCRIBERS that can be sent per message
+               while(i < size){
+                   if((j = i+Util.MAX_N_SUBSCRIBERS) >= size)
+                       j = size;
+
+                   m = new TopologyMessage(Util.TopologyMessageType.SUBSCRIBERS,new ArrayList<Subscriber>(lastOnline.subList(i,j)));
+                   tracker.getChannel().send(m.buildMessage(),sender.getAddress(),sender.getDefPort());
+                   Logs.sentTopologyMessage(m);
+
+                   i = j;
+               }
+
+                break;
+            }
+            default:{
+                System.out.println("RECEIVED UNKNOWN MSG");
+                break;
+            }
+	    }
 	}
 }

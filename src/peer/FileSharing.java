@@ -10,7 +10,7 @@ public class FileSharing
 	{		
 		if(args.length != 3)
 		{
-			System.out.println("java peer.FileSharing <peer_id> <remoteObjName> <address:port>");
+			System.out.println("java peer.FileSharing <peer_id> <remoteObjName> <tracker_address:port>");
 			return;
 		}
 
@@ -19,12 +19,6 @@ public class FileSharing
 		String[] root = addressVerification(args[2]);
 
 		new Peer(peer_id,root,remoteObjName);
-		
-		/*String[] parts_mc = addressVerification(args[3]);
-		String[] parts_mdb = addressVerification(args[4]);
-		String[] parts_mdr = addressVerification(args[5]);*/
-
-		//new Peer(protocol_version,peer_id,remoteObjName,parts_mc,parts_mdb,parts_mdr);	
 	}
 
 	private static String[] addressVerification(String arg) 

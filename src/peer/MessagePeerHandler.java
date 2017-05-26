@@ -2,7 +2,6 @@ package peer;
 
 import filesystem.ChunkInfo;
 import filesystem.Database;
-import message.ActivityMessage;
 import message.ProtocolMessage;
 import message.TopologyMessage;
 import network.GroupChannel;
@@ -21,7 +20,7 @@ public class MessagePeerHandler extends Thread{
     private GroupChannel channel = null;
     private Util.ChannelType fromChannelType;
 
-    public MessagePeerHandler(Util.ChannelType channelType, byte[] message, Subscriber sender, Peer peer, GroupChannel channel){
+    public MessagePeerHandler(Util.ChannelType channelType, byte[] message, Subscriber sender, Peer peer, GroupChannel channel) {
 
         this.sender = sender;
         this.peer = peer;
@@ -31,94 +30,36 @@ public class MessagePeerHandler extends Thread{
         String content = new String(message);
 
         int firstSpace = content.indexOf(new String(" "));
-        String type = content.substring(0,firstSpace);
+        String type = content.substring(0, firstSpace);
 
-        if(Util.isTopologyMessageType(type)){
+        if (Util.isTopologyMessageType(type)) {
             TopologyMessage msg = TopologyMessage.parseMessage(message);
             handleTopologyMessage(msg);
-        }
-        else if(Util.isProtocolMessageType(type)){
+        } else if (Util.isProtocolMessageType(type)) {
             ProtocolMessage msg = ProtocolMessage.parseMessage(message);
             handleProtocolMessage(msg);
-        }
-        else if(Util.isActivityMessageType(type)){
-            ActivityMessage msg = ActivityMessage.parseMessage(message);
-            handleActivityMessage(msg);
-        }
-        else{
+        } else {
             System.out.println(content);
         }
     }
 
-    public void handleTopologyMessage(TopologyMessage msg){
+   public void handleTopologyMessage(TopologyMessage msg){
 
-        Logs.receivedTopologyMessage(msg);
+		Logs.receivedTopologyMessage(msg);
 
-        switch (msg.getType()) {
-            //I'm the root
-            case ROOT:{
-                boolean sameRoot = channel.getMySubscription().equals(msg.getSubscriber());
+		switch (msg.getType()) {
 
-                if(!sameRoot){
-                    channel.setRoot(msg.getSubscriber());
-                    channel.setParent(msg.getSubscriber());
-                    Logs.newTopology("ROOT", msg.getSubscriber());
-                    channel.sendMessageToSubscribers(msg,Util.ChannelType.TOP);
-                    Logs.sentTopologyMessage(msg);
-                }
+		case SUBSCRIBERS:{
+			channel.addSubscribers(msg.getSubscribersGroup());
+			break;
+		}
+		default:{
+			System.out.println("RECEIVED UNKNOWN MSG");
+			break;
+		}
+		}
 
-                break;
-            }
-            //Your parent
-            case PARENT:{
-                TopologyMessage warnMessage;
-
-                //If the root  has a parent -> parent is the new root
-                if(channel.iAmRoot()){
-                    warnMessage = new TopologyMessage(Util.TopologyMessageType.ROOT,msg.getSubscriber());
-                    channel.sendMessageToRoot(warnMessage,Util.ChannelType.TOP);
-                    Logs.sentTopologyMessage(warnMessage);
-
-                    channel.setRoot(msg.getSubscriber());
-                    Logs.newTopology("ROOT", msg.getSubscriber());
-                }
-                //If it already had a parent -> update new parent and warn the old parent to remove me from his childs
-                else if(channel.hasParent() && !channel.getParent().equals(msg.getSubscriber())){
-                    warnMessage = new TopologyMessage(Util.TopologyMessageType.REMSUBSCRIBER,peer.getMySubscriptionInfo());
-                    channel.sendMessageToParent(warnMessage,Util.ChannelType.TOP);
-                    Logs.sentTopologyMessage(warnMessage);
-                }
-
-                //update parent
-                channel.setParent(msg.getSubscriber());
-                Logs.newTopology("PARENT",msg.getSubscriber());
-
-                //warn that i'm his subscriber
-                warnMessage = new TopologyMessage(Util.TopologyMessageType.SUBSCRIBER,peer.getMySubscriptionInfo());
-                channel.sendMessageToParent(warnMessage,Util.ChannelType.TOP);
-                Logs.sentTopologyMessage(warnMessage);
-
-                break;
-            }
-            //I'm your subscriber
-            case SUBSCRIBER:{
-                if(channel.addSubscriber(msg.getSubscriber()))
-                    Logs.newTopology("SUBSCRIBER", msg.getSubscriber());
-                break;
-            }
-            //Remove me
-            case REMSUBSCRIBER:{
-                channel.removeSubscriber(msg.getSubscriber());
-                Logs.remTopology("SUBSCRIBER", msg.getSubscriber());
-                break;
-            }
-            default:{
-                System.out.println("RECEIVED UNKNOWN MSG");
-                break;
-            }
-        }
-
-    }
+	}
 
     public void handleProtocolMessage(ProtocolMessage msg)
     {
@@ -138,7 +79,7 @@ public class MessagePeerHandler extends Thread{
 
                 case STORED:
                     peer.getChannelRecord().addStoredMessage(msg.getChunkNo()+msg.getFileId(), msg.getSenderId());
-                    handleStore(msg.getFileId(), msg.getChunkNo(),msg.getSenderId());
+                    handleStore(msg);
                     break;
 
                 case GETCHUNK:
@@ -168,34 +109,24 @@ public class MessagePeerHandler extends Thread{
 
     }
 
-    public void handleActivityMessage(ActivityMessage msg){
 
-        Logs.activityMessage(msg, sender);
-
-        if(msg.getType().compareTo(Util.ActivityMessageType.ACTIVITY) == 0){
-            ActivityMessage message = new ActivityMessage(Util.ActivityMessageType.ONLINE,channel.getMySubscription());
-            channel.sendMessageToTracker(message);
-        }
-
-    }
-
-    /**
-     * Peer response to other peer PUTCHUNK message.
-     * The peer will store the chunk if it has space on its disk and if it doesn't have the chunk already stored.
-     *
-     * Enhancement: If the conditions are pleased for the chunk to be stored, the peer will gather all the peers
-     * that had stored the same chunk (previously and after receiving the message) and will check if the
-     * number of peers (replication of the chunk) is bellow the desired. If it is, the peer will store the chunk,
-     * otherwise, it will not be stored, ensuring the desired replication degree of that chunk and preventing space
-     * occupation.
-     *
-     * @param fileId - File identification
-     * @param chunkNo - Chunk identification number
-     * @param repDeg - Chunk desirable chunk replication degree
-     * @param body - Chunk content
-     */
-    private synchronized void handlePutchunk(String fileId, int chunkNo, int repDeg, byte[] body)
-    {
+	/**
+	 * Peer response to other peer PUTCHUNK message.
+	 * The peer will store the chunk if it has space on its disk and if it doesn't have the chunk already stored.
+	 *
+	 * Enhancement: If the conditions are pleased for the chunk to be stored, the peer will gather all the peers
+	 * that had stored the same chunk (previously and after receiving the message) and will check if the
+	 * number of peers (replication of the chunk) is bellow the desired. If it is, the peer will store the chunk,
+	 * otherwise, it will not be stored, ensuring the desired replication degree of that chunk and preventing space
+	 * occupation.
+	 *
+	 * @param fileId - File identification
+	 * @param chunkNo - Chunk identification number
+	 * @param repDeg - Chunk desirable chunk replication degree
+	 * @param body - Chunk content
+	 */
+	private synchronized void handlePutchunk(String fileId, int chunkNo, int repDeg, byte[] body)
+	{
         int actualRepDeg = 0;
 
         //Owner of the file with file id
@@ -228,9 +159,9 @@ public class MessagePeerHandler extends Thread{
 			 * can be updated much faster about the actual replication of the chunk.
 			 */
 
-            if(alreadyExists)
-            {
-                channel.sendMessageToRoot(msg,Util.ChannelType.MDB);
+			if(alreadyExists)
+			{
+                channel.sendMessageToSubscribers(msg,Util.ChannelType.MDB);
                 Logs.sentMessageLog(msg);
             }
             else
@@ -248,8 +179,8 @@ public class MessagePeerHandler extends Thread{
                     return;
                 }
 
-                //send STORED message
-                channel.sendMessageToRoot(msg,Util.ChannelType.MDB);
+				//send STORED message
+				channel.sendMessageToSubscribers(msg,Util.ChannelType.MDB);
                 Logs.sentMessageLog(msg);
 
                 //Save chunk info on database
@@ -261,11 +192,9 @@ public class MessagePeerHandler extends Thread{
                 //save chunk in memory
                 peer.getFileManager().saveChunk(c);
 
-                //TODO confirm
                 //peer.getChannelRecord().removeStoredMessages(c.getChunkKey());
 
-                //Save chunk info on database
-                peer.getDatabase().saveChunkInfo(chunkNo+fileId,c);
+				peer.getDatabase().saveChunkInfo(chunkNo+fileId,c);
 
                 //TODO
                 byte[] teste = peer.getFileManager().getChunkContent(fileId, chunkNo);
@@ -287,8 +216,7 @@ public class MessagePeerHandler extends Thread{
 
             //Send message to the multicast to warn the other peers so they can update their replication degree of the chunk
             ProtocolMessage msg = new ProtocolMessage(Util.ProtocolMessageType.REMOVED,peer.getID(),chunks.get(i).getFileId(),chunks.get(i).getChunkNo());
-
-            channel.sendMessageToRoot(msg,Util.ChannelType.MC);
+			channel.sendMessageToSubscribers(msg,Util.ChannelType.MC);
             Logs.sentMessageLog(msg);
 
             //Deletes the chunk from the peers disk
@@ -300,18 +228,15 @@ public class MessagePeerHandler extends Thread{
         }
     }
 
-    /**
-     * Peer response to other peer STORE message.
-     * The peer will record the peers that stored the chunks of the files that it backup.
-     * The peer will update the peers that stored the chunks that he also stored.
-     *
-     * @param fileId - File identification
-     * @param chunkNo - Chunk identification number
-     * @param senderId - Sender peer identification number
-     */
-    private synchronized void handleStore(String fileId, int chunkNo, int senderId){
+	/**
+	 * Peer response to other peer STORE message.
+	 * The peer will record the peers that stored the chunks of the files that it backup.
+	 * The peer will update the peers that stored the chunks that he also stored.
+	 *
+	 */
+	private synchronized void handleStore(ProtocolMessage msg){
 
-        String chunkKey = chunkNo + fileId;
+	    String chunkKey = msg.getChunkNo() + msg.getFileId();
 
         //Updates the Replication Degree if the peer has the chunk stored
         if(peer.getDatabase().hasChunkStored(chunkKey))
@@ -326,7 +251,7 @@ public class MessagePeerHandler extends Thread{
         //Record the storedChunks in case the peer is the OWNER of the backup file
         if(peer.getDatabase().hasSentChunk(chunkKey))
         {
-            peer.getDatabase().addFilesystem(chunkKey,senderId);
+            peer.getDatabase().addFilesystem(chunkKey,msg.getSenderId());
         }
 
     }
@@ -352,10 +277,10 @@ public class MessagePeerHandler extends Thread{
             // Waits random time
             Util.randomDelay();
 
-            //If meanwhile the chunk content wasn't sent by another peer
-            if(!peer.getChannelRecord().receivedChunkMessage(fileId, chunkNo))
-            {
-                channel.sendMessageToRoot(msg,Util.ChannelType.MDR);
+			//If meanwhile the chunk content wasn't sent by another peer
+			if(!peer.getChannelRecord().receivedChunkMessage(fileId, chunkNo))
+			{
+				channel.sendMessageToSubscribers(msg,Util.ChannelType.MDR);
                 Logs.sentMessageLog(msg);
             }
         }

@@ -1,6 +1,5 @@
 package resources;
 
-import message.ActivityMessage;
 import message.ProtocolMessage;
 import message.TopologyMessage;
 import network.Subscriber;
@@ -8,65 +7,46 @@ import network.Subscriber;
 public class Logs {
 
 	public static void MyAddress(Subscriber s){
-		System.out.println("ME:      " + s.getSubscriberInfo());
+		System.out.println("ME:      " + s.toString());
 	}
 	
 	//Handling Topology Messages
-	
+
+	/**
+	 * Function that displays the information about a topology message received
+	 * @param message
+	 */
 	public static void receivedTopologyMessage(TopologyMessage message){
-		/*String print = new String("RECEIVED - TOPOLOGY:" + message.getType().toString() + ":" + 
-						message.getSubscriber1().getSubscriberInfo());
-		if(message.getSubscriber2() != null)
-			print += message.getSubscriber2().getSubscriberInfo();
-		
-		System.out.println(print);*/
+		String print = new String("RECEIVED - TOPOLOGY:" + message.getType().toString() + ": ");
+		print += message.toString();
+		System.out.println(print);
 	}
-	
+
+	/**
+	 * Function that displays the information about a topology message sent
+	 * @param message
+	 */
 	public static void sentTopologyMessage(TopologyMessage message){
-		/*String print = new String("SENT     - TOPOLOGY:" + message.getType().toString() + ": <" + 
-						message.getSubscriber1().getAddress().getHostAddress() + ":" + message.getSubscriber1().getPort() + ">");
-		if(message.getSubscriber2() != null)
-			print += " <" + message.getSubscriber2().getAddress().getHostAddress() + ":" + message.getSubscriber2().getPort() + ">";
-		
-		System.out.println(print);*/
+		String print = new String("SENT     - TOPOLOGY:" + message.getType().toString() + ": ");
+		print += message.toString();
+		System.out.println(print);
 	}
 	//Topology Messages
-	
+
+	/**
+	 * Function that displays the information about a message that is not of the type topology
+	 */
 	public static void notTopologyMessage(){
 		errorMsg("TOPOLOGY: Message is not of type Topology!");
 	}
-	public static void notActivityMessage(){
-		errorMsg("ACTIVITY: Message is not of type Activity!");
-	}
-	
-	public static void newTopology(String newT, Subscriber s){
-		System.out.println("NEW      - " + newT + ":" + s.getSubscriberInfo());
-	}
-	
-	public static void remTopology(String remT,Subscriber s){
-		System.out.println("REMOVED  - " + remT + ":" + s.getSubscriberInfo());
-	}
-	
-	public static void activityMessage(ActivityMessage msg, Subscriber sender){
-		String print = new String("RECEIVED - ACTIVITY: " + msg.getType().toString());
-		
-		if(msg.getType().compareTo(Util.ActivityMessageType.ACTIVITY) != 0)
-			print += ":" + sender.getSubscriberInfo();
-		
-		System.out.println(print);
-	}
-	
-	
-	/*public static void message(String msg) {
-		System.out.println(msg);
-	}*/
-	
+
+	/**
+	 * Function that display an error with a message
+	 * @param msg
+	 */
 	public static void errorMsg(String msg){
 		System.out.println("ERROR    - " + msg);
 	}
-
-
-
 
 
 	/*

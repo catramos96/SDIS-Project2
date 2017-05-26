@@ -2,6 +2,7 @@ package protocols;
 
 import filesystem.Database;
 import message.ProtocolMessage;
+import message.TopologyMessage;
 import network.GroupChannel;
 import resources.Logs;
 import resources.Util;
@@ -50,7 +51,7 @@ public class ChunkBackupProtocol extends Thread
 			System.out.println("Try number : "+rep+" to backup chunk "+msg.getChunkNo());
 
             //send message
-            channel.sendMessageToRoot(msg,Util.ChannelType.MC);
+            channel.sendMessageToSubscribers(msg,Util.ChannelType.MC);
 			Logs.sentMessageLog(msg);
 
             //waits
@@ -71,6 +72,11 @@ public class ChunkBackupProtocol extends Thread
 			
 			waitingTime *= Util.TIME_REINFORCEMENT;	//doubles time for each rep
 			rep++;
+
+
+			//request peers to tracker
+			TopologyMessage msgToTracker = new TopologyMessage(Util.TopologyMessageType.GETONLINE,msg.getReplicationDeg()*2);
+			channel.sendMessageToTracker(msgToTracker);
 		}
 
 		//TODO confirm

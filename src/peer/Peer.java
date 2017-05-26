@@ -4,6 +4,7 @@ import filesystem.ChunkInfo;
 import filesystem.Database;
 import filesystem.FileManager;
 import message.MessageRMI;
+import message.TopologyMessage;
 import network.ChannelRecord;
 import network.DatagramListener;
 import network.GroupChannel;
@@ -12,6 +13,7 @@ import protocols.BackupInitiator;
 import protocols.DeleteInitiator;
 import protocols.RestoreInitiator;
 import resources.Logs;
+import resources.Util;
 import security.Encrypt;
 import security.SSLlistenerClient;
 
@@ -50,7 +52,7 @@ public class Peer implements MessageRMI
     private Encrypt encrypt = null;
 
     /*Schedule*/
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(3);
 
     public Peer(int peer_id, String[] trackerInfo, String remoteObjName){
         this.ID = peer_id;
@@ -107,11 +109,17 @@ public class Peer implements MessageRMI
             e.printStackTrace();
         }
 
+        /*
+         * Routine Tasks
+         */
         //save metadata in 90s intervals
         saveMetadata();
 
         //try to backup chunks with actual replication degree bellow desired
         verifyChunks(this);
+
+        //Warns peers about its activity only if this peer can also store new chunks
+        updateStateOnTracker();
 
         //save metadata when shouts down
         Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -138,6 +146,20 @@ public class Peer implements MessageRMI
             }
         };
         scheduler.scheduleAtFixedRate(saveMetadata, 30, 90, TimeUnit.SECONDS);
+    }
+
+    private void updateStateOnTracker(){
+        final Runnable saveMetadata = new Runnable() {
+            public void run() {
+                //Only warns peer of its activity if it can also store more chunks
+                if(fileManager.getRemainingSpace() > 0) {
+                    TopologyMessage msg = new TopologyMessage(Util.TopologyMessageType.ONLINE, mySubscription);
+                    subscribedGroup.sendMessageToTracker(msg);
+                    Logs.sentTopologyMessage(msg);
+                }
+            }
+        };
+        scheduler.scheduleAtFixedRate(saveMetadata, 0, 30, TimeUnit.SECONDS);
     }
 
     public synchronized void loadDB() {

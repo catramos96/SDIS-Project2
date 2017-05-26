@@ -23,7 +23,11 @@ public class ChunkRestoreProtocol extends Thread {
 
     @Override
     public void run() {
-        channel.sendMessageToRoot(msg,Util.ChannelType.MC);
+
+        /*
+        Ir buscar os peers que têm o chunk e adiciona-los aos subscribers
+         */
+        channel.sendMessageToSubscribers(msg,Util.ChannelType.MC);
         System.out.println("Sent getChunk");
     }
 }
