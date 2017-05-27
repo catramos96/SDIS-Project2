@@ -31,10 +31,13 @@ Sempre que um peer iniciar sessão (ativo), ele faz check de todos os chunks que
 * Ir buscar mais peers no caso de o protocolo começar a repetir muitas vezes por falta de stores.
 * Por cada peer que faça store de mensagens, retirá-lo dos subscribers no groupChannel, assim não envia mais mensagens para ele.
 * Guardar apenas temporariamente os peers que guardaram os stores, só para saber se o replication degree foi atingido, depois não. interessa
+* Alterar mensagem de PUTCHUNK e por o ip e a port do canal mdb do peer. Depois o STORED é mandado para este ip e port.
+* Se um peer que recebe um putchunk já tiver feito backup daquele chunk, então manda mensagem stored
 
 ##### Restore
 * Ir buscar x peers com aquele chunk com paginação = 1 e enviar para esses.
 * Por cada try no restore protocol, ir buscar mais x peers ao tracker com paginação = n+1.
+* Alterar mensagem de GETCHUNK e por o ip e a port do canal mdr do peer. Depois o CHUNK é mandado para este ip e port.
 
 ##### Delete
 * Remover no tracker os chunks dos ficheiros.
