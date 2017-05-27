@@ -32,7 +32,7 @@ Sempre que um peer iniciar sessão (ativo), ele faz check de todos os chunks que
 * Por cada peer que faça store de mensagens, retirá-lo dos subscribers no groupChannel, assim não envia mais mensagens para ele.
 * Guardar apenas temporariamente os peers que guardaram os stores, só para saber se o replication degree foi atingido, depois não. interessa
 * ~~Alterar mensagem de PUTCHUNK e por o ip e a port do canal mdb do peer. Depois o STORED é mandado para este ip e port.~~
-* Se um peer que recebe um putchunk já tiver feito backup daquele chunk, então manda mensagem stored
+* ~~Se um peer que recebe um putchunk já tiver feito backup daquele chunk, então não manda mensagem stored~~
 
 ##### Restore
 * ~~Ir buscar x peers com aquele chunk com paginação = 1 e enviar para esses.~~
