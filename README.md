@@ -19,13 +19,7 @@ Métodos DTH:
 * REMOVE    peer that no longer has chunk
 * DELETE    delete chunk info
 
-Métodos gerais:
-* Obter os x primeiros peers com um chunk com paginação y
-
 #### Peer
-Protocolos:
-
-Sempre que um peer iniciar sessão (ativo), ele faz check de todos os chunks que ele tem de outros e dos que fez backup, confirma se ainda existem (se não elimina-os) e faz backup se o número de peers for inferior ao replication degree.
 
 ##### Backup
 * ~~Ir buscar mais peers no caso de o protocolo começar a repetir muitas vezes por falta de stores.~~
