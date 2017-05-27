@@ -55,6 +55,7 @@ public class MessagePeerHandler extends Thread{
 		}
 		default:{
 			System.out.println("RECEIVED UNKNOWN MSG");
+			System.out.println("teste" + msg.toString());
 			break;
 		}
 		}
@@ -91,7 +92,7 @@ public class MessagePeerHandler extends Thread{
                     handleChunk(msg.getFileId(), msg.getChunkNo(), msg.getBody());
                     break;
 
-                case DELETE:
+                case DELETED:
                     peer.getChannelRecord().resetChunkMessages(msg.getFileId());
                     peer.getChannelRecord().resetStoreMessages(msg.getFileId());
                     handleDelete(msg.getFileId());

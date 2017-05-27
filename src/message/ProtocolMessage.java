@@ -44,7 +44,7 @@ public class ProtocolMessage extends Message
 	 * STORED 	<Version> <SenderId> <FileId> <ChunkNo> 					<CRLF><CRLF>
 	 * GETCHUNK <Version> <SenderId> <FileId> <ChunkNo> 					<CRLF><CRLF>
 	 * CHUNK 	<Version> <SenderId> <FileId> <ChunkNo> 					<CRLF><CRLF>	<Body>
-	 * DELETE 	<Version> <SenderId> <FileId> 								<CRLF><CRLF>
+	 * DELETED 	<Version> <SenderId> <FileId> 								<CRLF><CRLF>
 	 * REMOVED 	<Version> <SenderId> <FileId> <ChunkNo> 					<CRLF><CRLF>
 	 * 
 	 * Enhancement Messages:
@@ -125,13 +125,13 @@ public class ProtocolMessage extends Message
 	}
 
 	/**
-	 * Constructor of ProtocolMessageType for the types DELETE, GETINITIATOR, INITIATOR.
+	 * Constructor of ProtocolMessageType for the types DELETED, GETINITIATOR, INITIATOR.
 	 * @param type - Type of the message, it has to be one of the types mentioned above
 	 * @param senderId - Sender identification
 	 * @param fileId - File identification
 	 */
 	public ProtocolMessage(ProtocolMessageType type, int senderId, String fileId) {
-		if(!(type.name().equals("DELETE") || type.name().equals("GETINITIATOR") || type.name().equals("INITIATOR"))){
+		if(!(type.name().equals("DELETED") || type.name().equals("GETINITIATOR") || type.name().equals("INITIATOR"))){
             System.out.println("error creating message");
 			//Logs.wrongMessageConstructor(type);
 		}
@@ -178,7 +178,7 @@ public class ProtocolMessage extends Message
 		
 		String content = type.name() + " " + senderId + " " + fileId + " ";
 		
-		if(((ProtocolMessageType)type).compareTo(Util.ProtocolMessageType.DELETE) != 0 || 
+		if(((ProtocolMessageType)type).compareTo(Util.ProtocolMessageType.DELETED) != 0 || 
 			((ProtocolMessageType)type).compareTo(Util.ProtocolMessageType.GETINITIATOR) != 0 || 
 			((ProtocolMessageType)type).compareTo(Util.ProtocolMessageType.INITIATOR) != 0 )
 			content += chunkNo + " ";
@@ -312,9 +312,9 @@ public class ProtocolMessage extends Message
 			int senderId_rcv = Integer.parseInt(parts[1]);
 			String fileId_rcv = parts[2];
 
-			//Exception for the types DELETE, GETINITIATOR, INITIATOR.
+			//Exception for the types DELETED, GETINITIATOR, INITIATOR.
 			int chunkNo_rcv = -1;
-			if(type_rcv.compareTo(Util.ProtocolMessageType.DELETE) != 0 && type_rcv.compareTo(Util.ProtocolMessageType.GETINITIATOR) != 0 && type_rcv.compareTo(Util.ProtocolMessageType.INITIATOR) != 0 )
+			if(type_rcv.compareTo(Util.ProtocolMessageType.DELETED) != 0 && type_rcv.compareTo(Util.ProtocolMessageType.GETINITIATOR) != 0 && type_rcv.compareTo(Util.ProtocolMessageType.INITIATOR) != 0 )
 				chunkNo_rcv = Integer.parseInt(parts[3]);
 
 			//Exception for type PUTCHUNK
@@ -343,7 +343,7 @@ public class ProtocolMessage extends Message
 			
 
 			//Creates the message with the respective attributes
-			if(type_rcv.compareTo(Util.ProtocolMessageType.DELETE) == 0 || type_rcv.compareTo(Util.ProtocolMessageType.GETINITIATOR) == 0 || type_rcv.compareTo(Util.ProtocolMessageType.INITIATOR) == 0)
+			if(type_rcv.compareTo(Util.ProtocolMessageType.DELETED) == 0 || type_rcv.compareTo(Util.ProtocolMessageType.GETINITIATOR) == 0 || type_rcv.compareTo(Util.ProtocolMessageType.INITIATOR) == 0)
 				parsed = new ProtocolMessage(type_rcv,senderId_rcv,fileId_rcv);
 			else if(type_rcv.compareTo(Util.ProtocolMessageType.STORED) == 0 || type_rcv.compareTo(Util.ProtocolMessageType.REMOVED) == 0 || type_rcv.compareTo(Util.ProtocolMessageType.GOTCHUNKENH) == 0)
 				parsed = new ProtocolMessage(type_rcv,senderId_rcv,fileId_rcv,chunkNo_rcv) ;

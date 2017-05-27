@@ -27,7 +27,7 @@ public class Util {
 	
 	public static enum ProtocolMessageType
 	{
-		PUTCHUNK, STORED, GETCHUNK, CHUNK, DELETE, REMOVED, GETINITIATOR, INITIATOR, GOTCHUNKENH, GETCHUNKENH
+		PUTCHUNK, STORED, GETCHUNK, CHUNK, DELETED, REMOVED, GETINITIATOR, INITIATOR, GOTCHUNKENH, GETCHUNKENH
 	}
 	
 	public static boolean isProtocolMessageType(String test){

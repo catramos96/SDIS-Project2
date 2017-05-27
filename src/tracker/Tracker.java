@@ -80,9 +80,9 @@ public class Tracker{
 		    DHT.get(key).add(s);
         }
         else{
-		    Set set = Collections.synchronizedSet(new HashSet<Subscriber>());
+		    Set<Subscriber> set = Collections.synchronizedSet(new HashSet<Subscriber>());
 		    set.add(s);
-		    DHT.put(key,(HashSet)set);
+		    DHT.put(key,new HashSet<Subscriber>(set));
 
 		    Logs.newMsg("Key: " + key + " Peer: " + s.toString());
         }
