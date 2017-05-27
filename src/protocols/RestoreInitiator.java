@@ -16,6 +16,7 @@ import javax.crypto.IllegalBlockSizeException;
 import filesystem.FileInfo;
 import message.Message;
 import message.ProtocolMessage;
+import message.TopologyMessage;
 
 /**
  * Class RestoreInitiator used to initiate the restore protocol of a file.
@@ -27,6 +28,7 @@ public class RestoreInitiator extends Thread
     private byte[][]    data;
 
 	private static final int MAX_TRIES = 5;
+	private static final int NO_PEERS = 5;
 
     /**
      * Constructor of RestoreInitiator
@@ -56,25 +58,32 @@ public class RestoreInitiator extends Thread
         data = new byte[numberChunks][];
         String fileID = fileInfo.getFileId();
 
-        //add initiator to peer
+        // add initiator to peer
         peer.addRestoreInitiator(fileID, this);
 
         for (int i = 0; i < numberChunks; i++)
         {
+        	String chunkId = fileInfo.getFileId() + i;
+            		
             ProtocolMessage msg = new ProtocolMessage(Util.ProtocolMessageType.GETCHUNK, peer.getID(), fileID, i);
             
             // Tries sending GETCHUNK message for MAX_TRIES
             for (int attempts = 0; attempts < MAX_TRIES; attempts++)
             {
+            	// get peers from DHT to send GETCHUNK to
+                TopologyMessage getPeersMsg = new TopologyMessage(Util.TopologyMessageType.GET, chunkId, NO_PEERS, attempts);
+                
             	// Sends message again if peer still hasn't received chunk
-				if(data[i] == null)
-				{
+				if(data[i] == null) {
 		            peer.getSubscribedGroup().sendMessageToSubscribers(msg,Util.ChannelType.MC);
 					Util.randomDelay();
 				} else {
 					break;
 				}
 			}
+            
+            // reset subscriber list
+            peer.getSubscribedGroup().resetSubscribers();
             
             // Checks if chunk has been recovered.
 			if (data[i] == null) {

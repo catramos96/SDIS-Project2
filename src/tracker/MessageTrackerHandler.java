@@ -68,7 +68,7 @@ public class MessageTrackerHandler extends Thread {
                 break;
             }
 			case PUT: {
-				tracker.putDHT(msg.getKey(),msg.getSubscriber());
+				tracker.putDHT(msg.getKey(),msg.getSubscriberHash());
 				break;
 			}
 			case GET: {

@@ -31,6 +31,7 @@ public class ProtocolMessage extends Message
 	private String address = null;		//For enhancement
 	private int port = -1;				//For enhancement
 	private byte[] body = null;
+	private int subscriberHash = -1;
 	
 	//Special characters for message construction
 	private static final char CR = 0xD;								
@@ -87,13 +88,33 @@ public class ProtocolMessage extends Message
 	 */
 	public ProtocolMessage(ProtocolMessageType type, int senderId, String fileId, int chunkNo)
 	{
-		if(!(type.name().equals("STORED")|| type.name().equals("GETCHUNK") || type.name().equals("REMOVED") || type.name().equals("GOTCHUNKENH")))//Logs.wrongMessageConstructor(type);
+		if(!(type.name().equals("GETCHUNK") || type.name().equals("REMOVED") || type.name().equals("GOTCHUNKENH")))//Logs.wrongMessageConstructor(type);
             System.out.println("error creating message");
 
 		this.type = type;
 		this.senderId = senderId;
 		this.fileId = fileId;
 		this.chunkNo = chunkNo;
+	}
+	
+	/**
+	 * Constructor of ProtocolMessageType for the type STORED
+	 * @param type - Type of the message, it has to be one of the types mentioned above
+	 * @param senderId - Sender identification
+	 * @param fileId - File identification
+	 * @param chunkNo - ChunkInfo identification number
+	 * @param subscriberHash - Subscriber hashCode
+	 */
+	public ProtocolMessage(ProtocolMessageType type, int senderId, String fileId, int chunkNo, int subscriberHash)
+	{
+		if(!type.name().equals("STORED"))
+            System.out.println("error creating message");
+		System.out.println("\n\nGIRO\n\n");
+		this.type = type;
+		this.senderId = senderId;
+		this.fileId = fileId;
+		this.chunkNo = chunkNo;
+		this.subscriberHash = subscriberHash;
 	}
 	
 	/**
@@ -177,7 +198,7 @@ public class ProtocolMessage extends Message
 		
 		if(((ProtocolMessageType)type).compareTo(Util.ProtocolMessageType.DELETE) != 0 || 
 			((ProtocolMessageType)type).compareTo(Util.ProtocolMessageType.GETINITIATOR) != 0 || 
-			((ProtocolMessageType)type).compareTo(Util.ProtocolMessageType.INITIATOR) != 0 )
+			((ProtocolMessageType)type).compareTo(Util.ProtocolMessageType.INITIATOR) != 0)
 			content += chunkNo + " ";
 		
 		if(((ProtocolMessageType)type).compareTo(Util.ProtocolMessageType.PUTCHUNK) == 0)
@@ -185,6 +206,10 @@ public class ProtocolMessage extends Message
 		
 		if(((ProtocolMessageType)type).compareTo(Util.ProtocolMessageType.GETCHUNKENH) == 0)
 			content += address + " " + port + " ";
+		
+		if (((ProtocolMessageType)type).compareTo(Util.ProtocolMessageType.STORED) == 0) {
+			content += Integer.toString(subscriberHash);
+		}
 		
 		content += LINE_SEPARATOR + LINE_SEPARATOR;
 		
@@ -278,6 +303,10 @@ public class ProtocolMessage extends Message
 		return port;
 	}
 	
+	public int getSubscriberHash() {
+		return subscriberHash;
+	}
+	
 	/**
 	 * Receives a message in byte[] and parses it filling the respective attributes
 	 * of a new ProtocolMessageType object. It also checks if the actual peers version that is
@@ -318,6 +347,12 @@ public class ProtocolMessage extends Message
 				replicationDeg_rcv = Integer.parseInt(parts[4]);
 			}
 			
+			// Exception for STORED
+			int subscriberHash_rcv = -1;
+			if (type_rcv.compareTo(Util.ProtocolMessageType.STORED)== 0) {
+				subscriberHash_rcv = Integer.parseInt(parts[4]);
+			}
+			
 			//Exception for the type GETCHUNKENH
 			String address_rcv = null;
 			Integer port_rcv = null;
@@ -338,8 +373,10 @@ public class ProtocolMessage extends Message
 			//Creates the message with the respective attributes
 			if(type_rcv.compareTo(Util.ProtocolMessageType.DELETE) == 0 || type_rcv.compareTo(Util.ProtocolMessageType.GETINITIATOR) == 0 || type_rcv.compareTo(Util.ProtocolMessageType.INITIATOR) == 0)
 				parsed = new ProtocolMessage(type_rcv,senderId_rcv,fileId_rcv);
-			else if(type_rcv.compareTo(Util.ProtocolMessageType.GETCHUNK) == 0 || type_rcv.compareTo(Util.ProtocolMessageType.STORED) == 0 || type_rcv.compareTo(Util.ProtocolMessageType.REMOVED) == 0 || type_rcv.compareTo(Util.ProtocolMessageType.GOTCHUNKENH) == 0)
-				parsed = new ProtocolMessage(type_rcv,senderId_rcv,fileId_rcv,chunkNo_rcv) ;
+			else if(type_rcv.compareTo(Util.ProtocolMessageType.GETCHUNK) == 0 || type_rcv.compareTo(Util.ProtocolMessageType.REMOVED) == 0 || type_rcv.compareTo(Util.ProtocolMessageType.GOTCHUNKENH) == 0)
+				parsed = new ProtocolMessage(type_rcv,senderId_rcv,fileId_rcv,chunkNo_rcv);
+			else if (type_rcv.compareTo(Util.ProtocolMessageType.STORED) == 0)
+				parsed = new ProtocolMessage(type_rcv, senderId_rcv, fileId_rcv, subscriberHash_rcv);
 			else if(type_rcv.compareTo(Util.ProtocolMessageType.PUTCHUNK) == 0){
 				parsed = new ProtocolMessage(type_rcv,senderId_rcv,fileId_rcv,chunkNo_rcv,replicationDeg_rcv,body);
 			}

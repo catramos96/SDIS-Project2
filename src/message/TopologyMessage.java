@@ -10,6 +10,7 @@ public class TopologyMessage extends Message{
 	Subscriber subscriber = null;
 	ArrayList<Subscriber> subscribersGroup = null;
 	int subscriberN = -1;
+	int subscriberHash = -1;
 
 	String key = null;
 	ArrayList<String> keys = null;
@@ -62,11 +63,23 @@ public class TopologyMessage extends Message{
             Logs.errorMsg("Topology message wrong format");
     }
 
-    public TopologyMessage(Util.TopologyMessageType type, String key, int repDeg){
-        if(type.name().equals("INFO")){
+
+    /**
+     * Constructor of TopologyMessage for the types INFO and PUT.
+     * @param type - Type of the message, it has to be one of the types mentioned above
+     * @param key - Chunk key
+     * @param data - If message is of type INFO, corresponds to the chunk's replication degree
+     * @param data - If message is of type PUT, corresponds to the subscriber hash code
+     */
+    public TopologyMessage(Util.TopologyMessageType type, String key, int data) {
+        if(type.name().equals("INFO") || type.name().equals("PUT")){
             this.type = type;
             this.key = key;
-            this.subscriberN = repDeg;
+            if (type.name().equals("INFO")) {
+                this.subscriberN = data;
+            } else {
+            	this.subscriberHash = data;
+            }
         }
         else
             Logs.errorMsg("Topology message wrong format");
@@ -129,14 +142,16 @@ public class TopologyMessage extends Message{
 
                 content += key + " ";
 
-                if(((TopologyMessageType) type).compareTo(Util.TopologyMessageType.PUT) == 0 ||
-                    (((TopologyMessageType) type).compareTo(Util.TopologyMessageType.REMOVE) == 0)){
+                if(((TopologyMessageType) type).compareTo(Util.TopologyMessageType.REMOVE) == 0){
                     content += subscriber.getAddress().getHostAddress() + " " +
                             subscriber.getDefPort() + " " + subscriber.getMcPort() + " " +
                             subscriber.getMdrPort() + " " + subscriber.getMdbPort() + " ";
                 }
                 else if(((TopologyMessageType) type).compareTo(Util.TopologyMessageType.INFO) == 0){
                     content += subscriberN + " ";
+                }
+                else if(((TopologyMessageType) type).compareTo(Util.TopologyMessageType.PUT) == 0){
+                    content += subscriberHash + " ";
                 }
                 else if(((TopologyMessageType) type).compareTo(Util.TopologyMessageType.GET) == 0){
                     content += subscriberN + " " + pagination + " ";
@@ -207,8 +222,7 @@ public class TopologyMessage extends Message{
 
                 parsed = new TopologyMessage(type_rcv,subs);
             }
-            else if(((TopologyMessageType) type_rcv).compareTo(Util.TopologyMessageType.PUT) == 0 ||
-                    (((TopologyMessageType) type_rcv).compareTo(Util.TopologyMessageType.REMOVE) == 0)){
+            else if (((TopologyMessageType) type_rcv).compareTo(Util.TopologyMessageType.REMOVE) == 0){
                 p1 = Integer.parseInt(parts[3]);
                 p2 = Integer.parseInt(parts[4]);
                 p3 = Integer.parseInt(parts[5]);
@@ -218,6 +232,9 @@ public class TopologyMessage extends Message{
                 parsed = new TopologyMessage(type_rcv,parts[1],s1);
             }
             else if(((TopologyMessageType) type_rcv).compareTo(Util.TopologyMessageType.INFO) == 0){
+                parsed = new TopologyMessage(type_rcv,parts[1],Integer.parseInt(parts[2]));
+            }
+            else if(((TopologyMessageType) type_rcv).compareTo(Util.TopologyMessageType.PUT) == 0){
                 parsed = new TopologyMessage(type_rcv,parts[1],Integer.parseInt(parts[2]));
             }
             else if(((TopologyMessageType) type_rcv).compareTo(Util.TopologyMessageType.GET) == 0) {
@@ -261,6 +278,10 @@ public class TopologyMessage extends Message{
 	public int getSubscriberN(){
 	    return subscriberN;
     }
+	
+	public int getSubscriberHash() {
+		return subscriberHash;
+	}
 
     public String getKey(){return key;}
 

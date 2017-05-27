@@ -18,6 +18,7 @@ public class Tracker{
 	private HashSet<String>  validIPs = null;
 	private DatagramListener channel = null;
 	private HashMap<String,HashSet<Subscriber>> DHT = null;
+	private HashMap<Integer, Subscriber> subscribersByHash = null;
 	
 	public Tracker(int port) throws ExecutionException, InterruptedException
 	{
@@ -25,6 +26,7 @@ public class Tracker{
 			lastAccess = new DLinkedList<Subscriber>();
 			subscribers = new HashMap<Subscriber,DLNode<Subscriber>>();
 			DHT = new HashMap<String,HashSet<Subscriber>>();
+			subscribersByHash = new HashMap<Integer, Subscriber>();
 			
 			validIPs = new HashSet<String>();
 			(new Thread(new SSLlistenerServer(4499,new String[0], this))).start();
@@ -48,11 +50,13 @@ public class Tracker{
 		if(subscribers.containsKey(newS)){
 			DLNode<Subscriber> lastAccessNode = subscribers.get(newS);
 			lastAccess.removeNode(lastAccessNode);						//remove old access
+		} else {
+			subscribersByHash.put(newS.hashCode(), newS); // Insert if it's the first time
 		}
 		
 		DLNode<Subscriber> newAccessNode = lastAccess.addFirst(newS);
 		subscribers.put(newS, newAccessNode);									//updates position in access
-
+		
 		//tmp
 		System.out.println(lastAccess.toString());
         Logs.newMsg("ACCESS: " + newS.toString());
@@ -75,7 +79,8 @@ public class Tracker{
 	 * DHT
 	 */
 
-	public synchronized void putDHT(String key, Subscriber s){
+	public synchronized void putDHT(String key, int subscriberHash){
+		Subscriber s = subscribersByHash.get(subscriberHash);
 		if(DHT.containsKey(key)){
 		    DHT.get(key).add(s);
         }

@@ -138,7 +138,7 @@ public class MessagePeerHandler extends Thread{
         c.setReplicationDeg(repDeg);
 
         //create response message : STORED
-        ProtocolMessage msg = new ProtocolMessage(Util.ProtocolMessageType.STORED,peer.getID(),c.getFileId(),c.getChunkNo());
+        ProtocolMessage msg = new ProtocolMessage(Util.ProtocolMessageType.STORED,peer.getID(),c.getFileId(),c.getChunkNo(), peer.getMySubscriptionInfo().hashCode());
 
         //verifies chunk existence in this peer
         boolean alreadyExists = peer.getDatabase().hasChunkStored(c.getChunkKey());
@@ -161,7 +161,7 @@ public class MessagePeerHandler extends Thread{
 
 			if(alreadyExists)
 			{
-                channel.sendMessageToSubscribers(msg,Util.ChannelType.MDB);
+                channel.sendMessageToSubscribers(msg,Util.ChannelType.MC);
                 Logs.sentMessageLog(msg);
             }
             else
@@ -180,7 +180,7 @@ public class MessagePeerHandler extends Thread{
                 }
 
 				//send STORED message
-				channel.sendMessageToSubscribers(msg,Util.ChannelType.MDB);
+				channel.sendMessageToSubscribers(msg,Util.ChannelType.MC);
                 Logs.sentMessageLog(msg);
 
                 //Save chunk info on database
@@ -232,9 +232,10 @@ public class MessagePeerHandler extends Thread{
 	 * Peer response to other peer STORE message.
 	 * The peer will record the peers that stored the chunks of the files that it backup.
 	 * The peer will update the peers that stored the chunks that he also stored.
+	 * The peer will send a message so the tracker can update the DHT.
 	 *
 	 */
-	private synchronized void handleStore(ProtocolMessage msg){
+	private synchronized void handleStore(ProtocolMessage msg) {
 
 	    String chunkKey = msg.getChunkNo() + msg.getFileId();
 
@@ -253,6 +254,11 @@ public class MessagePeerHandler extends Thread{
         {
             peer.getDatabase().addFilesystem(chunkKey,msg.getSenderId());
         }
+        
+        // Updates DHT Info
+        TopologyMessage trackerMsg = new TopologyMessage(Util.TopologyMessageType.PUT, chunkKey, msg.getSubscriberHash());
+        		
+        // Removes peer from SubscribedGroup
 
     }
 
