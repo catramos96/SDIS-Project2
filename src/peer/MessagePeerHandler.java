@@ -83,7 +83,7 @@ public class MessagePeerHandler extends Thread{
                     break;
 
                 case GETCHUNK:
-                    handleGetchunk(msg.getFileId(), msg.getChunkNo());
+                    handleGetchunk(msg.getFileId(), msg.getChunkNo(), msg.getAddress(), msg.getPort());
                     break;
 
                 case CHUNK:
@@ -168,7 +168,9 @@ public class MessagePeerHandler extends Thread{
         		return;
         	}
         	
+        	// creates temporary subscriber
         	Subscriber s = new Subscriber(address, -1, -1, -1, port);
+        	
         	//send STORED message
         	channel.sendPrivateMessage(msg, s, Util.ChannelType.MDB);
         	Logs.sentMessageLog(msg);
@@ -254,13 +256,15 @@ public class MessagePeerHandler extends Thread{
     /**
      * Peer response to other peer GETCHUNK message.
      * If the peer has stored the chunkNo of the fileId, it will send the chunk content
-     * to the multicast (without enhancement) or to a private channel with the owner of the file (with enchancement)
+     * to a private channel with the owner of the file
      * in a message of type CHUNK.
      *
      * @param fileId - File identification
      * @param chunkNo - Chunk identification number
+	 * @param address - Address of the restore initiator
+	 * @param port - Port of the restore initiator's MDR channel
      */
-    private synchronized void handleGetchunk(String fileId, int chunkNo)
+    private synchronized void handleGetchunk(String fileId, int chunkNo, String address, int port)
     {
         byte[] chunk = peer.getFileManager().getChunkContent(fileId, chunkNo);
 
@@ -271,12 +275,16 @@ public class MessagePeerHandler extends Thread{
 
             // Waits random time
             Util.randomDelay();
-
+            
 			//If meanwhile the chunk content wasn't sent by another peer
 			if(!peer.getChannelRecord().receivedChunkMessage(fileId, chunkNo))
 			{
-				channel.sendMessageToSubscribers(msg,Util.ChannelType.MDR);
-                Logs.sentMessageLog(msg);
+	        	// creates temporary subscriber
+	        	Subscriber s = new Subscriber(address, -1, -1, port, -1);
+	        	
+	        	// send CHUNK message
+	        	channel.sendPrivateMessage(msg, s, Util.ChannelType.MDR);
+	        	Logs.sentMessageLog(msg);
             }
         }
     }

@@ -66,7 +66,7 @@ public class RestoreInitiator extends Thread
         {
         	String chunkId = fileInfo.getFileId() + i;
             		
-            ProtocolMessage msg = new ProtocolMessage(Util.ProtocolMessageType.GETCHUNK, peer.getID(), fileID, i);
+            ProtocolMessage msg = new ProtocolMessage(Util.ProtocolMessageType.GETCHUNK, peer.getID(), fileID, i, peer.getMySubscriptionInfo().getAddress().getHostAddress(), peer.getMySubscriptionInfo().getMdrPort());
             
             // Tries sending GETCHUNK message for MAX_TRIES
             for (int attempts = 0; attempts < MAX_TRIES; attempts++)
