@@ -1,6 +1,5 @@
 package resources;
 
-import com.siyeh.ig.security.SystemSetSecurityManagerInspection;
 import network.Subscriber;
 
 public class DLinkedList<N> {

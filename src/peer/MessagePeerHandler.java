@@ -139,7 +139,7 @@ public class MessagePeerHandler extends Thread{
 
         //create response message : STORED
         ProtocolMessage msg = new ProtocolMessage(Util.ProtocolMessageType.STORED,peer.getID(),c.getFileId(),c.getChunkNo());
-
+        
         //verifies chunk existence in this peer
         boolean alreadyExists = peer.getDatabase().hasChunkStored(c.getChunkKey());
 
@@ -182,6 +182,14 @@ public class MessagePeerHandler extends Thread{
 				//send STORED message
 				channel.sendMessageToSubscribers(msg,Util.ChannelType.MDB);
                 Logs.sentMessageLog(msg);
+                
+                // creates PUT message to update DHT
+                TopologyMessage putMsg = new TopologyMessage(Util.TopologyMessageType.PUT, c.getChunkKey(), peer.getMySubscriptionInfo());
+                
+                // send PUT message
+
+                peer.getSubscribedGroup().sendMessageToTracker(putMsg);
+                Logs.sentTopologyMessage(putMsg);
 
                 //Save chunk info on database
                 peer.getDatabase().saveChunkInfo(chunkNo+fileId,c);
