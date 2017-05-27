@@ -62,9 +62,11 @@ public class ProtocolMessage extends Message
 	 * @param fileId - File identification
 	 * @param chunkNo - ChunkInfo identification number
 	 * @param replicationDeg - Desired replication degree of the associated chunk
+	 * @param address - Address of the sender
+	 * @param port - Port of the sender
 	 * @param body - Content of the associated chunk
 	 */
-	public ProtocolMessage(ProtocolMessageType type, int senderId, String fileId, int chunkNo, int replicationDeg, byte[] body)
+	public ProtocolMessage(ProtocolMessageType type, int senderId, String fileId, int chunkNo, int replicationDeg, String address, int port, byte[] body)
 	{
         if (!type.name().equals("PUTCHUNK"))
             System.out.println("error creating message");
@@ -75,6 +77,8 @@ public class ProtocolMessage extends Message
 		this.fileId = fileId;
 		this.chunkNo = chunkNo;
 		this.replicationDeg = replicationDeg;
+		this.address = address;
+		this.port = port;
 		this.body = body;
 	}
 	
@@ -180,8 +184,10 @@ public class ProtocolMessage extends Message
 			((ProtocolMessageType)type).compareTo(Util.ProtocolMessageType.INITIATOR) != 0 )
 			content += chunkNo + " ";
 		
-		if(((ProtocolMessageType)type).compareTo(Util.ProtocolMessageType.PUTCHUNK) == 0)
-			content += replicationDeg + " ";
+		if(((ProtocolMessageType)type).compareTo(Util.ProtocolMessageType.PUTCHUNK) == 0) {
+			content += replicationDeg + " " + address + " " + port + " ";
+			
+		}
 		
 		if(((ProtocolMessageType)type).compareTo(Util.ProtocolMessageType.GETCHUNKENH) == 0)
 			content += address + " " + port + " ";
@@ -314,13 +320,15 @@ public class ProtocolMessage extends Message
 
 			//Exception for type PUTCHUNK
 			int replicationDeg_rcv = -1;
+			String address_rcv = null;
+			int port_rcv = -1;
 			if(type_rcv.compareTo(Util.ProtocolMessageType.PUTCHUNK) == 0){
 				replicationDeg_rcv = Integer.parseInt(parts[4]);
+				address_rcv = parts[5];
+				port_rcv = Integer.parseInt(parts[6]);
 			}
 			
 			//Exception for the type GETCHUNKENH
-			String address_rcv = null;
-			Integer port_rcv = null;
 			/*if(type_rcv.compareTo(Util.ProtocolMessageType.GETCHUNKENH) == 0){
 				address_rcv = parts[5];
 				port_rcv = Integer.parseInt(parts[6]);
@@ -341,7 +349,7 @@ public class ProtocolMessage extends Message
 			else if(type_rcv.compareTo(Util.ProtocolMessageType.GETCHUNK) == 0 || type_rcv.compareTo(Util.ProtocolMessageType.STORED) == 0 || type_rcv.compareTo(Util.ProtocolMessageType.REMOVED) == 0 || type_rcv.compareTo(Util.ProtocolMessageType.GOTCHUNKENH) == 0)
 				parsed = new ProtocolMessage(type_rcv,senderId_rcv,fileId_rcv,chunkNo_rcv) ;
 			else if(type_rcv.compareTo(Util.ProtocolMessageType.PUTCHUNK) == 0){
-				parsed = new ProtocolMessage(type_rcv,senderId_rcv,fileId_rcv,chunkNo_rcv,replicationDeg_rcv,body);
+				parsed = new ProtocolMessage(type_rcv,senderId_rcv,fileId_rcv,chunkNo_rcv,replicationDeg_rcv, address_rcv, port_rcv, body);
 			}
 			else if(type_rcv.compareTo(Util.ProtocolMessageType.CHUNK) == 0)
 				parsed = new ProtocolMessage(type_rcv,senderId_rcv,fileId_rcv,chunkNo_rcv,body);

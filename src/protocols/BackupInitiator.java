@@ -142,7 +142,7 @@ public class BackupInitiator extends Thread
         peer.getDatabase().startChunkMapping(c.getChunkKey());
 
         //message to send
-        ProtocolMessage msg = new ProtocolMessage(Util.ProtocolMessageType.PUTCHUNK,peer.getID(),c.getFileId(),c.getChunkNo(),c.getReplicationDeg(),c.getData());
+        ProtocolMessage msg = new ProtocolMessage(Util.ProtocolMessageType.PUTCHUNK,peer.getID(),c.getFileId(),c.getChunkNo(),c.getReplicationDeg(), peer.getMySubscriptionInfo().getAddress().getHostAddress(), peer.getMySubscriptionInfo().getMdbPort(), c.getData());
 
         //start chunk backup protocol
         ChunkBackupProtocol cbp = new ChunkBackupProtocol(peer.getDatabase(),peer.getSubscribedGroup(),msg);
