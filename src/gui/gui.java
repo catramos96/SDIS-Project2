@@ -2,14 +2,9 @@ package gui;
 
 import javax.swing.*;
 
-import peer.Peer;
-import tracker.Tracker;
 
-import java.awt.BorderLayout;
-import java.awt.FlowLayout;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.awt.event.ActionEvent;
 
@@ -19,14 +14,22 @@ import java.awt.event.ActionEvent;
 public class gui extends JFrame {
 	private JTextField trackerIP;
 	private JTextField trackerPort;
-	private JTextField peerIP;
-	private JTextField peerPort;
 	private JTextField peerID;
 	private JTextField path;
 	private JTextField rmiID;
-
+	private int defaulRep = 2;
     public static void main(String[] args) {
+    	
+    	 try {
+			UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
+		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException
+				| UnsupportedLookAndFeelException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	
     	gui test = new gui();
+    	
     }
 
     public gui () {
@@ -37,7 +40,7 @@ public class gui extends JFrame {
         
     	// gui  graphical blocks
         setTitle("Distributed Storage System");
-        setSize(350, 600);
+        setSize(350, 473);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         getContentPane().setLayout(new BoxLayout(getContentPane(), BoxLayout.X_AXIS));
@@ -51,7 +54,7 @@ public class gui extends JFrame {
         panel.add(lblTrackerIp);
         
         trackerIP = new JTextField();
-        trackerIP.setBounds(149, 12, 114, 19);
+        trackerIP.setBounds(149, 12, 114, 25);
         trackerIP.setText("127.0.0.1");
         panel.add(trackerIP);
         trackerIP.setColumns(10);
@@ -61,7 +64,7 @@ public class gui extends JFrame {
         panel.add(lblPorto);
         
         trackerPort = new JTextField();
-        trackerPort.setBounds(149, 39, 114, 19);
+        trackerPort.setBounds(149, 39, 114, 26);
         trackerPort.setText("8080");
         trackerPort.setColumns(10);
         panel.add(trackerPort);
@@ -69,56 +72,38 @@ public class gui extends JFrame {
         JButton btnStartTracker = new JButton("Start Tracker");
         btnStartTracker.setBounds(74, 77, 189, 25);
         panel.add(btnStartTracker);
-               
-        JLabel lblPeerIp = new JLabel("Peer IP");
-        lblPeerIp.setBounds(74, 154, 70, 15);
-        panel.add(lblPeerIp);
         
-        peerIP = new JTextField();
-        peerIP.setBounds(149, 152, 114, 19);
-        peerIP.setText("127.0.0.1");
-        panel.add(peerIP);
-        peerIP.setColumns(10);
-        
-        JLabel label = new JLabel("Port");
-        label.setBounds(74, 185, 70, 15);
-        panel.add(label);
-        
-        peerPort = new JTextField();
-        peerPort.setBounds(149, 183, 114, 19);
-        peerPort.setText("3333");
-        peerPort.setColumns(10);
-        panel.add(peerPort);
+     
         
         JButton btnNewButton = new JButton("Start Peer");
-        btnNewButton.setBounds(74, 270, 189, 25);
+        btnNewButton.setBounds(72, 172, 189, 25);
         
         panel.add(btnNewButton);
         
         peerID = new JTextField();
-        peerID.setBounds(149, 214, 114, 19);
+        peerID.setBounds(147, 114, 114, 25);
         peerID.setText("123");
         panel.add(peerID);
         peerID.setColumns(10);
         
         JLabel lblPeerId = new JLabel("Peer ID");
-        lblPeerId.setBounds(74, 212, 70, 15);
+        lblPeerId.setBounds(72, 114, 70, 15);
         panel.add(lblPeerId);
         
         JRadioButton rdbtnBackup = new JRadioButton("Backup");
-        rdbtnBackup.setBounds(28, 326, 149, 23);
+        rdbtnBackup.setBounds(26, 228, 149, 23);
         panel.add(rdbtnBackup);
         
         JRadioButton rdbtnDelete = new JRadioButton("Delete");
-        rdbtnDelete.setBounds(28, 365, 149, 23);
+        rdbtnDelete.setBounds(26, 267, 149, 23);
         panel.add(rdbtnDelete);
         
         JRadioButton rdbtnRestore = new JRadioButton("Restore");
-        rdbtnRestore.setBounds(193, 326, 149, 23);
+        rdbtnRestore.setBounds(191, 228, 149, 23);
         panel.add(rdbtnRestore);
         
         JRadioButton rdbtnReclaim = new JRadioButton("Reclaim");
-        rdbtnReclaim.setBounds(193, 365, 149, 23);
+        rdbtnReclaim.setBounds(191, 267, 149, 23);
         panel.add(rdbtnReclaim);
         
         ButtonGroup group = new ButtonGroup();
@@ -129,26 +114,26 @@ public class gui extends JFrame {
         group.add(rdbtnReclaim);
         
         path = new JTextField();
+        path.setBounds(72, 339, 239, 26);
         path.setText("/home/syram/Documents/oi.pdf");
-        path.setBounds(74, 437, 239, 19);
         panel.add(path);
         path.setColumns(10);
         
         JLabel lblNewLabel = new JLabel("Path");
-        lblNewLabel.setBounds(28, 439, 70, 15);
+        lblNewLabel.setBounds(26, 341, 70, 15);
         panel.add(lblNewLabel);
         
         JButton btnStartProtocol = new JButton("Start Protocol");
-        btnStartProtocol.setBounds(74, 468, 189, 25);
+        btnStartProtocol.setBounds(72, 370, 189, 25);
         panel.add(btnStartProtocol);
         
         JLabel lblNewLabel_1 = new JLabel("Peer RMI");
-        lblNewLabel_1.setBounds(74, 239, 70, 15);
+        lblNewLabel_1.setBounds(72, 141, 70, 15);
         panel.add(lblNewLabel_1);
         
         rmiID = new JTextField();
+        rmiID.setBounds(147, 141, 114, 25);
         rmiID.setText("rmi1");
-        rmiID.setBounds(149, 239, 114, 19);
         panel.add(rmiID);
         rmiID.setColumns(10);
         
@@ -157,7 +142,7 @@ public class gui extends JFrame {
         	public void actionPerformed(ActionEvent arg0) {
         		
             	String command[] = {"/bin/sh", "-c", 
-                "gnome-terminal --execute java -Djavax.net.ssl.trustStore=truststore -Djavax.net.ssl.trustStorePassword=123456 -Djavax.net.ssl.keyStore=client.keys -Djavax.net.ssl.keyStorePassword=123456 tracker.PeerTracker " + trackerPort.getText()}; //TODO
+                "gnome-terminal --execute java -Djavax.net.ssl.trustStore=truststore -Djavax.net.ssl.trustStorePassword=123456 -Djavax.net.ssl.keyStore=client.keys -Djavax.net.ssl.keyStorePassword=123456 tracker.PeerTracker " + trackerPort.getText()};  
            
             	String teste = executeCommand(command);
            		System.out.println(teste);
@@ -167,7 +152,7 @@ public class gui extends JFrame {
         btnNewButton.addActionListener(new ActionListener() {	
         	public void actionPerformed(ActionEvent arg0) {
         		String command[] = {"/bin/sh", "-c", 
-        		"gnome-terminal --execute java -Djavax.net.ssl.trustStore=truststore -Djavax.net.ssl.trustStorePassword=123456 -Djavax.net.ssl.keyStore=client.keys -Djavax.net.ssl.keyStorePassword=123456 peer.FileSharing "+peerID.getText()+" "+rmiID.getText()+" " + trackerIP.getText() + ":" + trackerPort.getText()}; //TODO
+        		"gnome-terminal --execute java -Djavax.net.ssl.trustStore=truststore -Djavax.net.ssl.trustStorePassword=123456 -Djavax.net.ssl.keyStore=client.keys -Djavax.net.ssl.keyStorePassword=123456 peer.FileSharing "+peerID.getText()+" "+rmiID.getText()+" " + trackerIP.getText() + ":" + trackerPort.getText()}; 
         	 	System.out.println(command[2]);
         		String teste = executeCommand(command);
         		System.out.println(teste);
@@ -177,21 +162,23 @@ public class gui extends JFrame {
         btnStartProtocol.addActionListener(new ActionListener() {
         	public void actionPerformed(ActionEvent arg0) {
         		String operation = null;
-        		
+        		String command[];
         		if(rdbtnBackup.isSelected()) {
         			operation = "BACKUP";
+        			command = new String [] {"/bin/sh", "-c", "java client.Main " + rmiID.getText() + " " + operation +" " + path.getText() + " " + defaulRep};
         		} else if(rdbtnDelete.isSelected()) {
         			operation = "DELETE";
+        			command = new String [] {"/bin/sh", "-c", "java client.Main " + rmiID.getText() + " " + operation +" " + path.getText()};
         		} else if(rdbtnRestore.isSelected()) {
         			operation = "RESTORE";
+        			command = new String [] {"/bin/sh", "-c", "java client.Main " + rmiID.getText() + " " + operation +" " + path.getText()};
         		} else if(rdbtnReclaim.isSelected()) {
         			operation = "RECLAIM";
+        			command = new String [] {"/bin/sh", "-c", "java client.Main " + rmiID.getText() + " " + operation +" " + path.getText()};
         		}
         		else {
         			return;
         		}
-        		String command[] = {"/bin/sh", "-c", 
-        				"java client.Main " + rmiID.getText() + " " + operation +" " + path.getText()}; //TODO
         		String teste = executeCommand(command);
         		System.out.println(teste);
         	}
