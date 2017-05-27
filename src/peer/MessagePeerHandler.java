@@ -74,7 +74,7 @@ public class MessagePeerHandler extends Thread{
             switch (msg.getType()) {
 
                 case PUTCHUNK:
-                    handlePutchunk(msg.getFileId(),msg.getChunkNo(),msg.getReplicationDeg(),msg.getBody());
+                    handlePutchunk(msg.getFileId(),msg.getChunkNo(),msg.getReplicationDeg(),msg.getAddress(), msg.getPort(),msg.getBody());
                     break;
 
                 case STORED:
@@ -83,7 +83,7 @@ public class MessagePeerHandler extends Thread{
                     break;
 
                 case GETCHUNK:
-                    handleGetchunk(msg.getFileId(), msg.getChunkNo());
+                    handleGetchunk(msg.getFileId(), msg.getChunkNo(), msg.getAddress(), msg.getPort());
                     break;
 
                 case CHUNK:
@@ -123,9 +123,11 @@ public class MessagePeerHandler extends Thread{
 	 * @param fileId - File identification
 	 * @param chunkNo - Chunk identification number
 	 * @param repDeg - Chunk desirable chunk replication degree
+	 * @param address - Address of the backup initiator
+	 * @param port - Port of the backup initiator's MDB channel
 	 * @param body - Chunk content
 	 */
-	private synchronized void handlePutchunk(String fileId, int chunkNo, int repDeg, byte[] body)
+	private synchronized void handlePutchunk(String fileId, int chunkNo, int repDeg, String address, int port, byte[] body)
 	{
         int actualRepDeg = 0;
 
@@ -139,7 +141,7 @@ public class MessagePeerHandler extends Thread{
 
         //create response message : STORED
         ProtocolMessage msg = new ProtocolMessage(Util.ProtocolMessageType.STORED,peer.getID(),c.getFileId(),c.getChunkNo());
-
+        
         //verifies chunk existence in this peer
         boolean alreadyExists = peer.getDatabase().hasChunkStored(c.getChunkKey());
 
@@ -152,54 +154,49 @@ public class MessagePeerHandler extends Thread{
 
         //verifies again (after evicting chunks) if has space available
         if(peer.getFileManager().hasSpaceAvailable(c))
-        {
-			/*
-			 * If the peer already stored the chunk, it will warn immediately the group channel.
-			 * By doing this, another peer that is pondering on storing the chunk,
-			 * can be updated much faster about the actual replication of the chunk.
-			 */
+        {         
+        	//Waits a random time
+        	Util.randomDelay();
 
-			if(alreadyExists)
-			{
-                channel.sendMessageToSubscribers(msg,Util.ChannelType.MDB);
-                Logs.sentMessageLog(msg);
-            }
-            else
-            {
-                //Waits a random time
-                Util.randomDelay();
+        	//count store messages from record channel
+        	actualRepDeg = peer.getChannelRecord().getStoredMessagesNum(c.getChunkKey());
 
-                //count store messages from record channel
-                actualRepDeg = peer.getChannelRecord().getStoredMessagesNum(c.getChunkKey());
+        	//enhancement: just store the exact number of chunks
+        	if(actualRepDeg >= repDeg)
+        	{
+        		System.out.println(" DONT STORE ");
+        		return;
+        	}
+        	
+        	// creates temporary subscriber
+        	Subscriber s = new Subscriber(address, -1, -1, -1, port);
+        	
+        	//send STORED message
+        	channel.sendPrivateMessage(msg, s, Util.ChannelType.MDB);
+        	Logs.sentMessageLog(msg);
 
-                //enhancement: just store the exact number of chunks
-                if(actualRepDeg >= repDeg)
-                {
-                    System.out.println(" DONT STORE ");
-                    return;
-                }
+        	// creates PUT message to update DHT
+        	TopologyMessage putMsg = new TopologyMessage(Util.TopologyMessageType.PUT, c.getChunkKey(), peer.getMySubscriptionInfo());
 
-				//send STORED message
-				channel.sendMessageToSubscribers(msg,Util.ChannelType.MDB);
-                Logs.sentMessageLog(msg);
+        	// send PUT message
+        	peer.getSubscribedGroup().sendMessageToTracker(putMsg);
+        	Logs.sentTopologyMessage(putMsg);
 
-                //Save chunk info on database
-                peer.getDatabase().saveChunkInfo(chunkNo+fileId,c);
+        	//Save chunk info on database
+        	peer.getDatabase().saveChunkInfo(chunkNo+fileId,c);
 
-                //update actual replication degree
-                peer.getDatabase().updateActualRepDeg(actualRepDeg+1,c.getChunkKey());
+        	//update actual replication degree
+        	peer.getDatabase().updateActualRepDeg(actualRepDeg+1,c.getChunkKey());
 
-                //save chunk in memory
-                peer.getFileManager().saveChunk(c);
+        	//save chunk in memory
+        	peer.getFileManager().saveChunk(c);
 
-                //peer.getChannelRecord().removeStoredMessages(c.getChunkKey());
+        	//peer.getChannelRecord().removeStoredMessages(c.getChunkKey());
 
-				peer.getDatabase().saveChunkInfo(chunkNo+fileId,c);
+        	peer.getDatabase().saveChunkInfo(chunkNo+fileId,c);
 
-                //TODO
-                byte[] teste = peer.getFileManager().getChunkContent(fileId, chunkNo);
-            }
-
+        	//TODO
+        	byte[] teste = peer.getFileManager().getChunkContent(fileId, chunkNo);
         }
     }
 
@@ -259,13 +256,15 @@ public class MessagePeerHandler extends Thread{
     /**
      * Peer response to other peer GETCHUNK message.
      * If the peer has stored the chunkNo of the fileId, it will send the chunk content
-     * to the multicast (without enhancement) or to a private channel with the owner of the file (with enchancement)
+     * to a private channel with the owner of the file
      * in a message of type CHUNK.
      *
      * @param fileId - File identification
      * @param chunkNo - Chunk identification number
+	 * @param address - Address of the restore initiator
+	 * @param port - Port of the restore initiator's MDR channel
      */
-    private synchronized void handleGetchunk(String fileId, int chunkNo)
+    private synchronized void handleGetchunk(String fileId, int chunkNo, String address, int port)
     {
         byte[] chunk = peer.getFileManager().getChunkContent(fileId, chunkNo);
 
@@ -276,12 +275,16 @@ public class MessagePeerHandler extends Thread{
 
             // Waits random time
             Util.randomDelay();
-
+            
 			//If meanwhile the chunk content wasn't sent by another peer
 			if(!peer.getChannelRecord().receivedChunkMessage(fileId, chunkNo))
 			{
-				channel.sendMessageToSubscribers(msg,Util.ChannelType.MDR);
-                Logs.sentMessageLog(msg);
+	        	// creates temporary subscriber
+	        	Subscriber s = new Subscriber(address, -1, -1, port, -1);
+	        	
+	        	// send CHUNK message
+	        	channel.sendPrivateMessage(msg, s, Util.ChannelType.MDR);
+	        	Logs.sentMessageLog(msg);
             }
         }
     }
