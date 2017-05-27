@@ -312,6 +312,12 @@ public class MessagePeerHandler extends Thread{
         if (restoreInitiator != null)
         {
             restoreInitiator.addChunk(chunkNo, body);
+            
+            // builds empty CHUNK message
+            ProtocolMessage msg = new ProtocolMessage(Util.ProtocolMessageType.CHUNK, peer.getID(), fileId, chunkNo, new byte[0]);
+            
+            // sends empty CHUNK so they are notified the initaor has already received the chunk.
+            peer.getSubscribedGroup().sendMessageToSubscribers(msg,Util.ChannelType.MC);
         }
     }
 
