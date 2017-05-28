@@ -183,21 +183,7 @@ public class Tracker {
     }
 
 	public synchronized int remSubscriberDHT(String key, Subscriber s){
-<<<<<<< Updated upstream
 	    return trackerData.remSubscriberDHT(key,s);
-=======
-	    if(DHT.containsKey(key)){
-	        HashSet<Subscriber> tmp = DHT.get(key);
-	        tmp.remove(s);
-	        if(tmp.size() < 1) {
-	        	DHT.remove(key);
-	        }
-	        Logs.remMsg("Key: " + key + " Peer: " + s.toString());
-	        return tmp.size();
-        }
-
-        return 0;
->>>>>>> Stashed changes
     }
 
     public synchronized void deleteDHT(String key){
