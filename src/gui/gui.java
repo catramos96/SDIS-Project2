@@ -5,11 +5,12 @@ import javax.swing.*;
 
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.Scanner;
 import java.awt.event.ActionEvent;
 
+/**
+ * Created by syram on 5/24/17.
+ */
 public class gui extends JFrame {
 	private JTextField trackerIP;
 	private JTextField trackerPort;
@@ -20,6 +21,7 @@ public class gui extends JFrame {
 	private String commandHead;
 	private String shell;
 	private String shellFlags;
+	private String endCommand;
 	private JTextField backupChannel;
 	private JTextField deletechannel;
 	private JTextField trackerChannel;
@@ -30,9 +32,11 @@ public class gui extends JFrame {
 			UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
 		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException
 				| UnsupportedLookAndFeelException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
+    	
+    	 
     	gui test = new gui();
     	
     }
@@ -44,10 +48,12 @@ public class gui extends JFrame {
    	 		commandHead = "gnome-terminal --execute";
    	 		shell = "/bin/sh";
    	 		shellFlags = "-c";
+   	 		endCommand = "";
    	 	} else if(OS.startsWith("Windows")){
    	 		commandHead = "start";
    	 		shell = "cmd";
 	 		shellFlags = "/c";
+	 		endCommand = " && pause";
    	 	}else{
    	 		System.out.println("Unsupported OS");
    	 	}
@@ -120,16 +126,13 @@ public class gui extends JFrame {
         rdbtnRestore.setBounds(193, 361, 149, 23);
         panel.add(rdbtnRestore);
         
-        JRadioButton rdbtnReclaim = new JRadioButton("Reclaim");
-        rdbtnReclaim.setBounds(193, 400, 149, 23);
-        panel.add(rdbtnReclaim);
+    
         
         ButtonGroup group = new ButtonGroup();
         
         group.add(rdbtnBackup);
         group.add(rdbtnDelete);
         group.add(rdbtnRestore);
-        group.add(rdbtnReclaim);
         
         path = new JTextField();
         path.setBounds(74, 472, 239, 26);
@@ -201,7 +204,7 @@ public class gui extends JFrame {
         	public void actionPerformed(ActionEvent arg0) {
         		
             	String command[] = {shell, shellFlags, 
-                commandHead + " java -Djavax.net.ssl.trustStore=truststore -Djavax.net.ssl.trustStorePassword=123456 -Djavax.net.ssl.keyStore=client.keys -Djavax.net.ssl.keyStorePassword=123456 tracker.PeerTracker " + trackerPort.getText()};  
+                commandHead + " java -Djavax.net.ssl.trustStore=truststore -Djavax.net.ssl.trustStorePassword=123456 -Djavax.net.ssl.keyStore=client.keys -Djavax.net.ssl.keyStorePassword=123456 tracker.PeerTracker " + trackerPort.getText() + endCommand};  
             	executeCommand(command);
             	}
         });
@@ -211,10 +214,8 @@ public class gui extends JFrame {
         		
         		String ports = trackerChannel.getText()+":"+controlChannel.getText()+":"+deletechannel.getText()+":"+backupChannel.getText();
         		String command[] = {shell, shellFlags, 
-        		commandHead + " java -Djavax.net.ssl.trustStore=truststore -Djavax.net.ssl.trustStorePassword=123456 -Djavax.net.ssl.keyStore=client.keys -Djavax.net.ssl.keyStorePassword=123456 peer.FileSharing "+peerID.getText()+" "+ ports +" "+rmiID.getText()+" " + trackerIP.getText() + ":" + trackerPort.getText()}; 
-        	 	System.out.println(command[2]);
-        	 	executeCommand(command);
-        		
+        		commandHead + " java -Djavax.net.ssl.trustStore=truststore -Djavax.net.ssl.trustStorePassword=123456 -Djavax.net.ssl.keyStore=client.keys -Djavax.net.ssl.keyStorePassword=123456 peer.FileSharing "+peerID.getText()+" "+ ports +" "+rmiID.getText()+" " + trackerIP.getText() + ":" + trackerPort.getText() + " "+ endCommand}; 
+        		executeCommand(command);
         	}
         });
         
@@ -231,11 +232,7 @@ public class gui extends JFrame {
         		} else if(rdbtnRestore.isSelected()) {
         			operation = "RESTORE";
         			command = new String [] {shell, shellFlags, "java client.Main " + rmiID.getText() + " " + operation +" " + path.getText()};
-        		} else if(rdbtnReclaim.isSelected()) {
-        			operation = "RECLAIM";
-        			command = new String [] {shell, shellFlags, "java client.Main " + rmiID.getText() + " " + operation +" " + path.getText()};
-        		}
-        		else {
+        		} else {
         			return;
         		}
         		executeCommand(command);
@@ -247,31 +244,27 @@ public class gui extends JFrame {
     }
     
     
-    private void executeCommand(String[] command) {
-    	  try{
-    		  Process p = Runtime.getRuntime().exec(command);
-    	        Thread tracer = new Thread (new Runnable(){
-    	            public void run(){
-    	                try {
-    	                    InputStream is=p.getErrorStream();
-    	                    BufferedReader br = new BufferedReader (new InputStreamReader (is));
-    	                    while (true) {
-    	                        String s = br.readLine ();
-    	                        if (s == null || s.trim().isEmpty()){
-    	                            break;
-    	                            }
-    	                    }
-    	                    is.close ();    
-    	                } catch (Exception ex) {
-    	                        ex.printStackTrace ();
-    	                }
-    	            }
-    	        });
-    	        tracer.start ();
-    	        p.waitFor();
-    	    }catch(Exception e){
-    	        System.out.println("Error "+e.getMessage());
-    	    }
-    }
-    	  
+    private String executeCommand(String[] command) {
+
+		StringBuffer output = new StringBuffer();
+
+		Process p;
+		try {
+			p = Runtime.getRuntime().exec(command);
+			p.waitFor();
+			BufferedReader reader =
+                            new BufferedReader(new InputStreamReader(p.getInputStream()));
+
+                        String line = "";
+			while ((line = reader.readLine())!= null) {
+				output.append(line + "\n");
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return output.toString();
+
+	}
 }
