@@ -2,16 +2,16 @@ package client;
 
 import java.awt.*;
 import java.awt.TrayIcon.MessageType;
+import java.net.MalformedURLException;
 
-public class Notification {
-
-    public static void main(String[] args) throws AWTException, java.net.MalformedURLException {
-        if (SystemTray.isSupported()) {
-        	Notification td = new Notification();
-            td.displayTray();
-        } else {
-            System.err.println("System tray not supported!");
-        }
+public class Notification implements Runnable  {
+	private String message = null;
+	private String protocol = null;
+	
+    public Notification(String protocol,String msg) {
+    	this.message = msg;
+    	this.protocol = protocol;
+    	
     }
 
     public void displayTray() throws AWTException, java.net.MalformedURLException {
@@ -28,6 +28,26 @@ public class Notification {
         //Set tooltip text for the tray icon
         trayIcon.setToolTip("System tray icon demo");
         tray.add(trayIcon);
-        trayIcon.displayMessage("Hello, World", "notification demo", MessageType.INFO);
+        trayIcon.displayMessage( protocol , message, MessageType.INFO);
     }
+
+	@Override
+	public void run() {
+		 if (SystemTray.isSupported()) {
+	        	try {
+					displayTray();
+				} catch (MalformedURLException | AWTException e1) {
+					System.out.println("Malformed notification");
+				}
+	            try {
+					Thread.sleep(2000);
+				} catch (InterruptedException e) {
+					System.out.println("thread sleep failure");
+				}
+	            return;
+	        } else {
+	            System.err.println("System tray not supported!");
+	        }
+		
+	}
 }

@@ -14,6 +14,7 @@ import java.security.spec.InvalidParameterSpecException;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 
+import client.Notification;
 import filesystem.FileInfo;
 import message.Message;
 import message.ProtocolMessage;
@@ -51,7 +52,9 @@ public class RestoreInitiator extends Thread
         
     	// Checks whether peer has requested the backup of the file or not
         if (fileInfo == null) {
-            System.out.println("The requested file: " + filePath + " doesn't exist in the database.");
+        	String notificationMsg = "The requested file: " + filePath + " doesn't exist in the database.";
+            System.out.println(notificationMsg);
+            (new Thread(new Notification("Restore " + peer.getID(), notificationMsg))).start();
             return;
         }
 
@@ -126,6 +129,10 @@ public class RestoreInitiator extends Thread
 		peer.getDatabase().addRestoredFile(filePath,fileInfo);
 		
 		peer.removeRestoreInitiator(fileID);
-		System.out.println(file + " has been restored successfully.");
+
+    	String notificationMsg = file + " has been restored successfully.";
+        System.out.println(notificationMsg);
+        (new Thread(new Notification("Restore " + peer.getID(), notificationMsg))).start();
+		System.out.println(notificationMsg);
     }
 }
