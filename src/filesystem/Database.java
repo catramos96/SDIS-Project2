@@ -91,6 +91,17 @@ public class Database implements Serializable
         }
     }
 
+    public synchronized int getDesiredRepDeg(String key){
+        if (!hasChunkStored(key)) {
+            notify();
+            return 0;
+        }
+
+        ChunkInfo chunk = getChunkInfo(key);
+        notify();
+        return chunk.getReplicationDeg();
+    }
+
     public synchronized boolean desiredReplication(String key) {
         if (!hasChunkStored(key)) {
             notify();
