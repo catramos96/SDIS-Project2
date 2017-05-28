@@ -53,7 +53,7 @@ public class gui extends JFrame {
    	 		commandHead = "start";
    	 		shell = "cmd";
 	 		shellFlags = "/c";
-	 		endCommand = " && pause";
+	 		endCommand = " ";
    	 	}else{
    	 		System.out.println("Unsupported OS");
    	 	}
@@ -244,7 +244,7 @@ public class gui extends JFrame {
     }
     
     
-    private String executeCommand(String[] command) {
+    private void executeCommand(String[] command) {
 
 		StringBuffer output = new StringBuffer();
 
@@ -264,7 +264,7 @@ public class gui extends JFrame {
 			e.printStackTrace();
 		}
 
-		return output.toString();
+		
 
 	}
 }
