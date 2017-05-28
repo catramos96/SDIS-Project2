@@ -6,6 +6,9 @@ import java.net.UnknownHostException;
 
 import resources.Util;
 
+/**
+ * Class that represents a peer in the network
+ */
 public class Subscriber implements Serializable{
 
 	private static final long serialVersionUID = 1L;
@@ -15,7 +18,13 @@ public class Subscriber implements Serializable{
 	private Integer mcPort = -1;			//For Protocol Messages
 	private Integer mdrPort = -1;			
 	private Integer mdbPort = -1;
-	
+
+	/**
+	 * COnstructor. The address may be a String or an InetAddress
+	 * @param address
+	 * @param defPort
+	 * @param <T>
+	 */
 	public <T> Subscriber(T address,int defPort){
 		
 		try {
@@ -29,7 +38,16 @@ public class Subscriber implements Serializable{
 		}
 		
 	}
-	
+
+	/**
+	 * Constructor. The address may be a String or an Inet Address
+	 * @param address
+	 * @param defPort
+	 * @param mcPort
+	 * @param mdrPort
+	 * @param mdbPort
+	 * @param <T>
+	 */
 	public <T> Subscriber(T address,int defPort, int mcPort, int mdrPort, int mdbPort){
 
 		try {
@@ -49,7 +67,16 @@ public class Subscriber implements Serializable{
 	/*
 	 * SETS AND GETS
 	 */
-	
+
+	/**
+	 * Function that sets the subscriber properties
+	 * @param address
+	 * @param defPort
+	 * @param mcPort
+	 * @param mdrPort
+	 * @param mdbPort
+	 * @param <T>
+	 */
 	public <T> void setSubscriber(T address, int defPort, int mcPort, int mdrPort, int mdbPort){
 		
 		try {
@@ -65,27 +92,52 @@ public class Subscriber implements Serializable{
 			e.printStackTrace();
 		}
 	}
-	
+
+	/**
+	 * Function that returns the Suscriber address
+	 * @return
+	 */
 	public InetAddress getAddress(){
 		return address;
 	}
-	
+
+	/**
+	 * Function that returns the DefaultPort (Comunication with the tracker)
+	 * @return
+	 */
 	public int getDefPort(){
 		return defPort;
 	}
-	
+
+	/**
+	 * Function that returns the McPort
+	 * @return
+	 */
 	public int getMcPort(){
 		return mcPort;
 	}
-	
+
+	/**
+	 * Function that returns the MdrPort
+	 * @return
+	 */
 	public int getMdrPort(){
 		return mdrPort;
 	}
-	
+
+	/**
+	 * Function that returns the MdbPort
+	 * @return
+	 */
 	public int getMdbPort(){
 		return mdbPort;
 	}
-	
+
+	/**
+	 * Function that returns the correct port depending on the channel type
+	 * @param type
+	 * @return
+	 */
 	public int getPort(Util.ChannelType type){
 		switch (type) {
 		case TOP:
@@ -101,11 +153,22 @@ public class Subscriber implements Serializable{
 		}
 		return -1;
 	}
-	
+
+	/**
+	 * Function that sets the address of the Subscriber
+	 * @param address
+	 */
 	public void setAddress(InetAddress address){
 		this.address = address;
 	}
-	
+
+	/**
+	 * Functions that sets all the ports of the Subscriber
+	 * @param defPort
+	 * @param mcPort
+	 * @param mdrPort
+	 * @param mdbPort
+	 */
 	public void setPorts(Integer defPort, Integer mcPort, Integer mdrPort, Integer mdbPort){
 		if(defPort != null)		this.defPort = defPort;
 		if(mcPort != null)		this.mcPort = mcPort;
