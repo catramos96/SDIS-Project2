@@ -5,7 +5,9 @@ import javax.swing.*;
 
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Scanner;
 import java.awt.event.ActionEvent;
 
 /**
@@ -205,9 +207,7 @@ public class gui extends JFrame {
         		
             	String command[] = {shell, shellFlags, 
                 commandHead + " java -Djavax.net.ssl.trustStore=truststore -Djavax.net.ssl.trustStorePassword=123456 -Djavax.net.ssl.keyStore=client.keys -Djavax.net.ssl.keyStorePassword=123456 tracker.PeerTracker " + trackerPort.getText()};  
-           
-            	String teste = executeCommand(command);
-           		System.out.println(teste);
+            	executeCommand(command);
             	}
         });
         
@@ -218,8 +218,8 @@ public class gui extends JFrame {
         		String command[] = {shell, shellFlags, 
         		commandHead + " java -Djavax.net.ssl.trustStore=truststore -Djavax.net.ssl.trustStorePassword=123456 -Djavax.net.ssl.keyStore=client.keys -Djavax.net.ssl.keyStorePassword=123456 peer.FileSharing "+peerID.getText()+" "+ ports +" "+rmiID.getText()+" " + trackerIP.getText() + ":" + trackerPort.getText()}; 
         	 	System.out.println(command[2]);
-        		String teste = executeCommand(command);
-        		System.out.println(teste);
+        	 	executeCommand(command);
+        		
         	}
         });
         
@@ -243,8 +243,7 @@ public class gui extends JFrame {
         		else {
         			return;
         		}
-        		String teste = executeCommand(command);
-        		System.out.println(teste);
+        		executeCommand(command);
         	}
         });
         
@@ -253,27 +252,31 @@ public class gui extends JFrame {
     }
     
     
-    private String executeCommand(String[] command) {
-
-		StringBuffer output = new StringBuffer();
-
-		Process p;
-		try {
-			p = Runtime.getRuntime().exec(command);
-			p.waitFor();
-			BufferedReader reader =
-                            new BufferedReader(new InputStreamReader(p.getInputStream()));
-
-                        String line = "";
-			while ((line = reader.readLine())!= null) {
-				output.append(line + "\n");
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		return output.toString();
-
-	}
+    private void executeCommand(String[] command) {
+    	  try{
+    		  Process p = Runtime.getRuntime().exec(command);
+    	        Thread tracer = new Thread (new Runnable(){
+    	            public void run(){
+    	                try {
+    	                    InputStream is=p.getErrorStream();
+    	                    BufferedReader br = new BufferedReader (new InputStreamReader (is));
+    	                    while (true) {
+    	                        String s = br.readLine ();
+    	                        if (s == null || s.trim().isEmpty()){
+    	                            break;
+    	                            }
+    	                    }
+    	                    is.close ();    
+    	                } catch (Exception ex) {
+    	                        ex.printStackTrace ();
+    	                }
+    	            }
+    	        });
+    	        tracer.start ();
+    	        p.waitFor();
+    	    }catch(Exception e){
+    	        System.out.println("Error "+e.getMessage());
+    	    }
+    }
+    	  
 }
