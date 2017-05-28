@@ -29,7 +29,7 @@ public class DatagramListener extends Thread{
         this.subscribers = channel;
 		this.channelType = type;
 		
-		int port = peer.getMySubscriptionInfo().getDefPort();
+		int port = peer.getMySubscriptionInfo().getPort(type);
 		
 		try {
 			if(port == -1)

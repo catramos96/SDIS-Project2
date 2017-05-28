@@ -54,7 +54,7 @@ public class Peer implements MessageRMI
     /*Schedule*/
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(3);
 
-    public Peer(int peer_id, String[] trackerInfo, String remoteObjName){
+    public Peer(int peer_id, String[] peerInfo, String[] trackerInfo, String remoteObjName){
         this.ID = peer_id;
         this.setFileManager(new FileManager(getID()));
         this.channelRecord = new ChannelRecord();
@@ -90,24 +90,20 @@ public class Peer implements MessageRMI
             e.printStackTrace();
         }
 
+        //this peer
+        mySubscription = new Subscriber(peerInfo[0],Integer.parseInt(peerInfo[1]),Integer.parseInt(peerInfo[2]),Integer.parseInt(peerInfo[3]),Integer.parseInt(peerInfo[4]));
 
-        try {
-            mySubscription = new Subscriber(InetAddress.getLocalHost().getHostAddress(), -1);
+        //tracker
+        Subscriber tracker = new Subscriber(trackerInfo[0],Integer.parseInt(trackerInfo[1]));
 
-            //tracker
-            Subscriber tracker = new Subscriber(trackerInfo[0],Integer.parseInt(trackerInfo[1]));
+        //Group1
+        subscribedGroup = new GroupChannel(this,tracker);
+        subscribedGroup.start();
 
-            //Group1
-            subscribedGroup = new GroupChannel(this,tracker);
-            subscribedGroup.start();
+        startRMI(remoteObjName);
 
-            startRMI(remoteObjName);
+        Logs.MyAddress(mySubscription);
 
-            Logs.MyAddress(mySubscription);
-
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        }
 
         /*
          * Routine Tasks
