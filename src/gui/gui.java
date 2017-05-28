@@ -19,6 +19,8 @@ public class gui extends JFrame {
 	private JTextField rmiID;
 	private int defaulRep = 2;
 	private String commandHead;
+	private String shell;
+	private String shellFlags;
 	private JTextField backupChannel;
 	private JTextField deletechannel;
 	private JTextField trackerChannel;
@@ -33,12 +35,25 @@ public class gui extends JFrame {
 			e.printStackTrace();
 		}
     	
-    	 System.out.println(System.getProperty("os.name"));
+    	 
     	gui test = new gui();
     	
     }
 
     public gui () {
+   	 	System.out.println(System.getProperty("os.name"));
+   	 	String OS = System.getProperty("os.name");
+   	 	if(OS.startsWith("Linux")){
+   	 		commandHead = "gnome-terminal --execute";
+   	 		shell = "/bin/sh";
+   	 		shellFlags = "-c";
+   	 	} else if(OS.startsWith("Windows")){
+   	 		commandHead = "start";
+   	 		shell = "cmd";
+	 		shellFlags = "/c";
+   	 	}else{
+   	 		System.out.println("Unsupported OS");
+   	 	}
         initUI();
     }
 
@@ -188,7 +203,7 @@ public class gui extends JFrame {
         btnStartTracker.addActionListener(new ActionListener() {
         	public void actionPerformed(ActionEvent arg0) {
         		
-            	String command[] = {"/bin/sh", "-c", 
+            	String command[] = {shell, shellFlags, 
                 "gnome-terminal --execute java -Djavax.net.ssl.trustStore=truststore -Djavax.net.ssl.trustStorePassword=123456 -Djavax.net.ssl.keyStore=client.keys -Djavax.net.ssl.keyStorePassword=123456 tracker.PeerTracker " + trackerPort.getText()};  
            
             	String teste = executeCommand(command);
@@ -200,8 +215,8 @@ public class gui extends JFrame {
         	public void actionPerformed(ActionEvent arg0) {
         		
         		String ports = trackerChannel.getText()+":"+controlChannel.getText()+":"+deletechannel.getText()+":"+backupChannel.getText();
-        		String command[] = {"/bin/sh", "-c", 
-        		"gnome-terminal --execute java -Djavax.net.ssl.trustStore=truststore -Djavax.net.ssl.trustStorePassword=123456 -Djavax.net.ssl.keyStore=client.keys -Djavax.net.ssl.keyStorePassword=123456 peer.FileSharing "+peerID.getText()+" "+ ports +" "+rmiID.getText()+" " + trackerIP.getText() + ":" + trackerPort.getText()}; 
+        		String command[] = {shell, shellFlags, 
+        		commandHead + " java -Djavax.net.ssl.trustStore=truststore -Djavax.net.ssl.trustStorePassword=123456 -Djavax.net.ssl.keyStore=client.keys -Djavax.net.ssl.keyStorePassword=123456 peer.FileSharing "+peerID.getText()+" "+ ports +" "+rmiID.getText()+" " + trackerIP.getText() + ":" + trackerPort.getText()}; 
         	 	System.out.println(command[2]);
         		String teste = executeCommand(command);
         		System.out.println(teste);
@@ -214,16 +229,16 @@ public class gui extends JFrame {
         		String command[];
         		if(rdbtnBackup.isSelected()) {
         			operation = "BACKUP";
-        			command = new String [] {"/bin/sh", "-c", "java client.Main " + rmiID.getText() + " " + operation +" " + path.getText() + " " + defaulRep};
+        			command = new String [] {shell, shellFlags, "java client.Main " + rmiID.getText() + " " + operation +" " + path.getText() + " " + defaulRep};
         		} else if(rdbtnDelete.isSelected()) {
         			operation = "DELETE";
-        			command = new String [] {"/bin/sh", "-c", "java client.Main " + rmiID.getText() + " " + operation +" " + path.getText()};
+        			command = new String [] {shell, shellFlags, "java client.Main " + rmiID.getText() + " " + operation +" " + path.getText()};
         		} else if(rdbtnRestore.isSelected()) {
         			operation = "RESTORE";
-        			command = new String [] {"/bin/sh", "-c", "java client.Main " + rmiID.getText() + " " + operation +" " + path.getText()};
+        			command = new String [] {shell, shellFlags, "java client.Main " + rmiID.getText() + " " + operation +" " + path.getText()};
         		} else if(rdbtnReclaim.isSelected()) {
         			operation = "RECLAIM";
-        			command = new String [] {"/bin/sh", "-c", "java client.Main " + rmiID.getText() + " " + operation +" " + path.getText()};
+        			command = new String [] {shell, shellFlags, "java client.Main " + rmiID.getText() + " " + operation +" " + path.getText()};
         		}
         		else {
         			return;

@@ -71,7 +71,7 @@ public class Peer implements MessageRMI
 
 
         try {
-            client = new SSLlistenerClient("localhost", 4499, new String[0], this); //TODO
+            client = new SSLlistenerClient(trackerInfo[0], 4499, new String[0], this); //TODO
             client.start();
         } catch (UnknownHostException e1) {
             // TODO Auto-generated catch block
