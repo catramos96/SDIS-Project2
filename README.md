@@ -3,12 +3,12 @@
 ### Implementação da DHT
 
 #### Mensagens
-PUT     <key> <address> <port1> <port2> <port3> <port4> <CRLF><CRLF>
-GET     <key> <numberPeers> <pagination>                <CRLF><CRLF>
-CHECK   <key>                                           <CRLF><CRLF>
-REMOVE  <key> <address> <port1> <port2> <port3> <port4> <CRLF><CRLF>
-DELETE  <key> <CRLF> <key> <CRLF> ...                   <CRLF><CRLF>
-INFO    <key> <repDegree>                               <CRLF><CRLF>
+PUT     key address port1 port2 port3 port4 CRLFCRLF
+GET     key numberPeers pagination          CRLFCRLF
+CHECK   key                                 CRLFCRLF
+REMOVE  key address port1 port2 port3 port4 CRLFCRLF
+DELETE  key CRLF key CRLF ...               CRLFCRLF
+INFO    key repDegree                       CRLFCRLF
         
 #### Tracker
 Métodos DTH:
