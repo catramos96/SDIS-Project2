@@ -10,7 +10,7 @@ public class FileSharing
 	{		
 		if(args.length != 4)
 		{
-			System.out.println("java peer.FileSharing <peer_id> <peer_address:defPort:mcPort:mdrPort:mdbPort> <remoteObjName> <tracker_address:port>");
+			System.out.println("java peer.FileSharing <peer_id> <defPort:mcPort:mdrPort:mdbPort> <remoteObjName> <tracker_address:port>");
 			return;
 		}
 
@@ -25,7 +25,7 @@ public class FileSharing
 	private static String[] addressVerification(String arg) 
 	{
 		String[] parts_ap = arg.split(":");
-		String[] parts = new String[5];
+		String[] parts = new String[4];
 
 		//localhost
 		if(parts_ap.length == 1)

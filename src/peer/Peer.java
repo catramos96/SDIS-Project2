@@ -91,7 +91,11 @@ public class Peer implements MessageRMI
         }
 
         //this peer
-        mySubscription = new Subscriber(peerInfo[0],Integer.parseInt(peerInfo[1]),Integer.parseInt(peerInfo[2]),Integer.parseInt(peerInfo[3]),Integer.parseInt(peerInfo[4]));
+        try {
+            mySubscription = new Subscriber(InetAddress.getLocalHost().getHostAddress(),Integer.parseInt(peerInfo[0]),Integer.parseInt(peerInfo[1]),Integer.parseInt(peerInfo[2]),Integer.parseInt(peerInfo[3]));
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
 
         //tracker
         Subscriber tracker = new Subscriber(trackerInfo[0],Integer.parseInt(trackerInfo[1]));
