@@ -4,8 +4,6 @@ import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import javax.print.DocFlavor.STRING;
-
 import resources.Util;
 
 /**
