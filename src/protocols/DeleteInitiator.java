@@ -1,5 +1,6 @@
 package protocols;
 
+import client.Notification;
 import filesystem.FileInfo;
 import message.ProtocolMessage;
 import message.TopologyMessage;
@@ -38,7 +39,9 @@ public class DeleteInitiator extends Thread{
         if(!peer.getDatabase().hasSentFile(filepath))
         {
             //message = filename + " not backed up by this peer!"
-            System.out.println("File not backed up");
+        	String notificationMsg = "File not backed up";
+            System.out.println(notificationMsg);
+            (new Thread(new Notification("DELETE " + peer.getID(), notificationMsg))).start();
             return;
         }
 
@@ -76,5 +79,10 @@ public class DeleteInitiator extends Thread{
 
         /*message = "Delete successful!";
         Logs.log(message);*/
+        
+
+        String notificationMsg = filepath  + " ended!";
+        (new Thread(new Notification("DELETE " + peer.getID(), notificationMsg))).start();
+        
     }
 }
