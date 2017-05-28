@@ -228,6 +228,7 @@ public class Peer implements MessageRMI
         }
     }
 
+    //TODO  mudar para a validade dos chunks
     private void verifyChunks(Peer peer) {
         /**
          * Function that gets all the chunks stored by this peer with the atual replication degree

@@ -1,5 +1,6 @@
 package network;
 
+import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
@@ -7,14 +8,15 @@ import javax.print.DocFlavor.STRING;
 
 import resources.Util;
 
-public class Subscriber {
+public class Subscriber implements Serializable{
+
+	private static final long serialVersionUID = 1L;
 
 	private InetAddress address = null;
 	private Integer defPort = -1;			//For Topology/Activity Messages
 	private Integer mcPort = -1;			//For Protocol Messages
 	private Integer mdrPort = -1;			
-	private Integer mdbPort = -1;			
-
+	private Integer mdbPort = -1;
 	
 	public <T> Subscriber(T address,int defPort){
 		
