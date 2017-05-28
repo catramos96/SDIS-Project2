@@ -19,6 +19,10 @@ public class gui extends JFrame {
 	private JTextField rmiID;
 	private int defaulRep = 2;
 	private String commandHead;
+	private JTextField backupChannel;
+	private JTextField deletechannel;
+	private JTextField trackerChannel;
+	private JTextField controlChannel;
     public static void main(String[] args) {
     	
     	 try {
@@ -42,7 +46,7 @@ public class gui extends JFrame {
         
     	// gui  graphical blocks
         setTitle("Distributed Storage System");
-        setSize(350, 473);
+        setSize(350, 576);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         getContentPane().setLayout(new BoxLayout(getContentPane(), BoxLayout.X_AXIS));
@@ -78,7 +82,7 @@ public class gui extends JFrame {
      
         
         JButton btnNewButton = new JButton("Start Peer");
-        btnNewButton.setBounds(72, 172, 189, 25);
+        btnNewButton.setBounds(74, 328, 189, 25);
         
         panel.add(btnNewButton);
         
@@ -93,19 +97,19 @@ public class gui extends JFrame {
         panel.add(lblPeerId);
         
         JRadioButton rdbtnBackup = new JRadioButton("Backup");
-        rdbtnBackup.setBounds(26, 228, 149, 23);
+        rdbtnBackup.setBounds(28, 361, 149, 23);
         panel.add(rdbtnBackup);
         
         JRadioButton rdbtnDelete = new JRadioButton("Delete");
-        rdbtnDelete.setBounds(26, 267, 149, 23);
+        rdbtnDelete.setBounds(28, 400, 149, 23);
         panel.add(rdbtnDelete);
         
         JRadioButton rdbtnRestore = new JRadioButton("Restore");
-        rdbtnRestore.setBounds(191, 228, 149, 23);
+        rdbtnRestore.setBounds(193, 361, 149, 23);
         panel.add(rdbtnRestore);
         
         JRadioButton rdbtnReclaim = new JRadioButton("Reclaim");
-        rdbtnReclaim.setBounds(191, 267, 149, 23);
+        rdbtnReclaim.setBounds(193, 400, 149, 23);
         panel.add(rdbtnReclaim);
         
         ButtonGroup group = new ButtonGroup();
@@ -116,17 +120,17 @@ public class gui extends JFrame {
         group.add(rdbtnReclaim);
         
         path = new JTextField();
-        path.setBounds(72, 339, 239, 26);
+        path.setBounds(74, 472, 239, 26);
         path.setText("/home/syram/Documents/oi.pdf");
         panel.add(path);
         path.setColumns(10);
         
         JLabel lblNewLabel = new JLabel("Path");
-        lblNewLabel.setBounds(26, 341, 70, 15);
+        lblNewLabel.setBounds(28, 474, 70, 15);
         panel.add(lblNewLabel);
         
         JButton btnStartProtocol = new JButton("Start Protocol");
-        btnStartProtocol.setBounds(72, 370, 189, 25);
+        btnStartProtocol.setBounds(74, 503, 189, 25);
         panel.add(btnStartProtocol);
         
         JLabel lblNewLabel_1 = new JLabel("Peer RMI");
@@ -139,7 +143,48 @@ public class gui extends JFrame {
         panel.add(rmiID);
         rmiID.setColumns(10);
         
+        backupChannel = new JTextField();
+        backupChannel.setText("8000");
+        backupChannel.setColumns(10);
+        backupChannel.setBounds(147, 172, 114, 25);
+        panel.add(backupChannel);
+        
+        JLabel lblPeerMcb = new JLabel("BackupChannel");
+        lblPeerMcb.setBounds(28, 172, 114, 15);
+        panel.add(lblPeerMcb);
+        
+        deletechannel = new JTextField();
+        deletechannel.setText("8001");
+        deletechannel.setColumns(10);
+        deletechannel.setBounds(147, 199, 114, 25);
+        panel.add(deletechannel);
+        
+        JLabel lblPeerMcd = new JLabel("DeleteChannel");
+        lblPeerMcd.setBounds(28, 199, 114, 15);
+        panel.add(lblPeerMcd);
+        
+        trackerChannel = new JTextField();
+        trackerChannel.setText("8002");
+        trackerChannel.setColumns(10);
+        trackerChannel.setBounds(147, 226, 114, 25);
+        panel.add(trackerChannel);
+        
+        JLabel lblRestoreChannel = new JLabel("TrackerChannel");
+        lblRestoreChannel.setBounds(28, 231, 116, 15);
+        panel.add(lblRestoreChannel);
+        
+        controlChannel = new JTextField();
+        controlChannel.setText("8003");
+        controlChannel.setColumns(10);
+        controlChannel.setBounds(146, 253, 116, 25);
+        panel.add(controlChannel);
+        
+        JLabel lblControlchannel = new JLabel("ControlChannel");
+        lblControlchannel.setBounds(28, 258, 116, 15);
+        panel.add(lblControlchannel);
+        
         //listeners
+        //defPort:mcPort:mdrPort:mdbPort
         btnStartTracker.addActionListener(new ActionListener() {
         	public void actionPerformed(ActionEvent arg0) {
         		
@@ -153,8 +198,10 @@ public class gui extends JFrame {
         
         btnNewButton.addActionListener(new ActionListener() {	
         	public void actionPerformed(ActionEvent arg0) {
+        		
+        		String ports = trackerChannel.getText()+":"+controlChannel.getText()+":"+deletechannel.getText()+":"+backupChannel.getText();
         		String command[] = {"/bin/sh", "-c", 
-        		"gnome-terminal --execute java -Djavax.net.ssl.trustStore=truststore -Djavax.net.ssl.trustStorePassword=123456 -Djavax.net.ssl.keyStore=client.keys -Djavax.net.ssl.keyStorePassword=123456 peer.FileSharing "+peerID.getText()+" "+rmiID.getText()+" " + trackerIP.getText() + ":" + trackerPort.getText()}; 
+        		"gnome-terminal --execute java -Djavax.net.ssl.trustStore=truststore -Djavax.net.ssl.trustStorePassword=123456 -Djavax.net.ssl.keyStore=client.keys -Djavax.net.ssl.keyStorePassword=123456 peer.FileSharing "+peerID.getText()+" "+ ports +" "+rmiID.getText()+" " + trackerIP.getText() + ":" + trackerPort.getText()}; 
         	 	System.out.println(command[2]);
         		String teste = executeCommand(command);
         		System.out.println(teste);
