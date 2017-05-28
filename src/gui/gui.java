@@ -10,9 +10,6 @@ import java.io.InputStreamReader;
 import java.util.Scanner;
 import java.awt.event.ActionEvent;
 
-/**
- * Created by syram on 5/24/17.
- */
 public class gui extends JFrame {
 	private JTextField trackerIP;
 	private JTextField trackerPort;
@@ -33,11 +30,9 @@ public class gui extends JFrame {
 			UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
 		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException
 				| UnsupportedLookAndFeelException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-    	
-    	 
+
     	gui test = new gui();
     	
     }

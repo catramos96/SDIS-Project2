@@ -5,7 +5,6 @@ import filesystem.FileInfo;
 import message.ProtocolMessage;
 import message.TopologyMessage;
 import peer.Peer;
-import resources.Logs;
 import resources.Util;
 
 /**

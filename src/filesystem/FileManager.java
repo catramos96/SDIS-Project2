@@ -14,7 +14,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidParameterSpecException;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 /**
  * Class responsible for handling all the interactions with the file system.

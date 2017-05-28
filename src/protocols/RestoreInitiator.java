@@ -16,7 +16,6 @@ import javax.crypto.IllegalBlockSizeException;
 
 import client.Notification;
 import filesystem.FileInfo;
-import message.Message;
 import message.ProtocolMessage;
 import message.TopologyMessage;
 
@@ -113,16 +112,12 @@ public class RestoreInitiator extends Thread
 			System.out.println("Failed to recover (invalid cypher key): " + filePath + ".");
 			e.printStackTrace();
 		} catch (InvalidParameterSpecException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IllegalBlockSizeException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (BadPaddingException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (InvalidAlgorithmParameterException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 

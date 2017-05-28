@@ -101,9 +101,9 @@ public class GroupChannel extends Thread{
     /*
      * others
      */
-	
+
 	// NEED FIX
-	
+
     public void addBackupInitiator(String chunkKey, ChunkBackupProtocol backup) {
        /* comunicationChannel.addBackupInitiator(chunkKey,backup);*/
     }

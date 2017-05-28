@@ -1,6 +1,5 @@
 package resources;
 
-import network.Subscriber;
 
 public class DLinkedList<N> {
 	protected DLNode<N> first = null;
