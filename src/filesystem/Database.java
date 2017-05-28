@@ -85,8 +85,10 @@ public class Database implements Serializable
     }
 
     public synchronized void updateActualRepDeg(int deg, String key) {
-        storedChunks.get(key).setActualRepDeg(deg);
-        notify();
+        if(storedChunks.containsKey(key)){
+            storedChunks.get(key).setActualRepDeg(deg);
+            notify();
+        }
     }
 
     public synchronized boolean desiredReplication(String key) {

@@ -49,15 +49,34 @@ public class MessagePeerHandler extends Thread{
 
 		switch (msg.getType()) {
 
-		case SUBSCRIBERS:{
-			channel.addSubscribers(msg.getSubscribersGroup());
-			break;
-		}
-		default:{
-			System.out.println("RECEIVED UNKNOWN MSG");
-			System.out.println("teste" + msg.toString());
-			break;
-		}
+            case SUBSCRIBERS:{
+                channel.addSubscribers(msg.getSubscribersGroup());
+                break;
+            }
+            case INFO:{
+                ArrayList<String> keys = msg.getKeys();
+                ArrayList<Integer> reps = msg.getRepDegs();
+
+                for(int i = 0; i < keys.size();i++){
+                    if(reps.get(i) == 0) {
+                        //deletes from the file system
+                        peer.getFileManager().deleteFile(keys.get(i));
+
+                        //update database
+                        peer.getDatabase().removeStoredChunk(keys.get(i));
+                    }
+                    else//update repDeg
+                        peer.getDatabase().updateActualRepDeg(reps.get(i),keys.get(i));
+
+                }
+
+                break;
+            }
+            default:{
+                System.out.println("RECEIVED UNKNOWN MSG");
+                System.out.println("teste" + msg.toString());
+                break;
+            }
 		}
 
 	}

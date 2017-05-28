@@ -13,23 +13,35 @@ public class TopologyMessage extends Message{
 
 	String key = null;
 	ArrayList<String> keys = null;
+	ArrayList<Integer> repDegs = null;
 	int pagination = -1;
 	
 	/**
-	 * ONLINE			<address> <defPort> <mcPort> <mdrPort> <mdbPort>		<CRLF><CRLF>
-     * GETONLINE		<number>                                                <CRLF><CRLF>
-	 * SUBSCRIBERS 		                                                        <CRLF>
-	 *     				<address> <defPort> <mcPort> <mdrPort> <mdbPort>        <CRLF>
-     *     				<address> <defPort> <mcPort> <mdrPort> <mdbPort>        <CRLF>
-	 *     				 ...                                                    <CRLF><CRLF>
-     * PUT     <key> <address> <port1> <port2> <port3> <port4> <CRLF><CRLF>
-     * GET     <key> <numberPeers> <pagination>                <CRLF><CRLF>
-     * CHECK   <key>                                           <CRLF><CRLF>
-     * REMOVE  <key> <address> <port1> <port2> <port3> <port4> <CRLF><CRLF>
-     * DELETE        <CRLF>
-     *         <key> <CRLF>
-     *         <key> <CRLF> ...                                 <CRLF><CRLF>
-     * INFO    <key> <repDegree>                               <CRLF><CRLF>
+	 * ONLINE			<address> <defPort> <mcPort> <mdrPort> <mdbPort>		    <CRLF><CRLF>
+     *
+     * GETONLINE		<number>                                                    <CRLF><CRLF>
+     *
+	 * SUBSCRIBERS 		                                                    <CRLF>
+	 *     				<address> <defPort> <mcPort> <mdrPort> <mdbPort>    <CRLF>
+     *     				<address> <defPort> <mcPort> <mdrPort> <mdbPort>    <CRLF>
+	 *     				 ...                                                        <CRLF><CRLF>
+     *
+     * PUT              <key> <address> <port1> <port2> <port3> <port4>             <CRLF><CRLF>
+     *
+     * GET              <key> <numberPeers> <pagination>                            <CRLF><CRLF>
+     *
+     * CHECK                                                                <CRLF>
+     *                  <key>                                               <CRLF>
+     *                  <key>                                                        <CRLF><CRLF>
+     * REMOVE           <key> <address> <port1> <port2> <port3> <port4>              <CRLF><CRLF>
+     *
+     * DELETE                                                               <CRLF>
+     *                  <key>                                               <CRLF>
+     *                  <key>                                                        <CRLF><CRLF>
+     *
+     * INFO                                                                 <CRLF>
+     *                  <key> <repDeg>                                      <CRLF>
+     *                  <key> <repDeg>                                                <CRLF><CRLF>
 	 */
 
 	public TopologyMessage(Util.TopologyMessageType type, String key, Subscriber s){
@@ -37,15 +49,6 @@ public class TopologyMessage extends Message{
             this.type = type;
             this. key = key;
             this.subscriber = s;
-        }
-        else
-            Logs.errorMsg("Topology message wrong format");
-    }
-
-    public TopologyMessage(Util.TopologyMessageType type, String key){
-	    if(type.name().equals("CHECK")){
-	        this.type = type;
-	        this.key = key;
         }
         else
             Logs.errorMsg("Topology message wrong format");
@@ -62,23 +65,28 @@ public class TopologyMessage extends Message{
             Logs.errorMsg("Topology message wrong format");
     }
 
-    public TopologyMessage(Util.TopologyMessageType type, String key, int repDeg){
+    public TopologyMessage(Util.TopologyMessageType type, ArrayList<String> keys, ArrayList<Integer> repDegs){
         if(type.name().equals("INFO")){
+            if(keys.size() != repDegs.size()){
+                Logs.errorMsg("Info message with keys and repDegs that do not match in size");
+                return;
+            }
             this.type = type;
-            this.key = key;
-            this.subscriberN = repDeg;
+            this.keys = keys;
+            this.repDegs = repDegs;
         }
         else
             Logs.errorMsg("Topology message wrong format");
     }
 
     public <T> TopologyMessage(Util.TopologyMessageType type, ArrayList<T> elems){
-        if(type.name().equals("DELETE")){
-            this.type = type;
+
+        this.type = type;
+
+        if(type.name().equals("DELETE") || type.name().equals("CHECK")){
             this.keys = (ArrayList<String>)elems;
         }
         else if(type.name().equals("SUBSCRIBERS")){
-            this.type = type;
             this.subscribersGroup = (ArrayList<Subscriber>)elems;
         }
         else
@@ -144,15 +152,32 @@ public class TopologyMessage extends Message{
             }
             else{
                 content += Util.LINE_SEPARATOR;
-                for(String k : keys){
-                    content += " " + k + " " + Util.LINE_SEPARATOR;
+
+                if(repDegs == null){
+                    for(String k : keys){
+                        content += " " + k + " " + Util.LINE_SEPARATOR;
+                    }
                 }
+                else{
+                    if(keys.size() != repDegs.size()){
+                        Logs.errorMsg("Wrong message construction");
+                        return new String("").getBytes();
+                    }
+
+                    for(int i = 0; i < keys.size(); i++){
+                        content += " " + keys.get(i) + " " + repDegs.get(i) + " " + Util.LINE_SEPARATOR;
+                    }
+
+                }
+
                 content += Util.LINE_SEPARATOR;
             }
         }
 
         if (((TopologyMessageType) type).compareTo(TopologyMessageType.SUBSCRIBERS) != 0 &&
-            ((TopologyMessageType) type).compareTo(TopologyMessageType.DELETE) != 0)
+            ((TopologyMessageType) type).compareTo(TopologyMessageType.DELETE) != 0 &&
+                ((TopologyMessageType) type).compareTo(TopologyMessageType.CHECK) != 0 &&
+                ((TopologyMessageType) type).compareTo(TopologyMessageType.INFO) != 0)
             content += Util.LINE_SEPARATOR + Util.LINE_SEPARATOR;
 
 		return content.getBytes();
@@ -217,16 +242,11 @@ public class TopologyMessage extends Message{
 
                 parsed = new TopologyMessage(type_rcv,parts[1],s1);
             }
-            else if(((TopologyMessageType) type_rcv).compareTo(Util.TopologyMessageType.INFO) == 0){
-                parsed = new TopologyMessage(type_rcv,parts[1],Integer.parseInt(parts[2]));
-            }
             else if(((TopologyMessageType) type_rcv).compareTo(Util.TopologyMessageType.GET) == 0) {
                 parsed = new TopologyMessage(type_rcv,parts[1],Integer.parseInt(parts[2]),Integer.parseInt(parts[3]));
             }
-            else if(((TopologyMessageType) type_rcv).compareTo(Util.TopologyMessageType.CHECK) == 0){
-                parsed = new TopologyMessage(type_rcv,parts[1]);
-            }
-            else if(((TopologyMessageType) type_rcv).compareTo(Util.TopologyMessageType.DELETE) == 0) {
+            else if(((TopologyMessageType) type_rcv).compareTo(Util.TopologyMessageType.DELETE) == 0 ||
+                    ((TopologyMessageType) type_rcv).compareTo(Util.TopologyMessageType.CHECK) == 0) {
                 ArrayList<String> keys = new ArrayList<String>();
 
                 int j = 1;
@@ -239,6 +259,21 @@ public class TopologyMessage extends Message{
                 }
 
                 parsed = new TopologyMessage(type_rcv,keys);
+            }
+            else if(((TopologyMessageType) type_rcv).compareTo(Util.TopologyMessageType.INFO) == 0){
+
+                ArrayList<String> keys = new ArrayList<String>();
+                ArrayList<Integer> reps = new ArrayList<Integer>();
+
+                int j = 1;
+                while(j < p.length){
+                    String subparts[] = p[j].split("\\s");
+                    keys.add(subparts[0]) ;
+                    reps.add(Integer.parseInt(subparts[1]));
+                    j++;
+                }
+
+                parsed = new TopologyMessage(type_rcv,keys,reps);
             }
 		}
 		else{
@@ -274,6 +309,10 @@ public class TopologyMessage extends Message{
 	    return subscribersGroup;
     }
 
+    public ArrayList<Integer> getRepDegs(){
+        return repDegs;
+    }
+
     @Override
     public String toString(){
         String s = new String("");
@@ -294,12 +333,16 @@ public class TopologyMessage extends Message{
                 s+= subscriber.toString();
             else if(type.equals(TopologyMessageType.GET))
                 s+= subscriberN + " " + pagination;
-            else if(type.equals(TopologyMessageType.INFO))
-                s += subscriberN;
-            else if(type.equals(TopologyMessageType.DELETE)){
+            else if(type.equals(TopologyMessageType.DELETE) ||(type.equals(TopologyMessageType.CHECK))){
                 s+="\n";
                 for(String k : keys){
                     s += "           " + k + "\n";
+                }
+            }
+            else if( type.equals(TopologyMessageType.INFO)){
+                s+="\n";
+                for(int i = 0; i < keys.size(); i++){
+                    s+="             RepDeg: " + repDegs.get(i) + " Key: " + keys.get(i) + "\n";
                 }
             }
         }

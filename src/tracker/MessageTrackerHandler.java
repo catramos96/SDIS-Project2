@@ -82,15 +82,20 @@ public class MessageTrackerHandler extends Thread {
 				break;
 			}
 			case CHECK:{
-				int repDeg = tracker.checkDHT(msg.getKey());
-				TopologyMessage m = new TopologyMessage(Util.TopologyMessageType.INFO,msg.getKey(),repDeg);
+				ArrayList<Integer> repDegs = new ArrayList<Integer>();
+				for(String k : msg.getKeys()){
+					repDegs.add(tracker.checkDHT(k));
+				}
+
+				TopologyMessage m = new TopologyMessage(Util.TopologyMessageType.INFO,msg.getKeys(),repDegs);
 				tracker.getChannel().send(m.buildMessage(),sender.getAddress(),sender.getDefPort());
 				Logs.sentTopologyMessage(m);
 				break;
 			}
 			case REMOVE:{
-				int repDeg = tracker.remSubscriberDHT(msg.getKey(),msg.getSubscriber());
-				TopologyMessage m = new TopologyMessage(Util.TopologyMessageType.INFO,msg.getKey(),repDeg);
+				ArrayList<String> keys = new ArrayList<String>();	keys.add(msg.getKey());
+				ArrayList<Integer> reps = new ArrayList<Integer>(); reps.add(tracker.remSubscriberDHT(msg.getKey(),msg.getSubscriber()));
+				TopologyMessage m = new TopologyMessage(Util.TopologyMessageType.INFO,keys,reps);
 				tracker.getChannel().send(m.buildMessage(),sender.getAddress(),sender.getDefPort());
 				Logs.sentTopologyMessage(m);
 				break;
