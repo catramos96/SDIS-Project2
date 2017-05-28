@@ -3,12 +3,12 @@
 ### Implementação da DHT
 
 #### Mensagens
-PUT     key address port1 port2 port3 port4 CRLFCRLF
-GET     key numberPeers pagination          CRLFCRLF
-CHECK   key                                 CRLFCRLF
-REMOVE  key address port1 port2 port3 port4 CRLFCRLF
-DELETE  key CRLF key CRLF ...               CRLFCRLF
-INFO    key repDegree                       CRLFCRLF
+* PUT     key address port1 port2 port3 port4 CRLFCRLF
+* GET     key numberPeers pagination          CRLFCRLF
+* CHECK   key                                 CRLFCRLF
+* REMOVE  key address port1 port2 port3 port4 CRLFCRLF
+* DELETE  key CRLF key CRLF ...               CRLFCRLF
+* INFO    key repDegree                       CRLFCRLF
         
 #### Tracker
 Métodos DTH:
@@ -39,7 +39,7 @@ Métodos DTH:
 
 ##### Remove
 * ~~Remover no tracker a entrada no peer para aquele chunk.~~
-* Receber a mensagem do tracker com o repDegree. Se o repDegree for mais baixo então efetuar o backup (mudar o backup para não enviar stored se já tem o chunk? assim não estamos a receber stored de peers que já tinham o chunk e confundir com o backup bem feito). Outra abordagem: assumir que se um peer remove um chunk então tem que fazer o backup com rep = 1
+* ~~Receber a mensagem do tracker com o repDegree. Se o repDegree for mais baixo então efetuar o backup (mudar o backup para não enviar stored se já tem o chunk? assim não estamos a receber stored de peers que já tinham o chunk e confundir com o backup bem feito). Outra abordagem: assumir que se um peer remove um chunk então tem que fazer o backup com rep = 1~~
 
 ##### GUI 
 * windows

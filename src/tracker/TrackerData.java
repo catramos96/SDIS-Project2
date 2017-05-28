@@ -64,11 +64,14 @@ public class TrackerData implements Serializable
     }
 
     public synchronized int remSubscriberDHT(String key, Subscriber s){
-        if(DHT.containsKey(key)){
-            HashSet<Subscriber> tmp = DHT.get(key);
-            tmp.remove(s);
-            Logs.remMsg("Key: " + key + " Peer: " + s.toString());
-            return tmp.size();
+    	if(DHT.containsKey(key)){
+	        HashSet<Subscriber> tmp = DHT.get(key);
+	        tmp.remove(s);
+	        if(tmp.size() < 1) {
+	        	DHT.remove(key);
+	        }
+	        Logs.remMsg("Key: " + key + " Peer: " + s.toString());
+	        return tmp.size();
         }
 
         return 0;

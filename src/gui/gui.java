@@ -18,6 +18,7 @@ public class gui extends JFrame {
 	private JTextField path;
 	private JTextField rmiID;
 	private int defaulRep = 2;
+	private String commandHead;
     public static void main(String[] args) {
     	
     	 try {
@@ -28,6 +29,7 @@ public class gui extends JFrame {
 			e.printStackTrace();
 		}
     	
+    	 System.out.println(System.getProperty("os.name"));
     	gui test = new gui();
     	
     }
