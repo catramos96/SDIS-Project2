@@ -204,7 +204,7 @@ public class gui extends JFrame {
         	public void actionPerformed(ActionEvent arg0) {
         		
             	String command[] = {shell, shellFlags, 
-                "gnome-terminal --execute java -Djavax.net.ssl.trustStore=truststore -Djavax.net.ssl.trustStorePassword=123456 -Djavax.net.ssl.keyStore=client.keys -Djavax.net.ssl.keyStorePassword=123456 tracker.PeerTracker " + trackerPort.getText()};  
+                commandHead + " java -Djavax.net.ssl.trustStore=truststore -Djavax.net.ssl.trustStorePassword=123456 -Djavax.net.ssl.keyStore=client.keys -Djavax.net.ssl.keyStorePassword=123456 tracker.PeerTracker " + trackerPort.getText()};  
            
             	String teste = executeCommand(command);
            		System.out.println(teste);
