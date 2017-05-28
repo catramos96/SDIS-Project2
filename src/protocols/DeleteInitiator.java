@@ -2,6 +2,7 @@ package protocols;
 
 import filesystem.FileInfo;
 import message.ProtocolMessage;
+import message.TopologyMessage;
 import peer.Peer;
 import resources.Logs;
 import resources.Util;
@@ -45,11 +46,13 @@ public class DeleteInitiator extends Thread{
 
         //create message
         String fileId = info.getFileId();
-        ProtocolMessage msg = new ProtocolMessage(Util.ProtocolMessageType.DELETED,peer.getID(),info.getFileId());
-        
+        ProtocolMessage msg = new ProtocolMessage(Util.ProtocolMessageType.DELETED,peer.getID(),info.getFileId());   
+        TopologyMessage msgTracker = new TopologyMessage(Util.TopologyMessageType.DELETE,peer.getDatabase().getChunksFromFile(info.getFileId()));
+        msgTracker.buildMessage();
       //send message twice because UDP is not reliable
         for(int i = 0; i < 2; i++) {
             peer.getSubscribedGroup().sendMessageToSubscribers(msg,Util.ChannelType.MC);
+            peer.getSubscribedGroup().sendMessageToTracker(msgTracker);
             System.out.println("Delete");
             //Logs.sentMessageLog(msg);
             Util.randomDelay();

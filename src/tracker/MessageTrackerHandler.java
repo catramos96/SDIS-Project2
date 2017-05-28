@@ -6,6 +6,9 @@ import resources.Util;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Map;
+
+import filesystem.ChunkInfo;
 
 public class MessageTrackerHandler extends Thread {
 	private Tracker tracker = null;
@@ -93,7 +96,10 @@ public class MessageTrackerHandler extends Thread {
 				break;
 			}
 			case DELETE:{
-				tracker.deleteDHT(msg.getKey());
+				ArrayList<String> keys = msg.getKeys();
+				for (String c : keys) {
+				tracker.deleteDHT(c);
+				}
 				break;
 			}
             default:{

@@ -1,6 +1,7 @@
 package filesystem;
 
 import java.io.Serializable;
+import java.lang.reflect.Array;
 import java.util.*;
 
 public class Database implements Serializable
@@ -139,6 +140,15 @@ public class Database implements Serializable
             if (c.getValue().getFileId().equals(fileId))
                 sentChunks.remove(c.getKey());
         }
+    }
+    
+    public synchronized ArrayList<String> getChunksFromFile(String fileId) {
+    	ArrayList<String> result = new ArrayList<String> ();
+    	for (Map.Entry<String, ChunkInfo> c : sentChunks.entrySet()) {
+            if (c.getValue().getFileId().equals(fileId))
+                result.add(c.getKey());
+        }
+    	return result;
     }
 
     //Returns a list of chunks with perceived replication degree is bellow than desired
