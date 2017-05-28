@@ -24,7 +24,7 @@ public class Tracker {
 	private TrackerData trackerData;
 
     /*Schedule*/
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(3);
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(4);
 
 
     public Tracker(int port) throws ExecutionException, InterruptedException
@@ -48,6 +48,8 @@ public class Tracker {
 		}
 
         saveTrackerData();
+
+		showTrackerState();
 
         //save metadata when shouts down
         Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -99,6 +101,15 @@ public class Tracker {
                 e.printStackTrace();
             }
         }
+    }
+
+    public synchronized void showTrackerState(){
+        final Runnable showState = new Runnable() {
+            public void run() {
+                displayState();
+            }
+        };
+        scheduler.scheduleAtFixedRate(showState, 15, 15, TimeUnit.SECONDS);
     }
 
     /**
@@ -210,5 +221,21 @@ public class Tracker {
 	public boolean authorizedIP (String ip) {
 		return validIPs.contains(ip);
 	}
-	
+
+    public  synchronized  void displayState(){
+	    String s = new String("");
+
+	    s += "============================================================\n" +
+             "=                          TRACKER                         =\n" +
+             "============================================================\n\n";
+
+	    s+= "LAST ACCESS: \n\n" +
+            lastAccess.toString() + "\n\n";
+
+	    s+= "DISTRIBUTED HASH TABLE FOR FILES STORED: \n\n" +
+                trackerData.toString() + "\n\n" +
+                "============================================================\n\n";
+
+        System.out.println(s);
+    }
 }

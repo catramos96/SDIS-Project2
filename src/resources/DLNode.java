@@ -16,7 +16,7 @@ public class DLNode<M>{
 	@Override
 	public String toString() {
 		String s = new String("");
-		s += "        " + (previous != null) + "# " + object.toString() + " #" + (next != null) + "\n";
+		s += "        " + object.toString() + "\n";
 		if(next != null)
 			s += next.toString();
 

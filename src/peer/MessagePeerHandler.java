@@ -91,8 +91,6 @@ public class MessagePeerHandler extends Thread{
 
     public void handleProtocolMessage(ProtocolMessage msg)
     {
-        //send to subscribers by the receiving channel type
-        channel.sendMessageToSubscribers(msg,fromChannelType);
 
         //Only processes messages sent by others
         if((peer.getID() != msg.getSenderId()) )
