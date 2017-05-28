@@ -43,3 +43,5 @@ Métodos DTH:
 
 ##### GUI 
 * windows
+##### Noticações
+* chamar a notificação quando termina a execução do protocolo
