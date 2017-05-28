@@ -1,9 +1,13 @@
 package tracker;
 
-import java.io.IOException;
+import java.io.*;
 import java.net.InetAddress;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
 import network.DatagramListener;
 import network.Subscriber;
 import resources.DLinkedList;
@@ -11,21 +15,26 @@ import resources.DLNode;
 import resources.Logs;
 import security.SSLlistenerServer;
 
-public class Tracker{
+public class Tracker {
 
 	private DLinkedList<Subscriber> lastAccess = null;			//LastAccess Subscribers
 	private HashMap<Subscriber,DLNode<Subscriber>> subscribers = null;		//Subscribers and lastAccessPosition
 	private HashSet<String>  validIPs = null;
 	private DatagramListener channel = null;
-	private HashMap<String,HashSet<Subscriber>> DHT = null;
-	
-	public Tracker(int port) throws ExecutionException, InterruptedException
+	private TrackerData trackerData;
+
+    /*Schedule*/
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(3);
+
+
+    public Tracker(int port) throws ExecutionException, InterruptedException
 	{
 		try {
 			lastAccess = new DLinkedList<Subscriber>();
 			subscribers = new HashMap<Subscriber,DLNode<Subscriber>>();
-			DHT = new HashMap<String,HashSet<Subscriber>>();
-			
+
+			loadTrackerData();
+
 			validIPs = new HashSet<String>();
 			(new Thread(new SSLlistenerServer(4499,new String[0], this))).start();
 			
@@ -37,7 +46,93 @@ public class Tracker{
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+
+        saveTrackerData();
+
+        //save metadata when shouts down
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            public void run() {
+                try {
+                    Thread.sleep(200);
+                    serializeTrackerData();
+                } catch (InterruptedException e) {
+                    //Logs.exception("addShutdownHook", "Peer", e.toString());
+                    e.printStackTrace();
+                }
+            }
+        });
 	}
+
+    /*
+     * METADATA
+     */
+
+    public synchronized void loadTrackerData() {
+
+        this.trackerData = new TrackerData();
+
+        File metadata = new File("../tracker.ser");
+
+        //file can be loaded
+        if(metadata.exists())
+        {
+            try
+            {
+                FileInputStream fileIn = new FileInputStream("../tracker.ser");
+                ObjectInputStream in  = new ObjectInputStream(fileIn);
+                this.trackerData = (TrackerData) in.readObject();
+                in.close();
+                fileIn.close();
+
+                Logs.serializeWarn("loaded from tracker.ser",0);
+            }
+            catch (FileNotFoundException e) {
+                Logs.exception("loadTrackerData", "Tracker", e.toString());
+                e.printStackTrace();
+            }
+            catch (IOException e) {
+                Logs.exception("loadTrackerData", "Tracker", e.toString());
+                e.printStackTrace();
+            }
+            catch (ClassNotFoundException e) {
+                Logs.exception("loadTrackerData", "Tracker", e.toString());
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * Runnable executed in 1h interval to save metadata, preventing mapping lost if the server crashes.
+     */
+    private void saveTrackerData() {
+        final Runnable saveMetadata = new Runnable() {
+            public void run() {
+                serializeTrackerData();
+            }
+        };
+        scheduler.scheduleAtFixedRate(saveMetadata, 15, 60, TimeUnit.MINUTES);
+    }
+
+    public synchronized void serializeTrackerData()
+    {
+        try
+        {
+            FileOutputStream fileOut = new FileOutputStream("../tracker.ser");
+            ObjectOutputStream out = new ObjectOutputStream(fileOut);
+            out.writeObject(trackerData);
+            out.close();
+            fileOut.close();
+            Logs.serializeWarn("saved in tracker.ser", 0);
+        }
+        catch (FileNotFoundException e) {
+            Logs.exception("serializeTrackerData", "Tracker", e.toString());
+            e.printStackTrace();
+        }
+        catch (IOException e) {
+            Logs.exception("serializeTrackerData", "Tracker", e.toString());
+            e.printStackTrace();
+        }
+    }
 
 	/*
 	 * Accesses
@@ -76,69 +171,23 @@ public class Tracker{
 	 */
 
 	public synchronized void putDHT(String key, Subscriber s){
-		if(DHT.containsKey(key)){
-		    DHT.get(key).add(s);
-        }
-        else{
-		    Set<Subscriber> set = Collections.synchronizedSet(new HashSet<Subscriber>());
-		    set.add(s);
-		    DHT.put(key,new HashSet<Subscriber>(set));
-
-		    Logs.newMsg("Key: " + key + " Peer: " + s.toString());
-        }
+		trackerData.putDHT(key,s);
 	}
 
 	public synchronized ArrayList<Subscriber> getDHT(String key, int peersN, int pagination){
-        ArrayList<Subscriber> subs = new ArrayList<Subscriber>();
-        Iterator<Subscriber> it;
-
-        if(DHT.containsKey(key)){
-            it = DHT.get(key).iterator();
-
-            int i = (pagination -1) * peersN;
-            int j = 0;
-            int w = pagination*peersN ;
-
-            while(it.hasNext()){
-                if(j == w)
-                    break;
-
-                if(i <= j)
-                    subs.add(it.next());
-                else
-                    it.next();
-                j++;
-            }
-
-        }
-
-        return subs;
+        return trackerData.getDHT(key,peersN,pagination);
     }
 
     public synchronized int checkDHT(String key){
-	    if(DHT.containsKey(key))
-	        return DHT.get(key).size();
-	    return 0;
+	    return trackerData.checkDHT(key);
     }
 
 	public synchronized int remSubscriberDHT(String key, Subscriber s){
-	    if(DHT.containsKey(key)){
-	        HashSet<Subscriber> tmp = DHT.get(key);
-	        tmp.remove(s);
-	        Logs.remMsg("Key: " + key + " Peer: " + s.toString());
-	        return tmp.size();
-        }
-
-        return 0;
+	    return trackerData.remSubscriberDHT(key,s);
     }
 
     public synchronized void deleteDHT(String key){
-    	 //Logs.delMsg("DELETE DHT " + DHT.containsKey(key) +  " " + key );
-    	 //Logs.delMsg(DHT.toString());
-	    if(DHT.containsKey(key)) {
-            DHT.remove(key);
-            Logs.delMsg("REMOVED Key: " + key);
-        }
+    	trackerData.deleteDHT(key);
     }
 	
 	/*
