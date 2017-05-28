@@ -4,6 +4,7 @@
 .idea
 *.iml
 /bin
+/out
 /peersDisk
 /src/*/*.class
 nohup.out
