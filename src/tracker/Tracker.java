@@ -15,8 +15,11 @@ import resources.DLNode;
 import resources.Logs;
 import security.SSLlistenerServer;
 
+/**
+ * Class that represents the server that keeps track of the peers in the aplication
+ * and the files that where backed up
+ */
 public class Tracker {
-
 	private DLinkedList<Subscriber> lastAccess = null;			            //LastAccess Subscribers
 	private HashMap<Subscriber,DLNode<Subscriber>> subscribers = null;		//Subscribers and Nodes of the DLindedList
 	private HashSet<String>  validIPs = null;
@@ -27,6 +30,12 @@ public class Tracker {
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(4);
 
 
+    /**
+     * Constructor of the tracker
+     * @param port associated to the tracker
+     * @throws ExecutionException
+     * @throws InterruptedException
+     */
     public Tracker(int port) throws ExecutionException, InterruptedException
 	{
 		try {
@@ -69,6 +78,9 @@ public class Tracker {
      * METADATA
      */
 
+    /**
+     * Function that loads the last data saved of the tracker
+     */
     public synchronized void loadTrackerData() {
 
         this.trackerData = new TrackerData();
@@ -103,13 +115,16 @@ public class Tracker {
         }
     }
 
+    /**
+     * Function that shows the tracker state
+     */
     public synchronized void showTrackerState(){
         final Runnable showState = new Runnable() {
             public void run() {
                 displayState();
             }
         };
-        scheduler.scheduleAtFixedRate(showState, 15, 15, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(showState, 30, 30, TimeUnit.SECONDS);
     }
 
     /**
@@ -124,6 +139,9 @@ public class Tracker {
         scheduler.scheduleAtFixedRate(saveMetadata, 15, 60, TimeUnit.MINUTES);
     }
 
+    /**
+     * Function that saves the information of the tracker except the lastAccess
+     */
     public synchronized void serializeTrackerData()
     {
         try
@@ -149,6 +167,10 @@ public class Tracker {
 	 * Accesses
 	 */
 
+    /**
+     * Function that registes a subscriber
+     * @param newS
+     */
 	public synchronized void registerSubscriber(Subscriber newS){
 		
 		if(subscribers.containsKey(newS)){
@@ -164,6 +186,11 @@ public class Tracker {
         Logs.newMsg("ACCESS: " + newS.toString());
     }
 
+    /**
+     * Function that returns the lastAccessed nSubscribers
+     * @param nSubscribers
+     * @return
+     */
 	public synchronized ArrayList<Subscriber> getLastAccess(int nSubscribers){
 		ArrayList<Subscriber> subs = new ArrayList<Subscriber>();
 		int size = 0;
