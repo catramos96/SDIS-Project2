@@ -33,6 +33,7 @@ public class Subscriber implements Serializable{
 	}
 	
 	public <T> Subscriber(T address,int defPort, int mcPort, int mdrPort, int mdbPort){
+
 		try {
 			if(address instanceof String)
 				this.address = InetAddress.getByName((String)address);

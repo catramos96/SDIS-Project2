@@ -8,40 +8,41 @@ public class FileSharing
 {
 	public static void main(String[] args) throws IOException
 	{		
-		if(args.length != 3)
+		if(args.length != 4)
 		{
-			System.out.println("java peer.FileSharing <peer_id> <remoteObjName> <tracker_address:port>");
+			System.out.println("java peer.FileSharing <peer_id> <defPort:mcPort:mdrPort:mdbPort> <remoteObjName> <tracker_address:port>");
 			return;
 		}
 
 		int peer_id = Integer.parseInt(args[0]);
-        String remoteObjName = args[1];
-		String[] root = addressVerification(args[2]);
+		String[] peer = addressVerification(args[1]);
+        String remoteObjName = args[2];
+		String[] tracker = addressVerification(args[3]);
 
-		new Peer(peer_id,root,remoteObjName);
+		new Peer(peer_id,peer,tracker,remoteObjName);
 	}
 
 	private static String[] addressVerification(String arg) 
 	{
 		String[] parts_ap = arg.split(":");
-		String[] parts = new String[2];
+		String[] parts = new String[4];
 
 		//localhost
 		if(parts_ap.length == 1)
 		{
 			try{
 				parts[0] = InetAddress.getLocalHost().getHostName();
-			} 
+			}
 			catch (UnknownHostException e) {
 				//Logs.exception("addressVerification", "BackupSystem", e.toString());
 				e.printStackTrace();
 			}
 			parts[1] = parts_ap[0];
 		}
-		else
+		else{
 			parts = parts_ap;
+		}
 
 		return parts;
 	}
-
 }

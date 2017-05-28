@@ -65,17 +65,24 @@ public class MessagePeerHandler extends Thread{
                         //update database
                         peer.getDatabase().removeStoredChunk(keys.get(i));
                     }
-                    else
-                    {//update repDeg
+
+                    else {
+                        //update repDeg
                         peer.getDatabase().updateActualRepDeg(reps.get(i), keys.get(i));
+                        //renovate expiration date
+                        peer.getDatabase().renovateChunks(msg.getKeys());
 
                         ChunkInfo chunk = peer.getDatabase().getChunkInfo(keys.get(i));
                         byte[] data = peer.getFileManager().getChunkContent(chunk.getFileId(),chunk.getChunkNo());
                         chunk.setData(data);
 
-                        //Check if new replication degree is bellow the desired
-                        if(chunk.getReplicationDeg() > reps.get(i)){
-                            peer.chunkBackup(chunk);
+                        if(peer.getDatabase().getStoredChunks().containsKey(keys.get(i))) {
+                            chunk = peer.getDatabase().getStoredChunks().get(keys.get(i));
+
+                            //Check if new replication degree is bellow the desired
+                            if(chunk.getReplicationDeg() > chunk.getActualRepDeg()){
+                                peer.chunkBackup(chunk);
+                            }
                         }
                     }
 
@@ -94,8 +101,6 @@ public class MessagePeerHandler extends Thread{
 
     public void handleProtocolMessage(ProtocolMessage msg)
     {
-        //send to subscribers by the receiving channel type
-        channel.sendMessageToSubscribers(msg,fromChannelType);
 
         //Only processes messages sent by others
         if((peer.getID() != msg.getSenderId()) )
@@ -105,7 +110,7 @@ public class MessagePeerHandler extends Thread{
             switch (msg.getType()) {
 
                 case PUTCHUNK:
-                    handlePutchunk(msg.getFileId(),msg.getChunkNo(),msg.getReplicationDeg(),msg.getAddress(), msg.getPort(),msg.getBody());
+                    handlePutchunk(msg.getFileId(),msg.getChunkNo(),msg.getReplicationDeg(),msg.getAddress(), msg.getPort(),msg.getBody()); 
                     break;
 
                 case STORED:
@@ -165,7 +170,8 @@ public class MessagePeerHandler extends Thread{
         //create chunk
         ChunkInfo c = new ChunkInfo(fileId, chunkNo, body);
         c.setReplicationDeg(repDeg);
-
+       
+        
         //create response message : STORED
         ProtocolMessage msg = new ProtocolMessage(Util.ProtocolMessageType.STORED,peer.getID(),c.getFileId(),c.getChunkNo());
 
@@ -208,7 +214,6 @@ public class MessagePeerHandler extends Thread{
             // send PUT message
             peer.getSubscribedGroup().sendMessageToTracker(putMsg);
             Logs.sentTopologyMessage(putMsg);
-
         }
     }
 
@@ -231,6 +236,11 @@ public class MessagePeerHandler extends Thread{
             //Deletes the chunk from the peers disk
             String filename = chunks.get(i).getChunkNo() + chunks.get(i).getFileId();
             peer.getFileManager().deleteFile(filename);
+         
+            //notify tracker
+			TopologyMessage msgTracker = new TopologyMessage(Util.TopologyMessageType.REMOVE,chunks.get(i).getChunkKey(),peer.getMySubscriptionInfo());
+            peer.getSubscribedGroup().sendMessageToTracker(msgTracker);
+            
 
             //update database
             peer.getDatabase().removeStoredChunk(chunks.get(i).getChunkKey());

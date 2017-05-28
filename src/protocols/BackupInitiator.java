@@ -18,6 +18,8 @@ import java.util.Map;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 
+import client.Notification;
+
 public class BackupInitiator extends Thread
 {
     private String filepath;
@@ -65,6 +67,11 @@ public class BackupInitiator extends Thread
             if (fileID.equals(info.getFileId())) {
                 System.out.println("File already backed up!");
                 peer.getSubscribedGroup().resetSubscribers();
+                
+                //gen notification
+                String notificationMsg = "File already backed up!";
+                (new Thread(new Notification("BACKUP " + peer.getID(), notificationMsg))).start();
+                
                 return;
             } else {
                 System.out.println("New version of file");
@@ -124,9 +131,11 @@ public class BackupInitiator extends Thread
         //all protocols ended -> chunks (whose backup was initiated) actual replication degree must be updated
         //wait for all threads to finish
         waitProtocols();
-
+        
+        //gen gui notification
         System.out.println(" - BACKUP SUCCESSFUL - ");
-
+        String notificationMsg = filepath  + " ended!";
+        (new Thread(new Notification("BACKUP " + peer.getID(), notificationMsg))).start();
         if( tmp.delete()) {
             System.out.println("Backup: temporary files deleted");
         };

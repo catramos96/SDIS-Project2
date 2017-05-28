@@ -59,7 +59,9 @@ public class Util {
 	
 	//ChunkInfo
 	public static int CHUNK_MAX_SIZE = 64000;
-	
+	public static int CHUNK_EXPIRATION = 5;
+
+
 	//FileManager - Directories
 	public static final String PEERS_DIR = new String("../peersDisk/");
 	public static final String CHUNKS_DIR = new String("/chunks/");

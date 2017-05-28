@@ -54,7 +54,7 @@ public class Peer implements MessageRMI
     /*Schedule*/
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(3);
 
-    public Peer(int peer_id, String[] trackerInfo, String remoteObjName){
+    public Peer(int peer_id, String[] peerInfo, String[] trackerInfo, String remoteObjName){
         this.ID = peer_id;
         this.setFileManager(new FileManager(getID()));
         this.channelRecord = new ChannelRecord();
@@ -71,7 +71,7 @@ public class Peer implements MessageRMI
 
 
         try {
-            client = new SSLlistenerClient("localhost", 4499, new String[0], this); //TODO
+            client = new SSLlistenerClient(trackerInfo[0], 4499, new String[0], this); //TODO
             client.start();
         } catch (UnknownHostException e1) {
             // TODO Auto-generated catch block
@@ -90,24 +90,24 @@ public class Peer implements MessageRMI
             e.printStackTrace();
         }
 
-
+        //this peer
         try {
-            mySubscription = new Subscriber(InetAddress.getLocalHost().getHostAddress(), -1);
-
-            //tracker
-            Subscriber tracker = new Subscriber(trackerInfo[0],Integer.parseInt(trackerInfo[1]));
-
-            //Group1
-            subscribedGroup = new GroupChannel(this,tracker);
-            subscribedGroup.start();
-
-            startRMI(remoteObjName);
-
-            Logs.MyAddress(mySubscription);
-
+            mySubscription = new Subscriber(InetAddress.getLocalHost().getHostAddress(),Integer.parseInt(peerInfo[0]),Integer.parseInt(peerInfo[1]),Integer.parseInt(peerInfo[2]),Integer.parseInt(peerInfo[3]));
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
+
+        //tracker
+        Subscriber tracker = new Subscriber(trackerInfo[0],Integer.parseInt(trackerInfo[1]));
+
+        //Group1
+        subscribedGroup = new GroupChannel(this,tracker);
+        subscribedGroup.start();
+
+        startRMI(remoteObjName);
+
+        Logs.MyAddress(mySubscription);
+
 
         /*
          * Routine Tasks
@@ -116,7 +116,7 @@ public class Peer implements MessageRMI
         saveMetadata();
 
         //try to backup chunks with actual replication degree bellow desired
-        verifyChunks(this);
+        verifyChunks();
 
         //Warns peers about its activity only if this peer can also store new chunks
         updateStateOnTracker();
@@ -228,29 +228,24 @@ public class Peer implements MessageRMI
         }
     }
 
-    //TODO  mudar para a validade dos chunks
-    private void verifyChunks(Peer peer) {
-        /**
-         * Function that gets all the chunks stored by this peer with the atual replication degree
-         * bellow the desired and try to initiate the chunk backup protocol for each chunk after a random time,
-         */
+    private void verifyChunks() {
+
         final Runnable checkChunks = new Runnable() {
             public void run()
             {
-                System.out.println(" - init chunk update - ");
+                ArrayList<String> chunks = database.getChunksExpired();
 
-                ArrayList<ChunkInfo> chunks = database.getSentChunksBellowRepDeg();
-
-                for(ChunkInfo c : chunks) {
-                    chunkBackup(c);
+                if(chunks.size() != 0){
+                    TopologyMessage msg = new TopologyMessage(Util.TopologyMessageType.CHECK,chunks);
+                    subscribedGroup.sendMessageToTracker(msg);
+                    Logs.sentTopologyMessage(msg);
                 }
 
-                System.out.println(" - update completed - ");
             }
 
         };
 
-        scheduler.scheduleAtFixedRate(checkChunks, 90, 300, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(checkChunks, 0, 1, TimeUnit.DAYS);
     }
 
     public void chunkBackup(ChunkInfo c) {
