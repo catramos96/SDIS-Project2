@@ -17,8 +17,8 @@ import security.SSLlistenerServer;
 
 public class Tracker {
 
-	private DLinkedList<Subscriber> lastAccess = null;			//LastAccess Subscribers
-	private HashMap<Subscriber,DLNode<Subscriber>> subscribers = null;		//Subscribers and lastAccessPosition
+	private DLinkedList<Subscriber> lastAccess = null;			            //LastAccess Subscribers
+	private HashMap<Subscriber,DLNode<Subscriber>> subscribers = null;		//Subscribers and Nodes of the DLindedList
 	private HashSet<String>  validIPs = null;
 	private DatagramListener channel = null;
 	private TrackerData trackerData;
@@ -185,18 +185,41 @@ public class Tracker {
 		trackerData.putDHT(key,s);
 	}
 
+    /**
+     * Function that returns peersN subscribers that have a chunk with the given key and
+     * with pagination n
+     * @param key of the chunk
+     * @param peersN number of peers to retrieve
+     * @param pagination pagination in the query
+     * @return Information of the peers that have the chunk
+     */
 	public synchronized ArrayList<Subscriber> getDHT(String key, int peersN, int pagination){
         return trackerData.getDHT(key,peersN,pagination);
     }
 
+    /**
+     * Function that checks a chunk by its key
+     * @param key of the chunk
+     * @return Replication degree of the chunk
+     */
     public synchronized int checkDHT(String key){
 	    return trackerData.checkDHT(key);
     }
 
+    /**
+     * Function that removes a peer that had a chunk
+     * @param key of the chunk
+     * @param s peer information
+     * @return New replication Degree of Chunk
+     */
 	public synchronized int remSubscriberDHT(String key, Subscriber s){
 	    return trackerData.remSubscriberDHT(key,s);
     }
 
+    /**
+     * Function that deletes a chunk entry by its key
+     * @param key
+     */
     public synchronized void deleteDHT(String key){
     	trackerData.deleteDHT(key);
     }
@@ -204,23 +227,35 @@ public class Tracker {
 	/*
 	 * GETS & SETS
 	 */
-	
+
+    /**
+     * Function that returns the tracker's channel
+     * @return DatagramListener
+     */
 	public DatagramListener getChannel(){
 		return this.channel;
 	}
-	
+
+    /**
+     * Function that adds a new Ip address to the validated Ips
+     * @param ip
+     */
 	public void addIP(InetAddress ip) {
 		validIPs.add(ip.getHostAddress());
 	}
 
-	public void removeIP(String ip) {
-		validIPs.remove(ip);
-	}
-	
+    /**
+     * Function that checks if a given ip addresss is authorized
+     * @param ip
+     * @return
+     */
 	public boolean authorizedIP (String ip) {
 		return validIPs.contains(ip);
 	}
 
+    /**
+     * Function that displays the tracker Information: lastAccess Peers and Chunks in Backup
+     */
     public  synchronized  void displayState(){
 	    String s = new String("");
 
