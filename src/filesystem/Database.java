@@ -12,8 +12,6 @@ public class Database implements Serializable
     private HashMap<String, ChunkInfo> storedChunks;
     //chunks created from backups               ("chunkKey", chunkInfo)
     private HashMap<String, ChunkInfo> sentChunks;
-    //chunks created from backups filesystems    ("chunkKey", <filesystems>)
-    private HashMap<String, ArrayList<Integer>> sentChunksMapping;
     //list of files whose backup was initiated  ("filepath", fileInfo)
     private HashMap<String, FileInfo> sentFiles;
     //list of restored files                    ("filepath", fileInfo)
@@ -23,7 +21,7 @@ public class Database implements Serializable
     {
         storedChunks = new HashMap<>();
         sentChunks = new HashMap<>();
-        sentChunksMapping = new HashMap<>();
+        //sentChunksMapping = new HashMap<>();
         sentFiles = new HashMap<>();
         restoredFiles = new HashMap<>();
     }
@@ -182,41 +180,22 @@ public class Database implements Serializable
         return sentChunks.get(chunkey);
     }
 
-    /*
-    SENT CHUNKS FILESYSTEM
-     */
+    public void addFilesystem(String chunkKey) {
+        int arp = sentChunks.get(chunkKey).getActualRepDeg();
+        sentChunks.get(chunkKey).setActualRepDeg(arp+1);
+    }
+
     public int getActualRepDeg(String chunkey) {
-        return sentChunksMapping.get(chunkey).size();
+        return sentChunks.get(chunkey).getActualRepDeg();
     }
 
-    public void startChunkMapping(String chunkKey) {
-        sentChunksMapping.put(chunkKey,new ArrayList<>());
-    }
+    public boolean removeFilesystem(String chunkKey) {
+        int arp = sentChunks.get(chunkKey).getActualRepDeg();
+        sentChunks.get(chunkKey).setActualRepDeg(arp-1);
 
-    public void addFilesystem(String chunkKey, int senderId) {
-        if(!sentChunksMapping.get(chunkKey).contains(senderId))
-            sentChunksMapping.get(chunkKey).add(senderId);
-    }
-
-    public void removeChunkMapping(String fileId)
-    {
-        for (Map.Entry<String,ArrayList<Integer> > c : sentChunksMapping.entrySet()) {
-            if (c.getKey().contains(fileId))
-                sentChunksMapping.remove(c.getKey());
-        }
-    }
-
-
-    public boolean removeFilesystem(String chunkey, int senderId)
-    {
-        sentChunksMapping.get(chunkey).remove(senderId);
-        //update chunks sent
-        int actualRepDeg = sentChunksMapping.get(chunkey).size();
-
-        ChunkInfo c = sentChunks.get(chunkey);
-        c.setActualRepDeg(actualRepDeg);
-
-        return c.getReplicationDeg() > c.getActualRepDeg();
+        if(sentChunks.get(chunkKey).getActualRepDeg() < sentChunks.get(chunkKey).getReplicationDeg())
+            return true;
+        return false;
     }
 
     /*

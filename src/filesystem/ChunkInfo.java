@@ -38,7 +38,7 @@ public class ChunkInfo implements Serializable
         this.fileId = fileNo;
         this.chunkNo = chunkNo;
         this.replicationDeg = replicationDeg;
-        this.actualRepDeg = replicationDeg;
+        this.actualRepDeg = 0;
     }
 
     /**
@@ -51,6 +51,7 @@ public class ChunkInfo implements Serializable
         this.setChunkNo(chunkNo);
         this.setFileId(fileId);
         this.setData(data);
+        this.actualRepDeg = 0;
     }
 
 	/*

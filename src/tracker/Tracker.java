@@ -198,7 +198,6 @@ public class Tracker {
 		return this.channel;
 	}
 	
-	
 	public void addIP(InetAddress ip) {
 		validIPs.add(ip.getHostAddress());
 	}

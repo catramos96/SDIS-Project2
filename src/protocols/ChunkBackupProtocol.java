@@ -18,7 +18,6 @@ public class ChunkBackupProtocol extends Thread
     private final ProtocolMessage   msg;
     private final GroupChannel      channel;
     private final Database		    db;
-    //private ArrayList<Integer>      filesystems;
 
 
 	/*			MSG="PUTCHUNK"		  --> Peer		MSG="STORED"		sleep(1sec)
@@ -78,19 +77,5 @@ public class ChunkBackupProtocol extends Thread
 			TopologyMessage msgToTracker = new TopologyMessage(Util.TopologyMessageType.GETONLINE,msg.getReplicationDeg()*2);
 			channel.sendMessageToTracker(msgToTracker);
 		}
-
-		//TODO confirm
-        //em caso de erro remove as mensagens guardadas ???
-        //msgRecord.removeStoredMessages(fileNo, chunkNo);
 	}
-
-    /*public void updateStores(int senderId)
-    {
-        if(!filesystems.contains(senderId))
-            filesystems.add(senderId);
-    }
-
-    public int getActualRepDeg() {
-        return filesystems.size();
-    }*/
 }

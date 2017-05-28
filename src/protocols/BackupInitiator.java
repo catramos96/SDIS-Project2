@@ -99,11 +99,9 @@ public class BackupInitiator extends Thread
         try {
 			peer.getEncrypt().encrypt(toSend, tmp);
 		} catch (InvalidKeyException | IOException | IllegalBlockSizeException | BadPaddingException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			return;
 		} catch (InvalidAlgorithmParameterException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
         
@@ -111,8 +109,6 @@ public class BackupInitiator extends Thread
         ArrayList<ChunkInfo> chunks = peer.getFileManager().splitFileInChunks(filepath,tmp);
         FileInfo fileinfo = new FileInfo(fileID,filepath,chunks.size(),repDeg);
 
-        //peer.addBackupInitiator(fileID,this);
-        
         //add sentFile
         peer.getDatabase().addSentFile(filepath, fileinfo);
 
@@ -139,8 +135,6 @@ public class BackupInitiator extends Thread
 
     public void sendChunk(ChunkInfo c)
     {
-        peer.getDatabase().startChunkMapping(c.getChunkKey());
-
         //message to send
         ProtocolMessage msg = new ProtocolMessage(Util.ProtocolMessageType.PUTCHUNK,peer.getID(),c.getFileId(),c.getChunkNo(),c.getReplicationDeg(), peer.getMySubscriptionInfo().getAddress().getHostAddress(), peer.getMySubscriptionInfo().getMdbPort(), c.getData());
 
@@ -163,7 +157,6 @@ public class BackupInitiator extends Thread
         try
         {
             prot.join();
-            peer.getDatabase().updateSentChunkRepDeg(chunkKey,peer.getDatabase().getActualRepDeg(chunkKey));
         }
         catch (InterruptedException e) {
             //Logs.exception("run", "BackupTrigger", e.toString());

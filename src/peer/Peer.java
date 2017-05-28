@@ -40,7 +40,7 @@ public class Peer implements MessageRMI
     private Database database;
     private ChannelRecord channelRecord = null;
 
-    /*hashmaps with temporary information about actual backups and restores*/
+    /*hashmaps with temporary information about actual restores*/
     private HashMap<String, RestoreInitiator> restoreInitiators;
 
     /*Communication*/

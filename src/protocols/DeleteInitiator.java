@@ -58,8 +58,6 @@ public class DeleteInitiator extends Thread{
             Util.randomDelay();
         }
 
-       
-
         //delete restores
         String dir = peer.getFileManager().diskDIR + Util.RESTORES_DIR + info.getFilename();
         peer.getFileManager().deleteFile(dir);
@@ -67,12 +65,8 @@ public class DeleteInitiator extends Thread{
         //delete entries from database (sent chunks, sent chunks mappings, files, restores)
         peer.getDatabase().removeSentChunks(fileId);
         peer.getDatabase().removeSentFile(filepath);
-        peer.getDatabase().removeChunkMapping(fileId);
+        //peer.getDatabase().removeChunkMapping(fileId);
         peer.getDatabase().removeRestoredFile(filepath);
-
-        //TODO confirm
-        //reset mdr ?
-        peer.getChannelRecord().resetChunkMessages(fileId);
 
         /*message = "Delete successful!";
         Logs.log(message);*/
