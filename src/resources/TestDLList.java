@@ -1,14 +1,8 @@
 package resources;
 
-import tracker.Tracker;
-
 import java.io.IOException;
 import java.util.Scanner;
-import java.util.concurrent.ExecutionException;
 
-/**
- * Created by Catarina Ramos on 25/05/2017.
- */
 public class TestDLList {
     public static void main(String[] args) throws IOException
     {

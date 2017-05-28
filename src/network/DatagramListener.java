@@ -2,7 +2,6 @@ package network;
 
 import peer.MessagePeerHandler;
 import peer.Peer;
-import protocols.ChunkBackupProtocol;
 import resources.Util;
 import tracker.MessageTrackerHandler;
 import tracker.Tracker;
@@ -13,7 +12,6 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.Arrays;
-import java.util.HashMap;
 
 public class DatagramListener extends Thread{
 	

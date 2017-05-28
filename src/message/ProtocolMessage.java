@@ -5,7 +5,6 @@ import resources.Util.ProtocolMessageType;
 
 import java.io.*;
 
-//import resources.//Logs;
 
 /**
  * Class ProtocolMessageType

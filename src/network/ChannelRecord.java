@@ -7,19 +7,9 @@ import java.util.HashMap;
  * Class ChannelRecord used to record messages received by the communication channels.
  * Some messages records are automatic, others have to be initiated by the functions 
  * startRecordingXXX(...).
- * 
- * @attribute storedMessages - Record of messages of type STORED as a HashMap<String, HashMap<Integer, ArrayList<Integer>>>
- * where the hash String represents a file identification and the HashMap<Integer, ArrayList<Integer>> represents all the chunks
- * associated with it. In the inner HashMap, the hash Integer represents the chunk identification number and the ArrayList the list of peers.
- * 
+ *
  * @attribute chunkMessages - Record of the messages of type CHUNK/GOTCHUNKENH as a HashMap<String, ArrayList<Integer>>
  * where the hash represents the file identification and the ArrayList the list of chunks.
- * 
- * @attribute putchunkMessages - Record of the messages of type PUTCHUNK as a HashMap<String, ArrayList<Integer>>
- * where the hash represents the file identification and the ArrayList the list of chunks.
- * 
- * @attribute initiatorMessages - Record of the messages of type INITIATOR as a HashMap<String, Integer>
- * where the hash represents the file identification and the key the chunk identification number.
  */
 public class ChannelRecord {
 
