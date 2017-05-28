@@ -5,6 +5,7 @@ import resources.Logs;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.Map.Entry;
 
 public class TrackerData implements Serializable
 {
@@ -78,5 +79,19 @@ public class TrackerData implements Serializable
             DHT.remove(key);
             Logs.delMsg("REMOVED Key: " + key);
         }
+    }
+
+    @Override
+    public synchronized String toString(){
+        String s = new String("");
+
+        for(Entry<String, HashSet<Subscriber>> e : DHT.entrySet()){
+            s += e.getKey() + "\n";
+
+            for(Subscriber sub : e.getValue()){
+                s+= "        " + sub.toString() + "\n";
+            }
+        }
+        return s;
     }
 }
