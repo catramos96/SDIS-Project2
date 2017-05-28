@@ -116,7 +116,7 @@ public class Peer implements MessageRMI
         saveMetadata();
 
         //try to backup chunks with actual replication degree bellow desired
-        verifyChunks(this);
+        verifyChunks();
 
         //Warns peers about its activity only if this peer can also store new chunks
         updateStateOnTracker();
@@ -228,29 +228,24 @@ public class Peer implements MessageRMI
         }
     }
 
-    //TODO  mudar para a validade dos chunks
-    private void verifyChunks(Peer peer) {
-        /**
-         * Function that gets all the chunks stored by this peer with the atual replication degree
-         * bellow the desired and try to initiate the chunk backup protocol for each chunk after a random time,
-         */
+    private void verifyChunks() {
+
         final Runnable checkChunks = new Runnable() {
             public void run()
             {
-                System.out.println(" - init chunk update - ");
+                ArrayList<String> chunks = database.getChunksExpired();
 
-                ArrayList<ChunkInfo> chunks = database.getSentChunksBellowRepDeg();
-
-                for(ChunkInfo c : chunks) {
-                    chunkBackup(c);
+                if(chunks.size() != 0){
+                    TopologyMessage msg = new TopologyMessage(Util.TopologyMessageType.CHECK,chunks);
+                    subscribedGroup.sendMessageToTracker(msg);
+                    Logs.sentTopologyMessage(msg);
                 }
 
-                System.out.println(" - update completed - ");
             }
 
         };
 
-        scheduler.scheduleAtFixedRate(checkChunks, 90, 300, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(checkChunks, 0, 1, TimeUnit.DAYS);
     }
 
     public void chunkBackup(ChunkInfo c) {

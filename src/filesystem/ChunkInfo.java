@@ -1,7 +1,12 @@
 package filesystem;
 
+import resources.Util;
+
 import java.io.Serializable;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 
 /**
  * Class responsible for representing a chunk.
@@ -24,6 +29,7 @@ public class ChunkInfo implements Serializable
     private byte[]  data = null;
     private int     replicationDeg = 0;	//Desired
     private int     actualRepDeg = 0;
+    private Calendar expirationDate = null;
 
 
     //private ArrayList<Integer> peers = new ArrayList<Integer>();
@@ -39,6 +45,9 @@ public class ChunkInfo implements Serializable
         this.chunkNo = chunkNo;
         this.replicationDeg = replicationDeg;
         this.actualRepDeg = replicationDeg;
+        this.expirationDate = Calendar.getInstance();
+        expirationDate.setTime(new Date());
+        expirationDate.add(Calendar.DATE, Util.CHUNK_EXPIRATION);
     }
 
     /**
@@ -51,6 +60,10 @@ public class ChunkInfo implements Serializable
         this.setChunkNo(chunkNo);
         this.setFileId(fileId);
         this.setData(data);
+
+        this.expirationDate = Calendar.getInstance();
+        expirationDate.setTime(new Date());
+        expirationDate.add(Calendar.DATE, Util.CHUNK_EXPIRATION);
     }
 
 	/*
@@ -95,4 +108,13 @@ public class ChunkInfo implements Serializable
         return (this.chunkNo+this.fileId);
     }
 
+    public boolean hasExpired(){
+
+       return (expirationDate.getTime().before(new Date()));
+    }
+
+    public void renovateDate(){
+        expirationDate.setTime(new Date());
+        expirationDate.add(Calendar.DATE, Util.CHUNK_EXPIRATION);
+    }
 }

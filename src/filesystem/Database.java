@@ -122,6 +122,24 @@ public class Database implements Serializable
         return chunkList;
     }
 
+    public synchronized ArrayList<String> getChunksExpired(){
+        ArrayList<String> chunksExpired = new ArrayList<String>();
+
+        for(ChunkInfo c : getStoredChunks().values()){
+            if(c.hasExpired())
+                chunksExpired.add(c.getChunkKey());
+        }
+
+        return chunksExpired;
+    }
+
+    public synchronized void renovateChunks(ArrayList<String> chunks){
+        for(String c : chunks){
+            if (storedChunks.containsKey(c))
+                storedChunks.get(c).renovateDate();
+        }
+    }
+
     /*
     SENTCHUNKS
      */
@@ -279,6 +297,7 @@ public class Database implements Serializable
     public synchronized boolean hasRestoredFile(String filepath) {
         return restoredFiles.containsKey(filepath);
     }
+
 
 
     /*

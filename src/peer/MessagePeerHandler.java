@@ -65,14 +65,21 @@ public class MessagePeerHandler extends Thread{
                         //update database
                         peer.getDatabase().removeStoredChunk(keys.get(i));
                     }
-                    else {//update repDeg
+                    else {
+                        //update repDeg
                         peer.getDatabase().updateActualRepDeg(reps.get(i), keys.get(i));
+                        //renovate expiration date
+                        peer.getDatabase().renovateChunks(msg.getKeys());
 
-                        ChunkInfo chunk = peer.getDatabase().getSentChunkInfo(keys.get(i));
+                        ChunkInfo chunk;
 
-                        //Check if new replication degree is bellow the desired
-                        if(chunk.getReplicationDeg() > reps.get(i)){
-                            peer.chunkBackup(chunk);
+                        if(peer.getDatabase().getStoredChunks().containsKey(keys.get(i))) {
+                            chunk = peer.getDatabase().getStoredChunks().get(keys.get(i));
+
+                            //Check if new replication degree is bellow the desired
+                            if(chunk.getReplicationDeg() > chunk.getActualRepDeg()){
+                                peer.chunkBackup(chunk);
+                            }
                         }
                     }
 
