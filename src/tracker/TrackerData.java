@@ -74,8 +74,6 @@ public class TrackerData implements Serializable
     }
 
     public synchronized void deleteDHT(String key){
-        //Logs.delMsg("DELETE DHT " + DHT.containsKey(key) +  " " + key );
-        //Logs.delMsg(DHT.toString());
         if(DHT.containsKey(key)) {
             DHT.remove(key);
             Logs.delMsg("REMOVED Key: " + key);
