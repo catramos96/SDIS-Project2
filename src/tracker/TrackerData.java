@@ -13,7 +13,8 @@ import java.util.Map.Entry;
 public class TrackerData implements Serializable
 {
     private static final long serialVersionUID = 1L;
-    private HashMap<String,HashSet<Subscriber>> DHT = null;
+
+    private HashMap<String,HashSet<Subscriber>> DHT = null; /* String - key of the chunk; HashSet - Subscribers that have the chunk */
 
     /**
      * Constructor that initializes the DHT
