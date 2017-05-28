@@ -10,7 +10,7 @@ public class FileSharing
 	{		
 		if(args.length != 4)
 		{
-			System.out.println("java peer.FileSharing <peer_id> <peer_address:defPort:mcPort:mdbPort:mrPort> <remoteObjName> <tracker_address:port>");
+			System.out.println("java peer.FileSharing <peer_id> <peer_address:defPort:mcPort:mdrPort:mdbPort> <remoteObjName> <tracker_address:port>");
 			return;
 		}
 
