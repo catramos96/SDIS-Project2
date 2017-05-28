@@ -34,9 +34,12 @@ Métodos DTH:
 * ~~Alterar mensagem de GETCHUNK e por o ip e a port do canal mdr do peer. Depois o CHUNK é mandado para este ip e port.~~
 
 ##### Delete
-* Remover no tracker os chunks dos ficheiros.
+* ~~Remover no tracker os chunks dos ficheiros.~~ Falta fix na DHT na compare KEY
 * De x em x dias, é enviada uma mensagem por chunk, para o tracker para saber se ainda existe o chunk, em caso negativo elimina-se todos os chunks daquele ficheiro. O tracker envia a mensagem INFO com o repDegree, e se for inferior ao desejado, então faz se backup. A validade podia ser definida no Util tipo = 5 dias. Depois no registo dos chunks que temos e outro tipo de informações guardavamos também a próxima data de "renovar" o chunk. Quando o peer inicia sessão ele pode verificar neste registo os peers que são precisos renovar e então envia um check para o tracker, se o tracker retornar uma mensagem info com repDeg = 0 então é porque foi eliminado
 
 ##### Remove
 * Remover no tracker a entrada no peer para aquele chunk.
 * Receber a mensagem do tracker com o repDegree. Se o repDegree for mais baixo então efetuar o backup (mudar o backup para não enviar stored se já tem o chunk? assim não estamos a receber stored de peers que já tinham o chunk e confundir com o backup bem feito). Outra abordagem: assumir que se um peer remove um chunk então tem que fazer o backup com rep = 1
+
+##### GUI 
+* windows
