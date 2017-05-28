@@ -232,6 +232,8 @@ public class TopologyMessage extends Message{
                 int j = 1;
 
                 while(j < p.length){
+                    if(j == p.length-1)
+                        p[j] = p[j].replace(" " + Util.LINE_SEPARATOR + Util.LINE_SEPARATOR,"");
                     keys.add(p[j]);
                     j++;
                 }
